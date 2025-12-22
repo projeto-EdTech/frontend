@@ -32,13 +32,11 @@ const getStatusIcon = (status: Status) => {
 const getStatusColor = (status: Status) => {
   switch (status) {
     case "current":
-      return "bg-gradient-to-r from-blue-600 to-blue-700 text-white border-2 border-blue-400 shadow-lg shadow-blue-500/50";
+      return "bg-[#007AFF] text-white shadow-sm ring-1 ring-black/5"; // Apple System Blue
     case "answered":
-      return "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-200/50";
+      return "!bg-gray-100 !text-gray-900 backdrop-blur-sm"; // Glass-like "filled" state
     case "unanswered":
-      return "bg-white text-gray-600 border-2 border-gray-200 shadow-sm hover:border-gray-300";
-    default:
-      return "";
+      return "bg-transparent text-gray-700 border-gray-200 hover:!bg-white hover:!text-gray-900 transition-colors"; // Clean default
   }
 };
 
@@ -107,7 +105,7 @@ export default function QuestionCarousel({
       };
     } else if (progressPercentage > 0) {
       return { 
-        src: "/Mascote/banners/Camaleão_Confuso/Gemini_Generated_Image_f7g8iff7g8iff7g8.png", 
+        src: "/Mascote/banners/Camaleão_Confuso/Camaleão_2.png", 
         alt: "Mascote curioso - Vamos começar!",
         message: "Vamos começar essa jornada! 📚"
       };
@@ -122,84 +120,85 @@ export default function QuestionCarousel({
   const mascot = getMascotImage();
 
   return (
-    <div className="relative bg-white border border-gray-200 rounded-3xl shadow-xl p-6 sm:p-8 mb-8 overflow-hidden">
+    <div className="relative bg-white backdrop-blur-xl border border-gray-200 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 mb-8 overflow-hidden font-sans">
       {/* Header com estatísticas */}
-      <div className="flex items-center justify-between mb-6 relative z-10">
-          <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-5">
             {/* Mascote dinâmico baseado no progresso */}
             <div className="hidden sm:block">
               <Image 
                 src={mascot.src}
                 alt={mascot.alt}
-                width={80}
-                height={80}
-                className="object-contain drop-shadow-lg transition-all duration-500"
+                width={70}
+                height={70}
+                className="object-contain drop-shadow-sm transition-all duration-500"
               />
             </div>
             
-            <div>
-              <h3 className="text-xl font-bold text-gray-800 mb-1">Navegação Rápida</h3>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold tracking-tight text-gray-900">Navegação Rápida</h3>
               {/* Mensagem motivacional do mascote */}
-              <p className="text-sm font-medium text-blue-600 mb-2 italic">
+              <p className="text-sm text-gray-500 leading-relaxed">
                 {mascot.message}
               </p>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle size={16} className="text-emerald-500" />
-                  {answeredCount} de {totalQuestions} respondidas
+              <div className="flex items-center gap-3 pt-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-transparent border border-gray-200 text-xs font-medium text-gray-600">
+                  <CheckCircle size={14} className="text-emerald-500/80" />
+                  {answeredCount} de {totalQuestions}
                 </span>
-                <span className="text-blue-600 font-medium">
-                  {Math.round(progressPercentage)}% concluído
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md !bg-white border border-gray-200 text-xs font-medium text-[#007AFF]">
+                  {Math.round(progressPercentage)}%
                 </span>
               </div>
             </div>
           </div>
 
           {/* Botões de Navegação do Carrossel */}
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1">
             <button
                 onClick={() => onQuestionJump(currentQuestion - 1)}
                 disabled={currentQuestion === 0}
-                className="p-2 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 hover:from-blue-100 hover:to-blue-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-sm"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent transition-all duration-200 cursor-pointer"
                 aria-label="Questão anterior"
             >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={20} strokeWidth={2} />
             </button>
+            <div className="w-px h-4 bg-gray-200 mx-1"></div>
             <button
                 onClick={() => onQuestionJump(currentQuestion + 1)}
                 disabled={currentQuestion === totalQuestions - 1}
-                className="p-2 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 hover:from-blue-100 hover:to-blue-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-sm"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent transition-all duration-200 cursor-pointer"
                 aria-label="Próxima questão"
             >
-                <ChevronRight size={18} />
+                <ChevronRight size={20} strokeWidth={2} />
             </button>
           </div>
       </div>
       
       {/* Barra de progresso com mascote animado */}
-      <div className="mb-6 relative">
-        <div className="h-3 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full shadow-inner overflow-hidden">
+      <div className="mb-8 relative px-1">
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div 
-              className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-emerald-500 transition-all duration-500 ease-out relative shadow-lg"
+              className="h-full bg-[#007AFF] rounded-full transition-all duration-500 ease-out relative"
               style={{ width: `${progressPercentage}%` }}
           >
-            {/* Efeito de brilho na barra */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+            {/* Efeito de brilho na barra - Opcional e sutil */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent"></div>
           </div>
         </div>
         
         {/* Mascote pequeno "caminhando" na barra de progresso */}
         {progressPercentage > 0 && progressPercentage < 100 && (
           <div 
-            className="absolute -top-8 transition-all duration-500 ease-out transform -translate-x-1/2"
-            style={{ left: `${Math.min(progressPercentage, 95)}%` }}
+            className="absolute -top-7 transition-all duration-500 ease-out transform -translate-x-1/2 pointer-events-none"
+            style={{ left: `${Math.min(progressPercentage, 98)}%` }}
           >
             <Image 
               src="/Mascote/banners/Camaleão_15.png"
               alt="Mascote progredindo"
-              width={40}
-              height={40}
-              className="object-contain drop-shadow-md animate-bounce-gentle"
+              width={32}
+              height={32}
+              className="object-contain drop-shadow-sm"
             />
           </div>
         )}
@@ -207,14 +206,14 @@ export default function QuestionCarousel({
         {/* Mascote comemorando quando completa 100% */}
         {progressPercentage === 100 && (
           <div 
-            className="absolute -top-8 right-0 animate-celebration"
+            className="absolute -top-8 right-0 animate-celebration pointer-events-none"
           >
             <Image 
               src="/Mascote/banners/Camaleão_25.png"
               alt="Mascote comemorando"
-              width={50}
-              height={50}
-              className="object-contain drop-shadow-lg"
+              width={40}
+              height={40}
+              className="object-contain drop-shadow-sm"
             />
           </div>
         )}
@@ -223,7 +222,7 @@ export default function QuestionCarousel({
       {/* 3. A ESTRUTURA DO CARROSSEL (JSX) */}
       <div 
         ref={carouselRef} 
-        className="flex items-center gap-3 overflow-x-auto pb-4 -mb-4 scrollbar-hide"
+        className="flex items-center gap-3 overflow-x-auto py-5 px-2 scrollbar-hide"
       >
         {Array.from({ length: totalQuestions }).map((_, index) => {
           const status = getQuestionStatus(index, currentQuestion, userAnswers);
@@ -233,15 +232,21 @@ export default function QuestionCarousel({
               onClick={() => onQuestionJump(index)}
               // A classe flex-shrink-0 impede que os botões espremam um ao outro.
               className={`
-                relative w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-2xl font-bold text-sm 
-                transition-all duration-300 transform hover:scale-110 hover:-translate-y-1
+                relative w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl text-sm font-medium
+                transition-all duration-200 cursor-pointer
                 ${getStatusColor(status)}
                 group
+                focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:ring-offset-2
               `}
               aria-label={`Ir para a questão ${index + 1}`}
             >
               <span className="relative z-10">{index + 1}</span>
-              <div className="absolute top-1 right-1 opacity-70 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                 {/* Icon hidden on default, shows on hover or active logic if needed, 
+                     but simplifying visual noise for macOS feel */}
+              </div>
+               {/* Icon overlay logic maintained if needed, but styling adjusted */}
+               <div className={`absolute top-0.5 right-0.5 transition-opacity ${status === 'answered' || status === 'current' ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
                 {getStatusIcon(status)}
               </div>
             </button>

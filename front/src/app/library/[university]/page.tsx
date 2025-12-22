@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -9,8 +9,9 @@ import { universities, type University } from "@/lib/dataUniversity";
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
 
-export default function UniversityExamPage({ params }: { params: { university: string } }) {
-  return <UniversityExamPageClient params={params} />;
+export default function UniversityExamPage({ params }: { params: Promise<{ university: string }> }) {
+  const unwrappedParams = use(params);
+  return <UniversityExamPageClient params={unwrappedParams} />;
 }
 
 function UniversityExamPageClient({ params }: { params: { university: string } }) {
@@ -84,17 +85,23 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
 
   // Sincronizar query params (ano, dia, tempo) na URL
   const syncQuery = useCallback((next: { year?: number | null; day?: number | null; time?: string | null }) => {
-    const curr = new URLSearchParams(searchParams.toString());
+    const currentParams = new URLSearchParams(searchParams.toString());
+    const newParams = new URLSearchParams(searchParams.toString());
+
     if (next.year !== undefined) {
-      if (next.year !== null) curr.set("year", String(next.year)); else curr.delete("year");
+      if (next.year !== null) newParams.set("year", String(next.year)); else newParams.delete("year");
     }
     if (next.day !== undefined) {
-      if (next.day !== null) curr.set("day", String(next.day)); else curr.delete("day");
+      if (next.day !== null) newParams.set("day", String(next.day)); else newParams.delete("day");
     }
     if (next.time !== undefined) {
-      if (next.time) curr.set("time", String(next.time)); else curr.delete("time");
+      if (next.time) newParams.set("time", String(next.time)); else newParams.delete("time");
     }
-    router.replace(`/library/${slug}?${curr.toString()}`, { scroll: false });
+    
+    // Only update if params actually changed
+    if (currentParams.toString() !== newParams.toString()) {
+      router.replace(`/library/${slug}?${newParams.toString()}`, { scroll: false });
+    }
   }, [router, searchParams, slug]);
 
   useEffect(() => {

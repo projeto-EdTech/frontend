@@ -6,6 +6,7 @@ import { Plus, Globe, Star, TrendingUp, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { universities as allUniversities } from "@/lib/dataUniversity";
+import { useSession } from "next-auth/react";
 
 interface Country {
   name: string;
@@ -53,6 +54,7 @@ const countries: Country[] = [
 
 export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
+  const { data: session } = useSession();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -486,51 +488,53 @@ export default function Sidebar() {
       </div>
 
       {/* Call-to-Action Premium - macOS Style colorido */}
-      <div className={`
-        p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl relative overflow-hidden group
-        ${isDarkMode 
-          ? 'bg-gradient-to-br from-purple-600/25 via-pink-600/20 to-violet-600/25 ring-1 ring-purple-500/40 shadow-lg shadow-purple-600/20' 
-          : 'bg-gradient-to-br from-purple-100 via-pink-100 to-violet-100 ring-1 ring-purple-300/50 shadow-md shadow-purple-400/20'
-        }
-      `}>
-        {/* Efeito de brilho */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none"></div>
-        
-        <div className="text-center relative z-10">
-          <div className={`
-            w-10 h-10 rounded-xl mx-auto mb-2.5 flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12
-            ${isDarkMode 
-              ? 'bg-gradient-to-br from-purple-600 to-pink-600 shadow-purple-600/50' 
-              : 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-purple-500/40'
-            }
-          `}>
-            <Star className="w-5 h-5 text-white fill-white" />
-          </div>
-          <h4 className={`
-            text-sm font-bold mb-1
-            ${isDarkMode ? 'text-white' : 'text-gray-900'}
-          `}>
-            Acesso Premium ⭐
-          </h4>
-          <p className={`text-xs mb-3.5 font-medium ${isDarkMode ? 'text-purple-200' : 'text-purple-800'}`}>
-            Desbloqueie todos os países e universidades
-          </p>
-          <Link href="/paidPlan">
-            <button className={`
-              w-full py-2.5 text-white text-xs font-bold rounded-xl
-              transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] hover:shadow-lg relative overflow-hidden group/btn cursor-pointer
+      {session?.user?.tier !== "Simula PRO" && (
+        <div className={`
+          p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl relative overflow-hidden group
+          ${isDarkMode 
+            ? 'bg-gradient-to-br from-purple-600/25 via-pink-600/20 to-violet-600/25 ring-1 ring-purple-500/40 shadow-lg shadow-purple-600/20' 
+            : 'bg-gradient-to-br from-purple-100 via-pink-100 to-violet-100 ring-1 ring-purple-300/50 shadow-md shadow-purple-400/20'
+          }
+        `}>
+          {/* Efeito de brilho */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none"></div>
+          
+          <div className="text-center relative z-10">
+            <div className={`
+              w-10 h-10 rounded-xl mx-auto mb-2.5 flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12
               ${isDarkMode 
-                ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-violet-600 hover:from-purple-500 hover:via-pink-500 hover:to-violet-500 shadow-md shadow-purple-600/40' 
-                : 'bg-gradient-to-r from-purple-500 via-pink-500 to-violet-500 hover:from-purple-600 hover:via-pink-600 hover:to-violet-600 shadow-sm shadow-purple-500/30'
+                ? 'bg-gradient-to-br from-purple-600 to-pink-600 shadow-purple-600/50' 
+                : 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-purple-500/40'
               }
             `}>
-              {/* Efeito de brilho no botão */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500"></div>
-              <span className="relative z-10">Fazer Upgrade 🚀</span>
-            </button>
-          </Link>
+              <Star className="w-5 h-5 text-white fill-white" />
+            </div>
+            <h4 className={`
+              text-sm font-bold mb-1
+              ${isDarkMode ? 'text-white' : 'text-gray-900'}
+            `}>
+              Acesso Premium ⭐
+            </h4>
+            <p className={`text-xs mb-3.5 font-medium ${isDarkMode ? 'text-purple-200' : 'text-purple-800'}`}>
+              Desbloqueie todos os países e universidades
+            </p>
+            <Link href="/paidPlan">
+              <button className={`
+                w-full py-2.5 text-white text-xs font-bold rounded-xl
+                transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] hover:shadow-lg relative overflow-hidden group/btn cursor-pointer
+                ${isDarkMode 
+                  ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-violet-600 hover:from-purple-500 hover:via-pink-500 hover:to-violet-500 shadow-md shadow-purple-600/40' 
+                  : 'bg-gradient-to-r from-purple-500 via-pink-500 to-violet-500 hover:from-purple-600 hover:via-pink-600 hover:to-violet-600 shadow-sm shadow-purple-500/30'
+                }
+              `}>
+                {/* Efeito de brilho no botão */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500"></div>
+                <span className="relative z-10">Fazer Upgrade 🚀</span>
+              </button>
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </aside>
     </>
   );

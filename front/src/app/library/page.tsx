@@ -108,6 +108,8 @@ export default function LibraryPage() {
     let targetYear;
 
     // Caso 1: Se "Todos os anos" estiver selecionado
+    if (!university.slug) return '#';
+    
     if (selectedYear === null) {
       // Pega o ano mais recente do array de anos da universidade.
       // Math.max(...array) é uma forma segura de encontrar o maior número.
@@ -250,7 +252,7 @@ export default function LibraryPage() {
                           </div>
                           {/* Balão de fala melhorado */}
                           <div className="absolute -top-2 -right-2 md:-top-4 md:-right-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl px-3 py-2 md:px-4 md:py-2.5 shadow-lg animate-in slide-in-from-right duration-700 delay-500 z-10">
-                            <p className="text-xs md:text-sm font-bold whitespace-nowrap">Vamos estudar? 📚</p>
+                            <p className="text-xs md:text-sm font-bold whitespace-nowrap">Bora estudar? 📚</p>
                             <div className="absolute left-1/2 bottom-0 translate-y-full -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-indigo-600"></div>
                           </div>
                         </div>
@@ -434,7 +436,7 @@ export default function LibraryPage() {
                               <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${regionColorClass(university.state)} shadow-sm opacity-60 group-hover:opacity-100 transition-opacity duration-300`}></div>
                               
                               {/* Container do logo */}
-                              <div className="relative z-10 w-20 h-20 bg-white rounded-xl shadow-md border border-gray-100 flex items-center justify-center mb-4 transition-all duration-300 overflow-hidden group-hover:shadow-lg group-hover:scale-110">
+                              <div className="relative z-10 w-20 h-20 !bg-white rounded-xl shadow-md border border-gray-100 flex items-center justify-center mb-4 transition-all duration-300 overflow-hidden group-hover:shadow-lg group-hover:scale-110">
                                 <Image
                                   src={
                                     university.logo
@@ -664,17 +666,17 @@ export default function LibraryPage() {
                               Escolha uma universidade acima e inicie sua jornada de preparação com simulados reais!
                             </p>
                             <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                              <div className="flex items-center gap-2 bg-white/90 backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                              <div className="flex items-center gap-2 !bg-white backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
                                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                <span className="text-sm font-semibold text-gray-700">100% Gratuito</span>
+                                <span className="text-sm font-semibold !text-gray-700">100% Gratuito</span>
                               </div>
-                              <div className="flex items-center gap-2 bg-white/90 backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                              <div className="flex items-center gap-2 !bg-white backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
                                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse delay-300"></div>
-                                <span className="text-sm font-semibold text-gray-700">Questões Reais</span>
+                                <span className="text-sm font-semibold !text-gray-700">Questões Reais</span>
                               </div>
-                              <div className="flex items-center gap-2 bg-white/90 backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                              <div className="flex items-center gap-2 !bg-white backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
                                 <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-600"></div>
-                                <span className="text-sm font-semibold text-gray-700">Resultados Instantâneos</span>
+                                <span className="text-sm font-semibold !text-gray-700">Resultados Instantâneos</span>
                               </div>
                             </div>
                           </div>

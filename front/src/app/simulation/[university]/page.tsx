@@ -298,8 +298,8 @@ export default function SimulationPage() {
           alternativaEscolhida: userAnswer !== null ? question.options[userAnswer] : "Não respondida",
           indiceAlternativaEscolhida: userAnswer,
           tempoGasto: 0,
-          materia: question.materia || "Não especificada",
-          conteudo: question.conteudo || "Não especificado",
+          materia: question.materia?.join(", ") || "Não especificada",
+          conteudo: question.conteudo?.join(", ") || "Não especificado",
         });
       }
     });
@@ -324,8 +324,8 @@ export default function SimulationPage() {
       wrongAnswers,
       successRate,
       completedAt: new Date().toISOString(),
-      materias: Array.from(new Set(questions.map((q) => q.materia).filter(Boolean))),
-      conteudos: Array.from(new Set(questions.map((q) => q.conteudo).filter(Boolean))),
+      materias: Array.from(new Set(questions.flatMap((q) => q.materia).filter(Boolean))),
+      conteudos: Array.from(new Set(questions.flatMap((q) => q.conteudo).filter(Boolean))),
     };
 
     sessionStorage.setItem("simulationSummary", JSON.stringify(summaryData));
@@ -483,7 +483,7 @@ export default function SimulationPage() {
                   {/* Logo da universidade */}
                   <div className="relative flex-shrink-0">
                     <div className="absolute inset-0 bg-blue-400 rounded-xl sm:rounded-2xl blur-lg opacity-30 transform rotate-1"></div>
-                    <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100">
+                    <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center !bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100">
                       <Image 
                         src={
                           currentUniversity.logo
