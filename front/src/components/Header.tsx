@@ -171,10 +171,10 @@ export default function Header() {
     ...(hasPaidPlan
       ? [
           {
-            name: "Simula IA",
-            href: "/SimulaIA",
+            name: "Vest IA",
+            href: "/VestIA",
             icon: BrainCircuit,
-            description: "Pagina de conversa com a simulaIA",
+            description: "Pagina de conversa com a VestiIA",
             color: "from-blue-500 to-cyan-500",
           },
         ]
@@ -244,7 +244,7 @@ export default function Header() {
                 <div className="relative w-[135px] h-16 lg:h-18 overflow-hidden">
                   <Image
                     src="/Mascote/banners/Camaleão_35.png"
-                    alt="SimulaVest Logo"
+                    alt="Vestibuline Logo"
                     width={135}
                     height={135}
                     className="absolute -top-9 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 z-10"

@@ -156,7 +156,7 @@ const Gemini: React.FC<GeminiProps> = ({
         <div className="absolute top-0 right-0 w-28 h-28 opacity-80 hover:opacity-100 transition-opacity duration-300">
           <Image 
             src="/Mascote/banners/Camaleão_34.png" 
-            alt="Mascote SimulaVest" 
+            alt="Mascote Vestibuline" 
             width={112}
             height={112}
             className="w-full h-full object-contain drop-shadow-md"

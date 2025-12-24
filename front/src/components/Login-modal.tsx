@@ -61,7 +61,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
             <div className="relative w-50 h-50 sm:w-35 sm:h-35 xl:w-[120px] xl:h-[120px] animate-in zoom-in duration-500">
               <Image
                 src="/Mascote/banners/Camaleão_10.png"
-                alt="Mascote SimulaVest"
+                alt="Mascote Vestibuline"
                 fill
                 className="object-contain drop-shadow-2xl"
                 priority
@@ -72,7 +72,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
           {/* Badge: Margens e paddings reduzidos no mobile */}
           <div className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-2.5 sm:px-4 sm:py-2 xl:px-6 xl:py-2 rounded-full text-xs xl:text-sm font-semibold mb-2 sm:mb-4 xl:mb-1 shadow-lg shadow-purple-500/30 w-fit mx-auto">
             <span className="text-lg sm:text-lg xl:text-lg">🚀</span>
-            <span>Bem-vindo ao SimulaVest</span>
+            <span>Bem-vindo ao Vestibuline</span>
           </div>
           
           <h2 className="text-xl sm:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent mb-1 sm:mb-2 xl:mb-4">

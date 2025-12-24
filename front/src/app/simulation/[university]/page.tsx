@@ -472,7 +472,7 @@ export default function SimulationPage() {
               <div className="absolute top-5 right-75 z-10 hidden sm:block">
                 <Image 
                   src="/Mascote/banners/Camaleão_24.png" 
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   className="w-16 h-16 sm:w-20 sm:h-20 object-contain opacity-90 hover:opacity-100 transition-opacity"
                   width={100}
                   height={100}

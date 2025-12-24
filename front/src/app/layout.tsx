@@ -29,7 +29,7 @@ const openDyslexic = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SimulaVest",
+  title: "Vestibuline",
   description: "Prepare-se para os principais vestibulares com simulados e automatize seus estudos.",
   icons: {
     icon: "/favicon.ico",

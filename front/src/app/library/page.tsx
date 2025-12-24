@@ -169,7 +169,7 @@ export default function LibraryPage() {
                         <div className="relative w-32 h-32 animate-bounce">
                           <Image
                             src="/Mascote/banners/Camaleão_15.png"
-                            alt="Mascote SimulaVest carregando"
+                            alt="Mascote Vestibuline carregando"
                             width={128}
                             height={128}
                             className="object-contain filter drop-shadow-lg"
@@ -244,7 +244,7 @@ export default function LibraryPage() {
                           <div className="relative w-32 h-32 md:w-40 md:h-40 lg:w-44 lg:h-44">
                             <Image
                               src="/Mascote/banners/Camaleão_1.png"
-                              alt="Mascote SimulaVest"
+                              alt="Mascote Vestibuline"
                               width={180}
                               height={180}
                               className="object-contain filter drop-shadow-2xl animate-in zoom-in duration-1000"

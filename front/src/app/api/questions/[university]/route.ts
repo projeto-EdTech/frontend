@@ -229,7 +229,7 @@ function formatApiData(jsonData: any): QuestaoFormatada[] {
         if (questaoFormatada.imageNames && questaoFormatada.imageNames.length > 0) {
             const universityFolderName = questaoFormatada.university.toUpperCase().replace(/-/g, '');
             questaoFormatada.images = questaoFormatada.imageNames.map(imageName => {
-                return `https://raw.githubusercontent.com/SimulaVest-organization/SimulaVest-Docs/refs/heads/main/Banco%20de%20Imagens/banco%20de%20Imagens/${universityFolderName}/${questaoFormatada.year}/questao-${String(questaoFormatada.id).padStart(2, '0')}/${imageName}`;
+                return `https://raw.githubusercontent.com/projeto-EdTech/Docs/refs/heads/main/Banco%20de%20Imagens/banco%20de%20Imagens/${universityFolderName}/${questaoFormatada.year}/questao-${String(questaoFormatada.id).padStart(2, '0')}/${imageName}`;
             });
         }
 

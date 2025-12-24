@@ -888,7 +888,7 @@ const Planner: React.FC = () => {
           <div className="flex justify-center mb-6">
             <Image
               src="/Mascote/banners/Camaleão_1.png"
-              alt="Mascote SimulaVest"
+              alt="Mascote Vestibuline"
               width={170}
               height={170}
               className="drop-shadow-2xl"
@@ -957,7 +957,7 @@ const Planner: React.FC = () => {
                   <div className="hidden md:block">
                     <Image
                       src="/Mascote/banners/Camaleão_3.png"
-                      alt="Mascote SimulaVest"
+                      alt="Mascote Vestibuline"
                       width={70}
                       height={70}
                       className="drop-shadow-2xl"

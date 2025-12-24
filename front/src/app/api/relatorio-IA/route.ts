@@ -146,7 +146,7 @@ export async function GET() {
 
     // --- O PROMPT DETALHADO ---
     const prompt = `
-      Você é um **mentor de estudos sênior** e **analista de dados educacionais** da plataforma **Simulavest**.
+      Você é um **mentor de estudos sênior** e **analista de dados educacionais** da plataforma **Vestibuline**.
       Sua função é **analisar o desempenho acadêmico de um estudante** com base nos dados fornecidos e **gerar um relatório personalizado, detalhado e motivacional**.
       O relatório deve traduzir os dados brutos em **insights significativos e humanos**, ajudando o aluno a compreender seu progresso, pontos fortes e áreas de melhoria.
 
@@ -200,7 +200,7 @@ export async function GET() {
       **Estudante:** [Nome]  
       **Período Analisado:** [Período]  
       **Tipo:** Relatório de Desempenho Mensal  
-      **Mentor Responsável:** Analista de Dados Educacionais Sênior | Simulavest  
+      **Mentor Responsável:** Analista de Dados Educacionais Sênior | Vestibuline  
       **Data de Geração:** [Data]
 
       ---
@@ -385,7 +385,7 @@ export async function GET() {
 
       [2-3 parágrafos de mensagem motivacional personalizada, reconhecendo esforços específicos e reforçando potencial de crescimento]
 
-      **— Sua equipe Simulavest está com você nessa jornada! 🚀**
+      **— Sua equipe Vestibuline está com você nessa jornada! 🚀**
 
       ---
 

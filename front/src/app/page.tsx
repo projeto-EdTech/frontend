@@ -219,7 +219,7 @@ export default function Home() {
                           <div className="w-2 h-2 md:w-3 md:h-3 bg-red-400 rounded-full"></div>
                           <div className="w-2 h-2 md:w-3 md:h-3 bg-yellow-400 rounded-full"></div>
                           <div className="w-2 h-2 md:w-3 md:h-3 bg-green-400 rounded-full"></div>
-                          <div className="ml-2 text-xs themed-text-secondary hidden sm:block">simulavest.com</div>
+                          <div className="ml-2 text-xs themed-text-secondary hidden sm:block">vestibuline.com</div>
                         </div>
                         <div className="rounded-lg p-3 md:p-4">
                           <div className="flex items-center justify-between mb-2">
@@ -1042,7 +1042,7 @@ export default function Home() {
               <div className="absolute -top-8 -right-8 z-50 animate-float">
                 <Image
                   src="/Mascote/banners/Camaleão_22.png"
-                  alt="Mascote SimulaVest celebrando ranking"
+                  alt="Mascote Vestibuline celebrando ranking"
                   width={120}
                   height={120}
                   className="w-20 h-20 md:w-25 md:h-25 object-contain"
@@ -1264,7 +1264,7 @@ export default function Home() {
           <div className="flex justify-center mb-8">
             <Image
               src="/Mascote/banners/Camaleão_6.png"
-              alt="Mascote SimulaVest - Garantias"
+              alt="Mascote Vestibuline - Garantias"
               width={500}
               height={500}
               className="w-50 h-50 md:w-56 md:h-56 object-contain"
@@ -1273,7 +1273,7 @@ export default function Home() {
 
           {/* Comparação Antes e Depois */}
             <div className="themed-comparison bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-100 rounded-3xl p-6 md:p-8 lg:p-12 mb-16 shadow-xl border border-blue-100">
-            <h3 className="themed-text text-xl md:text-2xl font-bold text-center mb-8 md:mb-12">Antes e Depois do SimulaVest</h3>
+            <h3 className="themed-text text-xl md:text-2xl font-bold text-center mb-8 md:mb-12">Antes e Depois do Vestibuline</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               {/* Antes */}
@@ -1300,7 +1300,7 @@ export default function Home() {
               {/* Depois */}
               <div className="themed-card bg-white rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-green-400">
                 <h4 className="text-base md:text-lg font-bold text-green-600 mb-3 md:mb-4 flex items-center gap-2">
-                  🚀 Depois - Com SimulaVest
+                  🚀 Depois - Com Vestibuline
                 </h4>
                 <ul className="space-y-2 md:space-y-3">
                   {[
@@ -1376,7 +1376,7 @@ export default function Home() {
               <div className="flex justify-center mb-6">
                 <Image
                   src="/Mascote/banners/Camaleão_14.png"
-                  alt="Mascote SimulaVest - Escolha seu plano"
+                  alt="Mascote Vestibuline - Escolha seu plano"
                   width={200}
                   height={200}
                   className="w-25 h-25 object-contain animate-wiggle"

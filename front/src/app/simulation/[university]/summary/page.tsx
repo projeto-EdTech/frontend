@@ -191,7 +191,7 @@ export default function SummaryPage() {
                     <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 hidden sm:block">
                         <Image 
                             src="/Mascote/banners/Camaleão_1.png" 
-                            alt="Mascote SimulaVest comemorando" 
+                            alt="Mascote Vestibuline comemorando" 
                             width={140}
                             height={140}
                             className="w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 object-contain drop-shadow-2xl animate-bounce"
@@ -503,7 +503,7 @@ export default function SummaryPage() {
                         <div className="absolute top-4 right-4 z-10 hidden md:block">
                             <Image 
                                 src="/Mascote/banners/Camaleão_Confuso/Camaleão_1.png" 
-                                alt="Mascote SimulaVest pensativo" 
+                                alt="Mascote Vestibuline pensativo" 
                                 width={100}
                                 height={100}
                                 className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 object-contain drop-shadow-2xl"
@@ -705,7 +705,7 @@ export default function SummaryPage() {
                             <div className="flex justify-center mb-4">
                                 <Image 
                                     src="/Mascote/banners/Camaleão_2.png" 
-                                    alt="Mascote SimulaVest feliz" 
+                                    alt="Mascote Vestibuline feliz" 
                                     width={180}
                                     height={180}
                                     className="w-36 h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 object-contain drop-shadow-2xl"
@@ -725,7 +725,7 @@ export default function SummaryPage() {
                     <div className="hidden lg:block">
                         <Image 
                             src="/Mascote/banners/Camaleão_4.png" 
-                            alt="Mascote SimulaVest motivacional" 
+                            alt="Mascote Vestibuline motivacional" 
                             width={140}
                             height={140}
                             className="w-32 h-32 lg:w-36 lg:h-36 object-contain drop-shadow-2xl"

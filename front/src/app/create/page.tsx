@@ -251,7 +251,7 @@ export default function CreatePage() {
                       <div className="hidden lg:block absolute top-1 right-1 z-20">
                         <Image 
                           src="/Mascote/banners/Camaleão_10.png" 
-                          alt="Mascote SimulaVest" 
+                          alt="Mascote Vestibuline" 
                           width={120} 
                           height={120}
                           className="w-24 h-24 object-contain opacity-90 hover:opacity-100 transition-opacity"
@@ -364,7 +364,7 @@ export default function CreatePage() {
                       <div className="hidden lg:block absolute top-1 right-1 z-20">
                         <Image 
                           src="/Mascote/banners/Camaleão_10.png" 
-                          alt="Mascote SimulaVest" 
+                          alt="Mascote Vestibuline" 
                           width={120} 
                           height={120}
                           className="w-24 h-24 object-contain opacity-90 hover:opacity-100 transition-opacity"
@@ -408,7 +408,7 @@ export default function CreatePage() {
                               <div className="flex flex-col items-center gap-4">
                                 <Image 
                                   src="/Mascote/banners/Camaleão_5.png" 
-                                  alt="Mascote SimulaVest" 
+                                  alt="Mascote Vestibuline" 
                                   width={100} 
                                   height={100}
                                   className="w-20 h-20 sm:w-24 sm:h-24 object-contain opacity-50"
@@ -470,7 +470,7 @@ export default function CreatePage() {
                               <div className="flex flex-col items-center gap-4">
                                 <Image 
                                   src="/Mascote/banners/Camaleão_7.png" 
-                                  alt="Mascote SimulaVest" 
+                                  alt="Mascote Vestibuline" 
                                   width={100} 
                                   height={100}
                                   className="w-20 h-20 sm:w-24 sm:h-24 object-contain"

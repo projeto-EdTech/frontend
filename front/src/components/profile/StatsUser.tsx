@@ -136,7 +136,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, theme }) =
               <div className="relative transform hover:scale-110 transition-transform duration-500">
                 <Image
                   src="/Mascote/banners/Camaleão_7.png"
-                  alt="Mascote Simulavest"
+                  alt="Mascote Vestibuline"
                   width={140}
                   height={140}
                   className="drop-shadow-2xl"
@@ -1159,7 +1159,7 @@ const StatsUser: React.FC<StatsUserProps> = ({ stats, subjectPerformance, monthl
                         new Paragraph({ text: "", style: "NormalABNT", spacing: { before: 1500 } }), // Espaço superior
                         
                         new Paragraph({
-                          children: [new TextRun({ text: "Simulavest", bold: true, size: 36 })], // 18pt
+                          children: [new TextRun({ text: "Vestibuline", bold: true, size: 36 })], // 18pt
                           style: "TituloABNT",
                           alignment: "center",
                         }),
@@ -1496,7 +1496,7 @@ const StatsUser: React.FC<StatsUserProps> = ({ stats, subjectPerformance, monthl
                       
                       // --- 7. Salvar o arquivo (sem alterações) ---
                       const blob = await Packer.toBlob(doc);
-                      saveAs(blob, `relatorio-simulavest-${new Date().toISOString().split('T')[0]}.docx`);
+                      saveAs(blob, `relatorio-vestibuline-${new Date().toISOString().split('T')[0]}.docx`);
                     }}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors duration-200
                       ${theme === 'dark'

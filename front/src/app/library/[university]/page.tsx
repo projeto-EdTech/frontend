@@ -150,7 +150,7 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
                         <div className="flex flex-col items-center justify-center py-16">
                           <Image 
                             src="/Mascote/banners/Camaleão_15.png" 
-                            alt="Mascote SimulaVest" 
+                            alt="Mascote Vestibuline" 
                             className="w-40 h-40 object-contain animate-bounce"
                             width={160}
                             height={160}

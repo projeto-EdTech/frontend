@@ -609,7 +609,7 @@ export default function ModernPaidPlan() {
                 <div className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 hidden md:block transition-transform duration-700 hover:scale-110">
                     <Image 
                         src="/Mascote/banners/Camaleão_13.png" 
-                        alt="Mascote SimulaVest" 
+                        alt="Mascote Vestibuline" 
                         width={180} 
                         height={180}
                         className="drop-shadow-2xl"
@@ -620,7 +620,7 @@ export default function ModernPaidPlan() {
                 <div className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 hidden md:block transition-transform duration-700 hover:scale-110">
                     <Image 
                         src="/Mascote/banners/Camaleão_19.png" 
-                        alt="Mascote SimulaVest" 
+                        alt="Mascote Vestibuline" 
                         width={220} 
                         height={220}
                         className="drop-shadow-2xl"

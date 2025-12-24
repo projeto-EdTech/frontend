@@ -39,7 +39,7 @@ export default function TermsPage() {
                 <div className="relative w-full h-full">
                   <Image
                     src="/Mascote/banners/Camaleão_1.png"
-                    alt="Mascote SimulaVest"
+                    alt="Mascote Vestibuline"
                     fill
                     className="object-contain drop-shadow-2xl"
                     priority
@@ -62,7 +62,7 @@ export default function TermsPage() {
             <p className={`text-lg md:text-xl mb-6 ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>
-              SimulaVest
+              Vestibuline
             </p>
           </div>
 
@@ -80,7 +80,7 @@ export default function TermsPage() {
                   ? 'text-gray-300'
                   : 'text-[#1d1d1f]'
               }`}>
-                Seja Bem-Vindo ao SimulaVest. Antes de explorar tudo o que temos a oferecer, é importante que você entenda e concorde com algumas regras básicas que regem o uso do nosso site www.simulavest.com, e qualquer outro serviço digital que nós oferecemos, como planos pagos para melhora de performance e afins.
+                Seja Bem-Vindo ao Vestibuline. Antes de explorar tudo o que temos a oferecer, é importante que você entenda e concorde com algumas regras básicas que regem o uso do nosso site www.vestibuline.com, e qualquer outro serviço digital que nós oferecemos, como planos pagos para melhora de performance e afins.
               </p>
               <p className={`text-lg md:text-xl leading-relaxed font-normal ${
                 theme === 'dark'
@@ -113,7 +113,7 @@ export default function TermsPage() {
                         ? 'text-gray-300'
                         : 'text-gray-600'
                     }`}>
-                      Ao navegar pelo site do SimulaVest, você concorda automaticamente com nossas regras e condições. Estamos sempre procurando melhorar, então esses termos podem mudar de vez em quando. Se fizermos alterações significativas, vamos postar as atualizações aqui no site. Continuar usando o site após essas mudanças significa que você aceita os novos termos.
+                      Ao navegar pelo site do Vestibuline, você concorda automaticamente com nossas regras e condições. Estamos sempre procurando melhorar, então esses termos podem mudar de vez em quando. Se fizermos alterações significativas, vamos postar as atualizações aqui no site. Continuar usando o site após essas mudanças significa que você aceita os novos termos.
                     </p>
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export default function TermsPage() {
                           ? 'text-gray-300'
                           : 'text-gray-600'
                       }`}>
-                        No SimulaVest, a privacidade é um valor essencial. Ao interagir com nosso site, você aceita nossa Política de Privacidade, que detalha nossa abordagem responsável e conforme às leis para o manejo dos seus dados pessoais. Nosso compromisso é com a transparência e a segurança: explicamos como coletamos, usamos e protegemos suas informações, garantindo sua privacidade e oferecendo controle sobre seus dados.
+                        No Vestibuline, a privacidade é um valor essencial. Ao interagir com nosso site, você aceita nossa Política de Privacidade, que detalha nossa abordagem responsável e conforme às leis para o manejo dos seus dados pessoais. Nosso compromisso é com a transparência e a segurança: explicamos como coletamos, usamos e protegemos suas informações, garantindo sua privacidade e oferecendo controle sobre seus dados.
                       </p>
                       <p className={`text-base md:text-lg leading-relaxed ${
                         theme === 'dark'
@@ -198,14 +198,14 @@ export default function TermsPage() {
                           ? 'text-gray-300'
                           : 'text-gray-600'
                       }`}>
-                        O conteúdo disponível no site do SimulaVest, incluindo, mas não se limitando a, textos, imagens, ilustrações, designs, ícones, fotografias, programas de computador, videoclipes e áudios, constitui propriedade intelectual protegida tanto pela legislação nacional quanto por tratados internacionais sobre direitos autorais e propriedade industrial. Essa propriedade engloba não apenas materiais diretamente produzidos e publicados por nós, mas também conteúdos que são utilizados sob licença ou permissão de terceiros, garantindo que todos os direitos sejam respeitados conforme as normativas vigentes.
+                        O conteúdo disponível no site do Vestibuline, incluindo, mas não se limitando a, textos, imagens, ilustrações, designs, ícones, fotografias, programas de computador, videoclipes e áudios, constitui propriedade intelectual protegida tanto pela legislação nacional quanto por tratados internacionais sobre direitos autorais e propriedade industrial. Essa propriedade engloba não apenas materiais diretamente produzidos e publicados por nós, mas também conteúdos que são utilizados sob licença ou permissão de terceiros, garantindo que todos os direitos sejam respeitados conforme as normativas vigentes.
                       </p>
                       <p className={`text-base md:text-lg leading-relaxed ${
                         theme === 'dark'
                           ? 'text-gray-300'
                           : 'text-gray-600'
                       }`}>
-                        Ao acessar nosso site, você recebe uma licença limitada, não exclusiva e revogável para visualizar e usar o conteúdo para fins pessoais e não comerciais. Isso implica que qualquer reprodução, distribuição, transmissão ou modificação do conteúdo, sem a devida autorização escrita do SimulaVest, é estritamente proibida. Tal restrição visa proteger os direitos de propriedade intelectual associados aos materiais disponibilizados, assegurando que sua utilização não infrinja os direitos dos criadores ou detentores desses direitos, além de promover um ambiente de respeito e valorização da criatividade e inovação.
+                        Ao acessar nosso site, você recebe uma licença limitada, não exclusiva e revogável para visualizar e usar o conteúdo para fins pessoais e não comerciais. Isso implica que qualquer reprodução, distribuição, transmissão ou modificação do conteúdo, sem a devida autorização escrita do Vestibuline, é estritamente proibida. Tal restrição visa proteger os direitos de propriedade intelectual associados aos materiais disponibilizados, assegurando que sua utilização não infrinja os direitos dos criadores ou detentores desses direitos, além de promover um ambiente de respeito e valorização da criatividade e inovação.
                       </p>
                     </div>
                   </div>
@@ -291,14 +291,14 @@ export default function TermsPage() {
                           ? 'text-gray-300'
                           : 'text-gray-600'
                       }`}>
-                        O SimulaVest oferece ferramentas, estatísticas e métricas que são calculadas de maneira lógica, com o objetivo de proporcionar um panorama sobre como funcionam as provas vestibulares e quais são as maiores probabilidades de determinados conteúdos aparecerem ou não. No entanto, essas informações têm caráter meramente informativo e estatístico, não sendo, em hipótese alguma, uma garantia de aprovação em vestibulares ou concursos.
+                        O Vestibuline oferece ferramentas, estatísticas e métricas que são calculadas de maneira lógica, com o objetivo de proporcionar um panorama sobre como funcionam as provas vestibulares e quais são as maiores probabilidades de determinados conteúdos aparecerem ou não. No entanto, essas informações têm caráter meramente informativo e estatístico, não sendo, em hipótese alguma, uma garantia de aprovação em vestibulares ou concursos.
                       </p>
                       <p className={`text-base md:text-lg leading-relaxed ${
                         theme === 'dark'
                           ? 'text-gray-300'
                           : 'text-gray-600'
                       }`}>
-                        É importante compreender que não é possível prever o futuro ou assegurar resultados individuais. O SimulaVest não se responsabiliza caso o usuário não consiga atingir seus objetivos pessoais, incluindo, mas não se limitando, à aprovação em processos seletivos ou vestibulares. O desempenho depende exclusivamente do esforço, dedicação e circunstâncias individuais de cada usuário.
+                        É importante compreender que não é possível prever o futuro ou assegurar resultados individuais. O Vestibuline não se responsabiliza caso o usuário não consiga atingir seus objetivos pessoais, incluindo, mas não se limitando, à aprovação em processos seletivos ou vestibulares. O desempenho depende exclusivamente do esforço, dedicação e circunstâncias individuais de cada usuário.
                       </p>
                     </div>
                   </div>
@@ -378,7 +378,7 @@ export default function TermsPage() {
                             : 'text-blue-600 hover:text-blue-700'
                         }`}
                       >
-                        simulavest_suporte@gmail.com
+                        suporte@vestibuline.com
                       </a>.
                     </p>
                   </div>

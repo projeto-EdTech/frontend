@@ -281,7 +281,7 @@ export default function BlogPage() {
           <div className="hidden lg:block absolute left-[5%] top-1/2 -translate-y-1/2 z-10 animate-float pointer-events-none">
             <Image
               src="/Mascote/banners/Camaleão_15.png"
-              alt="Mascote SimulaVest"
+              alt="Mascote Vestibuline"
               width={160}
               height={160}
               className="drop-shadow-2xl"
@@ -295,7 +295,7 @@ export default function BlogPage() {
           >
             <Image
               src="/Mascote/banners/Camaleão_23.png"
-              alt="Mascote SimulaVest"
+              alt="Mascote Vestibuline"
               width={180}
               height={180}
               className="drop-shadow-2xl"
@@ -320,7 +320,7 @@ export default function BlogPage() {
               >
                 <div className="relative">
                   <h1 className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent block mb-5">
-                    SimulaVest News
+                    Vestibuline News
                   </h1>
                   <h1 className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent block relative pb-3">
                     Artigos e Matérias que Aprovam
@@ -797,7 +797,7 @@ export default function BlogPage() {
                   <div className="relative w-64 h-64 mx-auto mb-8">
                     <Image
                       src="/Mascote/banners/Camaleão_18.png"
-                      alt="Mascote SimulaVest preparando conteúdo"
+                      alt="Mascote Vestibuline preparando conteúdo"
                       width={256}
                       height={256}
                       className="drop-shadow-2xl animate-float"
@@ -868,7 +868,7 @@ export default function BlogPage() {
           <div className="hidden lg:block absolute left-[5%] top-1/2 -translate-y-1/2 z-10 animate-float pointer-events-none">
             <Image
               src="/Mascote/banners/Camaleão_11.png"
-              alt="Mascote SimulaVest Newsletter"
+              alt="Mascote Vestibuline Newsletter"
               width={260}
               height={260}
               className="drop-shadow-2xl"
@@ -882,7 +882,7 @@ export default function BlogPage() {
           >
             <Image
               src="/Mascote/banners/Camaleão_8.png"
-              alt="Mascote SimulaVest Newsletter"
+              alt="Mascote Vestibuline Newsletter"
               width={260}
               height={260}
               className="drop-shadow-2xl"

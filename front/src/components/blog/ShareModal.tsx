@@ -77,7 +77,7 @@ export default function ShareModal({ title }: ShareModalProps) {
     { 
         name: 'Instagram', 
         icon: <InstagramIcon />, 
-        url: `https://www.instagram.com/simulavest`, 
+        url: `https://www.instagram.com`, 
     },
   ];
 
@@ -136,7 +136,7 @@ export default function ShareModal({ title }: ShareModalProps) {
             <div className="relative w-20 h-20 mx-auto mb-4 flex items-center justify-center">
               <Image 
                 src="/Mascote/banners/Camaleão_1.png" 
-                alt="Mascote SimulaVest" 
+                alt="Mascote Vestibuline" 
                 width={80} 
                 height={80}
                 className="relative z-10 drop-shadow-lg"
@@ -212,7 +212,7 @@ export default function ShareModal({ title }: ShareModalProps) {
           <p className="mt-6 text-xs text-gray-500 flex items-center justify-center gap-2">
             <Image 
               src="/Mascote/banners/Camaleão_5.png" 
-              alt="Mascote SimulaVest" 
+              alt="Mascote Vestibuline" 
               width={32} 
               height={32}
               className="inline-block"

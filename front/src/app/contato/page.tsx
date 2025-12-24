@@ -197,7 +197,7 @@ export default function ContatoPage() {
               >
                 <Image
                   src="/Mascote/banners/Camaleão_1.png"
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   width={160}
                   height={160}
                   className="drop-shadow-2xl"
@@ -226,7 +226,7 @@ export default function ContatoPage() {
               >
                 <Image
                   src="/Mascote/banners/Camaleão_3.png"
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   width={140}
                   height={140}
                   className="drop-shadow-2xl"
@@ -364,7 +364,7 @@ export default function ContatoPage() {
                           Email
                         </h3>
                         <p className={`font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                          simulavest_suporte@gmail.com
+                          suporte@vestibuline.com
                         </p>
                         <p className={`text-sm mt-2 flex items-center gap-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                           <CheckCircle size={12} className="text-green-500" />
@@ -796,14 +796,14 @@ export default function ContatoPage() {
                   Acompanhe nossas novidades
                 </p>
                 <a 
-                  href="https://www.instagram.com/simulavest/" 
+                  href="https://www.instagram.com/Vestibuline/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className={`inline-flex items-center gap-2 font-semibold ${
                     theme === 'dark' ? 'text-pink-400 hover:text-pink-300' : 'text-pink-600 hover:text-pink-500'
                   }`}
                 >
-                  @simulavest
+                  @vestibuline
                 </a>
               </motion.div>
 
