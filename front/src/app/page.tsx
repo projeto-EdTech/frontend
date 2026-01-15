@@ -789,78 +789,54 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Right Column: Carrossel 3D de Mockups com janela do navegador */}
-                <div className="relative w-full flex items-center justify-center mt-12 lg:mt-0 lg:col-span-1">
-                  {/* Container do Carrossel 3D */}
-                  <div className="relative w-full flex items-center justify-center">
+                {/* Right Column: Carrossel Dinâmico de Features */}
+                <div className="relative w-full mt-12 lg:mt-0 lg:col-span-1">
+                  <div
+                    className="relative w-full overflow-visible"
+                    style={{ minHeight: "600px" }}
+                  >
                     <SphereCarousel
                       items={HERO_FEATURES}
-                      itemHeight={450}
+                      itemHeight={550}
                       autoRotateInterval={5000}
-                      renderItem={(feature) => {
-                        // Renderiza a janela completa do navegador com o mockup correspondente
-                        const renderMockupContent = () => {
+                      itemSpacing={150}
+                      renderItem={(feature: any) => {
+                        const props = { isDark };
+                        const renderContent = () => {
                           switch (feature.id) {
-                            case 0:
-                              return <SimuladoMockup isDark={isDark} selectedAnswer={3} />;
-                            case 1:
-                              return <BancoProvasMockup isDark={isDark} />;
-                            case 2:
-                              return <CronogramaMockup isDark={isDark} />;
-                            case 3:
-                              return <NotaDeCorteMockup isDark={isDark} />;
-                            case 4:
-                              return <QuestoesIAMockup isDark={isDark} />;
-                            case 5:
-                              return <EstatisticasMockup isDark={isDark} />;
-                            default:
-                              return null;
+                            case 0: return <SimuladoMockup {...props} selectedAnswer={3} />;
+                            case 1: return <BancoProvasMockup {...props} />;
+                            case 2: return <CronogramaMockup {...props} />;
+                            case 3: return <NotaDeCorteMockup {...props} />;
+                            case 4: return <QuestoesIAMockup {...props} />;
+                            case 5: return <EstatisticasMockup {...props} />;
+                            default: return null;
                           }
                         };
 
                         return (
-                          <div className="flex items-center justify-center">
-                            {/* Janela do navegador completa - tamanho */}
-                            <div
-                              className={`rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] overflow-hidden border flex flex-col ${
-                                isDark ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
-                              }`}
-                              style={{ width: "650px", maxWidth: "90vw", height: "500px" }}
-                            >
-                              {/* Browser Header - 3 bolinhas */}
-                              <div
-                                className={`h-10 flex items-center px-4 gap-2 flex-shrink-0 ${
-                                  isDark
-                                    ? "bg-gray-800 border-b border-gray-700"
-                                    : "bg-gray-100 border-b border-gray-200"
-                                }`}
-                              >
-                                <div className="flex gap-1.5">
-                                  <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-                                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-                                  <div className="w-3 h-3 rounded-full bg-[#27CA40]"></div>
-                                </div>
-                                <div className="flex-1 text-center">
-                                  <span
-                                    className={`text-xs font-medium ${
-                                      isDark ? "text-gray-500" : "text-gray-500"
-                                    }`}
-                                  >
-                                    vestibuline.com.br
-                                  </span>
-                                </div>
+                          <div
+                            className={`w-full min-w-[750px] max-w-[500px] rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-colors duration-300 ${
+                              isDark ? "bg-gray-800" : "bg-white"
+                            } border ${isDark ? "border-gray-700" : "border-gray-200"}`}
+                          >
+                            {/* Cabeçalho do Navegador - Gira junto */}
+                            <div className="h-10 bg-gradient-to-r from-gray-700 to-gray-800 flex items-center px-4 gap-3 flex-shrink-0">
+                              <div className="flex gap-2.5">
+                                <button className="w-3 h-3 rounded-full bg-red-500 cursor-pointer"></button>
+                                <button className="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer"></button>
+                                <button className="w-3 h-3 rounded-full bg-green-500 cursor-pointer"></button>
                               </div>
+                              <div className="flex-1 text-center font-sans text-[10px] text-gray-400 tracking-widest uppercase">
+                                vestibuline.com
+                              </div>
+                            </div>
 
-                              {/* Conteúdo do Mockup - altura flexível */}
-                              <div
-                                className={`flex-1 overflow-auto ${
-                                  isDark
-                                    ? "bg-gray-900"
-                                    : "bg-white"
-                                }`}
-                              >
-                                {renderMockupContent()}
-                              </div>
+                            {/* Conteúdo do Mockup */}
+                            <div className={`flex-1 p-6 relative ${
+                              isDark ? "bg-gray-900" : "bg-slate-50"
+                            }`}>
+                              {renderContent()}
                             </div>
                           </div>
                         );
@@ -1149,7 +1125,7 @@ export default function Home() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={1.5}
-                                d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h3.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                               />
                             </svg>
                           </div>
@@ -1277,7 +1253,6 @@ export default function Home() {
                         className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
                       >
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
                         <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-emerald-400/30 transition-colors duration-500"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
@@ -1312,7 +1287,6 @@ export default function Home() {
                         className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
                       >
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
                         <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-emerald-400/30 transition-colors duration-500"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
@@ -1327,7 +1301,7 @@ export default function Home() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={1.5}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2h-2a2 2 0 01-2-2v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
                               />
                             </svg>
                           </div>
@@ -1362,7 +1336,7 @@ export default function Home() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={1.5}
-                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+                                d="M7 12l3-3 3 3 4-4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
                               />
                             </svg>
                           </div>
@@ -1382,7 +1356,6 @@ export default function Home() {
                         className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(126,34,206,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
                       >
                         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
                         <div className="absolute top-0 right-0 w-40 h-40 bg-purple-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-purple-400/30 transition-colors duration-500"></div>
 
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
@@ -1397,7 +1370,7 @@ export default function Home() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={1.5}
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
                               />
                             </svg>
                           </div>
@@ -1730,7 +1703,7 @@ export default function Home() {
                             <div className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors cursor-pointer"></div>
                             <div className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors cursor-pointer"></div>
                           </div>
-                          <div className="flex-1 text-center">
+                          <div className="flex-1 text-center font-sans">
                             <span className="text-xs text-gray-400 font-medium tracking-wider">
                               vestibuline.com.br
                             </span>
@@ -1864,7 +1837,7 @@ export default function Home() {
                   </div>
                 </a>
 
-                <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+                <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
                   <span className="block">Veja sua Posição</span>
                   <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent animate-gradient-x">
                     no Ranking Nacional!
