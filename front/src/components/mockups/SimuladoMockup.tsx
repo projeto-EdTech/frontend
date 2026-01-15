@@ -1,14 +1,31 @@
 "use client";
 
 import Image from "next/image";
+import { useState, useEffect } from "react"; // 1. Importação necessária
 
 interface SimuladoMockupProps {
   isDark: boolean;
-  selectedAnswer: number;
+  selectedAnswer?: number; // Tornamos opcional para não quebrar se não for passado
   setSelectedAnswer?: (index: number) => void;
 }
 
-export function SimuladoMockup({ isDark, selectedAnswer, setSelectedAnswer }: SimuladoMockupProps) {
+export function SimuladoMockup({ isDark, selectedAnswer = -1, setSelectedAnswer }: SimuladoMockupProps) {
+  // 2. Criamos um estado interno para gerenciar a seleção visualmente
+  const [localSelection, setLocalSelection] = useState<number>(selectedAnswer);
+
+  // 3. (Opcional) Mantém o estado local sincronizado caso o Pai mude a prop selectedAnswer
+  useEffect(() => {
+    setLocalSelection(selectedAnswer);
+  }, [selectedAnswer]);
+
+  // 4. Função para lidar com o clique
+  const handleSelect = (index: number) => {
+    setLocalSelection(index); // Atualiza visualmente na hora
+    if (setSelectedAnswer) {
+      setSelectedAnswer(index); // Avisa o pai, se necessário
+    }
+  };
+
   return (
     <div
       className={`rounded-xl h-full flex flex-col overflow-hidden transition-colors duration-300 ${isDark ? "bg-gray-800" : "bg-white"}`}
@@ -95,9 +112,9 @@ export function SimuladoMockup({ isDark, selectedAnswer, setSelectedAnswer }: Si
           ].map((option, index) => (
             <div
               key={option.letter}
-              onClick={() => setSelectedAnswer?.(index)}
+              onClick={() => handleSelect(index)} // 5. Usa o novo handler
               className={`flex items-center gap-3 p-3 border-2 rounded-lg transition-all cursor-pointer group ${
-                selectedAnswer === index
+                localSelection === index // 6. Verifica o estado local
                   ? isDark
                     ? "border-blue-500 bg-blue-900/30 shadow-md"
                     : "border-blue-500 bg-blue-50 shadow-md"
@@ -108,7 +125,7 @@ export function SimuladoMockup({ isDark, selectedAnswer, setSelectedAnswer }: Si
             >
               <div
                 className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
-                  selectedAnswer === index
+                  localSelection === index // 6. Verifica o estado local
                     ? "border-blue-500 bg-blue-500 text-white shadow-md"
                     : isDark
                       ? "border-gray-500 text-gray-300 group-hover:border-gray-400"
@@ -119,7 +136,7 @@ export function SimuladoMockup({ isDark, selectedAnswer, setSelectedAnswer }: Si
               </div>
               <div
                 className={`font-semibold text-sm transition-colors duration-300 ${
-                  selectedAnswer === index
+                  localSelection === index // 6. Verifica o estado local
                     ? isDark
                       ? "text-blue-300"
                       : "text-blue-700"
@@ -140,11 +157,11 @@ export function SimuladoMockup({ isDark, selectedAnswer, setSelectedAnswer }: Si
         className={`border-t px-4 py-3 flex-shrink-0 flex justify-between items-center gap-3 transition-colors duration-300 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}
       >
         <button
-          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-200" : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${isDark ? "bg-gray-700 hover:bg-gray-600 text-gray-200" : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}
         >
           Anterior
         </button>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors shadow-md">
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors shadow-md cursor-pointer">
           Próxima
         </button>
       </div>

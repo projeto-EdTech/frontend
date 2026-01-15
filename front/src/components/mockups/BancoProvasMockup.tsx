@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 
 interface BancoProvasMockupProps {
@@ -7,12 +8,20 @@ interface BancoProvasMockupProps {
 }
 
 export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
+  // 1. Estados para controlar os filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState("Todos os anos");
+  const [selectedState, setSelectedState] = useState("Todos os estados");
+  const [selectedType, setSelectedType] = useState("Todas");
+
+  // 2. Banco de dados mockado (Adicionei o campo 'years' para o filtro funcionar)
   const universidades = [
     {
       name: "FUVEST",
       logo: "/Logo_Universidades/fuvest.jpg",
       state: "SP",
       type: "estadual",
+      years: ["2025", "2024", "2023", "2022"],
       dotColor: "bg-yellow-400",
     },
     {
@@ -20,6 +29,7 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
       logo: "/Logo_Universidades/unesp.jpg",
       state: "SP",
       type: "estadual",
+      years: ["2025", "2024"],
       dotColor: "bg-yellow-400",
     },
     {
@@ -27,6 +37,7 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
       logo: "/Logo_Universidades/unicamp.png",
       state: "SP",
       type: "estadual",
+      years: ["2024", "2023"],
       dotColor: "bg-yellow-400",
     },
     {
@@ -34,9 +45,36 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
       logo: "/Logo_Universidades/ufpr.jpg",
       state: "PR",
       type: "federal",
+      years: ["2025", "2023"],
       dotColor: "bg-blue-400",
     },
   ];
+
+  // 3. Lógica de Filtragem
+  const filteredUniversidades = universidades.filter((uni) => {
+    // Filtro de Texto (Nome)
+    const matchesSearch = uni.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Filtro de Ano (Verifica se o ano selecionado existe na lista de anos da faculdade)
+    const matchesYear =
+      selectedYear === "Todos os anos" || uni.years.includes(selectedYear);
+
+    // Filtro de Estado (Mapeamento de nome completo para sigla)
+    const stateMap: Record<string, string> = {
+      "São Paulo": "SP",
+      "Paraná": "PR",
+      "Minas Gerais": "MG",
+    };
+    const targetState = stateMap[selectedState];
+    const matchesState =
+      selectedState === "Todos os estados" || uni.state === targetState;
+
+    // Filtro de Tipo (Normalização para minúsculo)
+    const matchesType =
+      selectedType === "Todas" || uni.type.toLowerCase() === selectedType.toLowerCase();
+
+    return matchesSearch && matchesYear && matchesState && matchesType;
+  });
 
   return (
     <div
@@ -79,6 +117,8 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
           <input
             type="text"
             placeholder="Buscar universidade..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className={`w-full px-3 py-2 rounded-lg text-sm border transition-all focus:outline-none focus:ring-2 ${isDark ? "bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500 focus:ring-blue-400/50 focus:border-blue-400" : "bg-white border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-blue-400/50 focus:border-blue-400"}`}
           />
         </div>
@@ -98,6 +138,8 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
             </svg>
           </span>
           <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
             className={`w-full px-3 py-2 rounded-lg text-sm border transition-all focus:outline-none focus:ring-2 appearance-none cursor-pointer ${isDark ? "bg-gray-700 border-gray-600 text-gray-200 focus:ring-purple-400/50 focus:border-purple-400" : "bg-white border-gray-200 text-gray-700 focus:ring-purple-400/50 focus:border-purple-400"}`}
           >
             <option>Todos os anos</option>
@@ -123,6 +165,8 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
             </svg>
           </span>
           <select
+            value={selectedState}
+            onChange={(e) => setSelectedState(e.target.value)}
             className={`w-full px-3 py-2 rounded-lg text-sm border transition-all focus:outline-none focus:ring-2 appearance-none cursor-pointer ${isDark ? "bg-gray-700 border-gray-600 text-gray-200 focus:ring-green-400/50 focus:border-green-400" : "bg-white border-gray-200 text-gray-700 focus:ring-green-400/50 focus:border-green-400"}`}
           >
             <option>Todos os estados</option>
@@ -146,6 +190,8 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
             </svg>
           </span>
           <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
             className={`w-full px-3 py-2 rounded-lg text-sm border transition-all focus:outline-none focus:ring-2 appearance-none cursor-pointer ${isDark ? "bg-gray-700 border-gray-600 text-gray-200 focus:ring-indigo-400/50 focus:border-indigo-400" : "bg-white border-gray-200 text-gray-700 focus:ring-indigo-400/50 focus:border-indigo-400"}`}
           >
             <option>Todas</option>
@@ -160,100 +206,115 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
       <div
         className={`flex-1 overflow-auto px-4 py-4 transition-colors duration-300 ${isDark ? "bg-gray-800" : "bg-white"}`}
       >
-        <div className="grid grid-cols-2 gap-4">
-          {universidades.map((uni, idx) => (
-            <div
-              key={idx}
-              className={`group relative h-48 rounded-2xl border transition-all cursor-pointer overflow-hidden shadow-md hover:shadow-lg ${
-                isDark
-                  ? "bg-gray-700 border-gray-600 hover:border-blue-500"
-                  : "bg-white border-gray-200 hover:border-blue-500"
-              }`}
-            >
-              {/* Ponto colorido no canto superior direito */}
+        {filteredUniversidades.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4">
+            {filteredUniversidades.map((uni, idx) => (
               <div
-                className={`absolute top-3 right-3 w-3 h-3 rounded-full ${uni.dotColor} z-10`}
-              ></div>
-
-              {/* Conteúdo centralizado */}
-              <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                {/* Logo em destaque */}
+                key={idx}
+                className={`group relative h-48 rounded-2xl border transition-all cursor-pointer overflow-hidden shadow-md hover:shadow-lg ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600 hover:border-blue-500"
+                    : "bg-white border-gray-200 hover:border-blue-500"
+                }`}
+              >
+                {/* Ponto colorido no canto superior direito */}
                 <div
-                  className={`w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0 mb-3 shadow-md transition-transform group-hover:scale-110 overflow-hidden relative ${
-                    isDark
-                      ? "bg-gray-600"
-                      : "bg-white border border-gray-200"
-                  }`}
-                >
-                  <div className="relative w-full h-full flex items-center justify-center !bg-white">
-                    <Image
-                      src={uni.logo}
-                      alt={`Logo ${uni.name}`}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-contain p-1"
-                      loading="lazy"
-                      quality={85}
-                    />
+                  className={`absolute top-3 right-3 w-3 h-3 rounded-full ${uni.dotColor} z-10`}
+                ></div>
+
+                {/* Conteúdo centralizado */}
+                <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                  {/* Logo em destaque */}
+                  <div
+                    className={`w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0 mb-3 shadow-md transition-transform group-hover:scale-110 overflow-hidden relative ${
+                      isDark
+                        ? "bg-gray-600"
+                        : "bg-white border border-gray-200"
+                    }`}
+                  >
+                    <div className="relative w-full h-full flex items-center justify-center !bg-white">
+                      <Image
+                        src={uni.logo}
+                        alt={`Logo ${uni.name}`}
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-contain p-1"
+                        loading="lazy"
+                        quality={85}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Nome da universidade */}
+                  <p
+                    className={`text-sm font-bold text-center transition-colors mb-2 ${
+                      isDark
+                        ? "text-gray-100 group-hover:text-blue-400"
+                        : "text-gray-900 group-hover:text-blue-600"
+                    }`}
+                  >
+                    {uni.name}
+                  </p>
+
+                  {/* Descrição */}
+                  <p
+                    className={`text-xs text-center mb-3 transition-colors ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                  >
+                    Universidade {uni.type === "estadual" ? "Estadual" : "Federal"}
+                  </p>
+
+                  {/* Badges */}
+                  <div className="flex gap-2 justify-center flex-wrap">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${
+                        uni.type === "estadual"
+                          ? isDark
+                            ? "bg-green-900/60 text-green-300"
+                            : "bg-green-100 text-green-700"
+                          : isDark
+                            ? "bg-blue-900/60 text-blue-300"
+                            : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {uni.type}
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                        isDark
+                          ? "bg-gray-600 text-gray-300"
+                          : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {uni.state}
+                    </span>
                   </div>
                 </div>
-
-                {/* Nome da universidade */}
-                <p
-                  className={`text-sm font-bold text-center transition-colors mb-2 ${
-                    isDark
-                      ? "text-gray-100 group-hover:text-blue-400"
-                      : "text-gray-900 group-hover:text-blue-600"
-                  }`}
-                >
-                  {uni.name}
-                </p>
-
-                {/* Descrição */}
-                <p
-                  className={`text-xs text-center mb-3 transition-colors ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                >
-                  Universidade {uni.type === "estadual" ? "Estadual" : "Federal"}
-                </p>
-
-                {/* Badges */}
-                <div className="flex gap-2 justify-center flex-wrap">
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${
-                      uni.type === "estadual"
-                        ? isDark
-                          ? "bg-green-900/60 text-green-300"
-                          : "bg-green-100 text-green-700"
-                        : isDark
-                          ? "bg-blue-900/60 text-blue-300"
-                          : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
-                    {uni.type}
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                      isDark
-                        ? "bg-gray-600 text-gray-300"
-                        : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {uni.state}
-                  </span>
-                </div>
               </div>
+            ))}
+          </div>
+        ) : (
+          // Estado vazio caso nenhum filtro encontre nada
+          <div className="h-full flex flex-col items-center justify-center text-center p-6">
+            <div className={`text-4xl mb-3 ${isDark ? "text-gray-600" : "text-gray-300"}`}>
+              🔍
             </div>
-          ))}
-        </div>
+            <p className={`font-semibold ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              Nenhuma universidade encontrada
+            </p>
+            <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+              Tente ajustar os filtros de busca
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Footer com estatísticas */}
+      {/* Footer com estatísticas dinâmicas */}
       <div
         className={`border-t px-4 py-3 flex-shrink-0 flex items-center justify-between text-xs transition-colors duration-300 ${isDark ? "bg-gray-800 border-gray-700 text-gray-400" : "bg-white border-gray-100 text-gray-600"}`}
       >
         <span className="flex items-center gap-1">
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          150+ Universidades
+          {filteredUniversidades.length} Universidade{filteredUniversidades.length !== 1 ? 's' : ''} Encontrada{filteredUniversidades.length !== 1 ? 's' : ''}
         </span>
         <span>Simulados Reais</span>
       </div>
