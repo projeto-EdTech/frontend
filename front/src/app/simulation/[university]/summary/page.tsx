@@ -37,11 +37,25 @@ export default function SummaryPage() {
         indiceAlternativaEscolhida: number | null,
         indiceAlternativaCorreta: number,
     }[]>([])
+    const [acertosQuestoes, setAcertosQuestoes] = useState<{
+        numero: number,
+        enunciado: string,
+        alternativaCorreta: string,
+        tempoGasto: number,
+        materia: string,
+        conteudo: string,
+        indiceAlternativaCorreta: number,
+    }[]>([])
     const [currentPage, setCurrentPage] = useState(1);
+    const [currentPageAcertos, setCurrentPageAcertos] = useState(1);
+    const [showAcertos, setShowAcertos] = useState(false);
+    const [showErros, setShowErros] = useState(false);
 
     // Crie a referência para a seção de erros e um controle para o primeiro carregamento
     const errosSectionRef = useRef<HTMLDivElement>(null);
+    const acertosSectionRef = useRef<HTMLDivElement>(null);
     const isInitialMount = useRef(true);
+    const isInitialMountAcertos = useRef(true);
 
     useEffect(() => {
         // Recuperar dados do sessionStorage
@@ -61,6 +75,17 @@ export default function SummaryPage() {
                 setErrosQuestoes(errosParseados)
             } catch (error) {
                 console.error('Erro ao parsear erros:', error)
+            }
+        }
+
+        // Recuperar acertos detalhados
+        const acertos = sessionStorage.getItem('simulationCorrect')
+        if (acertos) {
+            try {
+                const acertosParseados = JSON.parse(acertos)
+                setAcertosQuestoes(acertosParseados)
+            } catch (error) {
+                console.error('Erro ao parsear acertos:', error)
             }
         }
     }, [router])
@@ -96,6 +121,23 @@ export default function SummaryPage() {
             });
         }
     }, [currentPage]); // A mágica acontece aqui: o efeito roda sempre que 'currentPage' muda
+
+    // useEffect para scroll na paginação dos acertos
+    useEffect(() => {
+        // Impede o scroll no carregamento inicial da página
+        if (isInitialMountAcertos.current) {
+            isInitialMountAcertos.current = false;
+            return;
+        }
+
+        // Se a referência existir, role suavemente para o início da seção
+        if (acertosSectionRef.current) {
+            acertosSectionRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+    }, [currentPageAcertos]);
 
     const currentUniversity = useMemo(() => {
         if (!summaryData) return null;
@@ -160,6 +202,17 @@ export default function SummaryPage() {
         return { paginatedErros, totalPages };
     }, [currentPage, errosQuestoes]);
 
+    const { paginatedAcertos, totalPagesAcertos } = useMemo(() => {
+        console.log('Total de acertos recebidos:', acertosQuestoes.length);
+        const totalPagesAcertos = Math.ceil(acertosQuestoes.length / QUESTIONS_PER_PAGE);
+        const startIndex = (currentPageAcertos - 1) * QUESTIONS_PER_PAGE;
+        const endIndex = startIndex + QUESTIONS_PER_PAGE;
+        console.log(`Página Acertos: ${currentPageAcertos}, Start: ${startIndex}, End: ${endIndex}`);
+        const paginatedAcertos = acertosQuestoes.slice(startIndex, endIndex);
+        console.log('Acertos paginados calculados:', paginatedAcertos.length);
+        return { paginatedAcertos, totalPagesAcertos };
+    }, [currentPageAcertos, acertosQuestoes]);
+
     if (!summaryData || !currentUniversity) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -194,7 +247,7 @@ export default function SummaryPage() {
                             alt="Mascote Vestibuline comemorando" 
                             width={140}
                             height={140}
-                            className="w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 object-contain drop-shadow-2xl animate-bounce"
+                            className="w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 object-contain drop-shadow-2xl"
                         />
                     </div>
 
@@ -202,8 +255,14 @@ export default function SummaryPage() {
                         <div className="flex flex-col md:flex-row justify-center items-center gap-8 mb-8">
                             {/* Logo da universidade com efeito especial */}
                             <div className="relative group">
-                                <div className="relative w-24 h-24 flex items-center justify-center bg-white rounded-3xl shadow-2xl group-hover:scale-105 transition-transform duration-300">
-                                    <img src={currentUniversity.logo} alt={currentUniversity.name} width={64} height={64} className="object-contain rounded-2xl" loading="lazy" />
+                                <div className="relative w-24 h-24 flex items-center justify-center !bg-white rounded-3xl shadow-2xl group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+                                    <Image 
+                                        src={currentUniversity.logo} 
+                                        alt={currentUniversity.name} 
+                                        fill 
+                                        className="object-contain p-2 rounded-2xl" 
+                                        priority 
+                                    />
                                 </div>
                                 {/* Badge de conquista */}
                                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
@@ -496,32 +555,49 @@ export default function SummaryPage() {
                     </div>
                 </div>
 
-                {/* Análise de Erros - Mobile Optimized */}
-                <div className="card-container relative" ref={errosSectionRef}>
-                    {/* Mascote Pensativo - Canto Superior Direito */}
-                    {errosQuestoes.length > 0 && (
-                        <div className="absolute top-4 right-4 z-10 hidden md:block">
-                            <Image 
-                                src="/Mascote/banners/Camaleão_Confuso/Camaleão_1.png" 
-                                alt="Mascote Vestibuline pensativo" 
-                                width={100}
-                                height={100}
-                                className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 object-contain drop-shadow-2xl"
-                            />
-                        </div>
-                    )}
-                    
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8 text-center flex items-center justify-center gap-3">
-                        <div className="w-8 md:w-10 h-8 md:h-10 bg-red-500 rounded-xl flex items-center justify-center">
-                            <svg className="w-4 md:w-6 h-4 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                            </svg>
-                        </div>
-                        Análise de Erros
-                    </h2>
+                {/* Análise de Erros - Mobile Optimized com Accordion */}
+                {errosQuestoes.length > 0 && (
+                    <div className="card-container relative" ref={errosSectionRef}>
+                        {/* Botão/Barra do Accordion */}
+                        <button
+                            onClick={() => setShowErros(!showErros)}
+                            className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl p-6 shadow-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-red-300 cursor-pointer"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-red-400 rounded-xl flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <div className="text-left">
+                                        <h2 className="text-2xl md:text-3xl font-bold text-white">
+                                            Análise de Erros
+                                        </h2>
+                                        <p className="text-red-100 font-semibold text-lg mt-1">
+                                            {statistics?.wrongAnswers} {statistics?.wrongAnswers === 1 ? 'questão para revisar' : 'questões para revisar'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <svg 
+                                        className={`w-8 h-8 text-white transition-transform duration-300 ${showErros ? 'rotate-180' : ''}`}
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </button>
 
-                    {errosQuestoes.length > 0 ? (
-                        <>
+                        {/* Conteúdo Expansível com Animação */}
+                        <div 
+                            className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                                showErros ? 'max-h-[10000px] opacity-100 mt-6' : 'max-h-0 opacity-0'
+                            }`}
+                        >
                             {/* Resumo dos erros em cards - mobile: stack vertical */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                                 {/* Card de resumo */}
@@ -561,9 +637,8 @@ export default function SummaryPage() {
                                 </div>
                             </div>
 
-                            {/* Lista detalhada de erros - só mostrar se houver dados detalhados */}
-                            {errosQuestoes.length > 0 ? (
-                                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+                            {/* Lista detalhada de erros */}
+                            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
                                     <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-4">
                                         <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -682,42 +757,191 @@ export default function SummaryPage() {
                                     )}
 
                                 </div>
-                            ) : (
-                                <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-2xl p-8 text-center shadow-lg">
-                                    <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </div>
+                    </div>
+                )}
+
+                {/* Seção de Questões Acertadas - Accordion Expansível */}
+                {acertosQuestoes.length > 0 && (
+                    <div className="card-container relative" ref={acertosSectionRef}>
+                        {/* Botão/Barra do Accordion */}
+                        <button
+                            onClick={() => setShowAcertos(!showAcertos)}
+                            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl p-6 shadow-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-300 cursor-pointer"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-green-400 rounded-xl flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-orange-900 mb-2">Questões para Revisar</h3>
-                                    <p className="text-orange-700 font-medium">
-                                        Você teve {statistics?.wrongAnswers} {statistics?.wrongAnswers === 1 ? 'erro' : 'erros'} neste simulado.
-                                    </p>
-                                    <p className="text-orange-600 text-sm mt-2">
-                                        Os detalhes das questões não estão disponíveis no momento.
+                                    <div className="text-left">
+                                        <h2 className="text-2xl md:text-3xl font-bold text-white">
+                                            Ver Questões Acertadas
+                                        </h2>
+                                        <p className="text-green-100 font-semibold text-lg mt-1">
+                                            {statistics?.correctAnswers} {statistics?.correctAnswers === 1 ? 'questão acertada' : 'questões acertadas'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <svg 
+                                        className={`w-8 h-8 text-white transition-transform duration-300 ${showAcertos ? 'rotate-180' : ''}`}
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Conteúdo Expansível com Animação */}
+                        <div 
+                            className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                                showAcertos ? 'max-h-[10000px] opacity-100 mt-6' : 'max-h-0 opacity-0'
+                            }`}
+                        >
+                            {/* Card de Motivação */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+                                {/* Card de resumo dos acertos */}
+                                <div className="bg-gradient-to-r from-green-500 to-emerald-600 border-2 border-green-700 rounded-2xl p-4 md:p-6 shadow-lg">
+                                    <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+                                        <div className="w-10 md:w-12 h-10 md:h-12 bg-green-400 rounded-xl flex items-center justify-center">
+                                            <svg className="w-5 md:w-6 h-5 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-green-50">Questões Acertadas</h3>
+                                            <p className="text-xl md:text-2xl font-extrabold text-white">{statistics?.correctAnswers}</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-green-50 text-xs md:text-sm font-medium">
+                                        Parabéns pelo seu desempenho!
                                     </p>
                                 </div>
-                            )}
-                        </>
-                    ) : (
-                        <div className="bg-green-400 border-2 border-green-500 rounded-2xl p-8 text-center shadow-lg relative">
-                            {/* Mascote Feliz para Perfeição - maior e mais visível */}
-                            <div className="flex justify-center mb-4">
-                                <Image 
-                                    src="/Mascote/banners/Camaleão_2.png" 
-                                    alt="Mascote Vestibuline feliz" 
-                                    width={180}
-                                    height={180}
-                                    className="w-36 h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 object-contain drop-shadow-2xl"
-                                />
+
+                                {/* Card de motivação */}
+                                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 border-2 border-blue-800 rounded-2xl p-4 md:p-6 shadow-lg">
+                                    <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+                                        <div className="w-10 md:w-12 h-10 md:h-12 bg-blue-400 rounded-xl flex items-center justify-center">
+                                            <svg className="w-5 md:w-6 h-5 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-blue-100">Continue Assim!</h3>
+                                            <p className="text-blue-100 text-xs md:text-sm font-medium">Seu conhecimento está sólido</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-blue-100 text-xs md:text-sm">
+                                        Revise estas questões para consolidar ainda mais seu aprendizado.
+                                    </p>
+                                </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800 mb-2">Perfeito!</h3>
-                            <p className="text-gray-800 font-medium">
-                                Parabéns! Você não errou nenhuma questão neste simulado. 🎉
-                            </p>
+
+                            {/* Lista de Questões Acertadas */}
+                            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+                                <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                        </svg>
+                                        Questões que Você Dominou
+                                    </h3>
+                                </div>
+                                <div className="divide-y divide-gray-100">
+                                    {paginatedAcertos.map((acerto, idx) => (
+                                        <div key={acerto.numero ?? idx} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-green-600 font-bold text-sm">{acerto.numero}</span>
+                                                </div>
+                                                <div className="flex-1 space-y-3">
+                                                    <div>
+                                                        <h4 className="font-bold text-gray-900 text-lg mb-2">Questão {acerto.numero}</h4>
+                                                        <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                                                            {acerto.enunciado}
+                                                        </ReactMarkdown>
+                                                    </div>
+
+                                                    {/* Resposta correta */}
+                                                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <span className="text-green-800 font-semibold text-sm">Sua Resposta (Correta): {indexToLetter(acerto.indiceAlternativaCorreta)}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-green-800 font-medium">{acerto.alternativaCorreta}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Tempo gasto (se disponível) */}
+                                                    {acerto.tempoGasto != null && (
+                                                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                <span className="text-blue-800 font-semibold text-sm">Tempo Gasto:</span>
+                                                            </div>
+                                                            <span className="text-blue-800 font-bold">
+                                                                {acerto.tempoGasto < 60
+                                                                    ? "menos que 1 minuto"
+                                                                    : formatTimeSpent(acerto.tempoGasto)}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Matéria e conteúdo */}
+                                                    {acerto.materia && acerto.conteudo && (
+                                                        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                                                </svg>
+                                                                <span className="text-purple-800 font-semibold text-sm">Tópico da Questão:</span>
+                                                            </div>
+                                                            <span className="text-purple-800 font-bold">{acerto.materia} - {acerto.conteudo}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Paginação dos acertos */}
+                                {totalPagesAcertos > 1 && (
+                                    <div className="flex justify-between items-center p-4 bg-white rounded-b-lg border-t border-gray-300">
+                                        <button
+                                            onClick={() => setCurrentPageAcertos(prev => Math.max(prev - 1, 1))}
+                                            disabled={currentPageAcertos === 1}
+                                            className="px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                        >
+                                            Anterior
+                                        </button>
+                                        <span className="text-sm font-semibold text-black">
+                                            Página {currentPageAcertos} de {totalPagesAcertos}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentPageAcertos(prev => Math.min(prev + 1, totalPagesAcertos))}
+                                            disabled={currentPageAcertos === totalPagesAcertos}
+                                            className="px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                        >
+                                            Próxima
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* Botões de Ação - Mobile Optimized */}
                 <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4 md:px-0 items-center">

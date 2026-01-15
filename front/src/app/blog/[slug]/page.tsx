@@ -95,7 +95,7 @@ export default async function BlogPostPage({
   }
 
   // Garante que métricas existam mesmo se ausentes na fonte
-  const stats = post.stats ?? { views: 0, likes: 0 };
+  const stats = post.stats ?? { views: 0.0, likes: 0.0 };
 
   return (
     <div className="themed-main-container min-h-screen force-themed-bg flex flex-col bg-[#f5f5f7]">

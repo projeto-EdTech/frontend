@@ -2,6 +2,7 @@
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -44,8 +45,9 @@ const staggerItem = {
 };
 
 export default function ContatoPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { theme } = useTheme();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -57,7 +59,12 @@ export default function ContatoPage() {
   const [submitMessage, setSubmitMessage] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // Refs para animações de scroll
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);  // Refs para animações de scroll
   const heroRef = useRef(null);
   const formSectionRef = useRef(null);
   const socialSectionRef = useRef(null);
@@ -936,7 +943,6 @@ export default function ContatoPage() {
           }}
         />
       </main>
-
       <motion.div
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
@@ -944,6 +950,14 @@ export default function ContatoPage() {
       >
         <Footer />
       </motion.div>
+
+      {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/contato"
+        isRequired={status === 'unauthenticated'}
+      />
     </div>
   );
 }

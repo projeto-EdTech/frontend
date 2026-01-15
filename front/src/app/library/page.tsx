@@ -3,15 +3,27 @@
 import Link from "next/link"
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header"
+import LoginModal from "@/components/Login-modal";
 import { useState, useEffect } from "react";
 import { University } from "@/lib/dataUniversity"; // Importa o tipo de dados da universidade
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useRouter } from "next/navigation"; // Importa o hook useRouter
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 
 export default function LibraryPage() {
   const router = useRouter();
+  const { status } = useSession();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
+
   const years = [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015];
   const [selectedYear, setSelectedYear] = useState<number | null>(null); // State for selected year - null = todos os anos
   const [searchText, setSearchText] = useState(""); // Estado para busca por texto
@@ -707,6 +719,15 @@ export default function LibraryPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/library"
+        isRequired={status === 'unauthenticated'}
+      />
+
       <Footer />
     </>
   );

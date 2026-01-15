@@ -268,7 +268,7 @@ export default function ProfilePage() {
       
       const fetchCutoff = async () => {
         try {
-          const response = await fetch('/api/Nota-corte/att-progress', {
+          const response = await fetch('/api/Nota-corte', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ targetExam, targetCourse }),

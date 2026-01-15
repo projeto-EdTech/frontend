@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -44,6 +44,13 @@ export default function ArenaPage() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const router = useRouter();
+
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
 
   // Verificar se o usuário tem plano pago
   const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
@@ -445,11 +452,11 @@ export default function ArenaPage() {
           </div>
         </div>
       </main>
-
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        redirectTo="/paidPlan"
+        redirectTo="/Arena"
+        isRequired={status === 'unauthenticated'}
       />
 
       <Footer />

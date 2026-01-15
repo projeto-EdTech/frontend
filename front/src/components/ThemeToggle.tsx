@@ -5,15 +5,16 @@ import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 const ThemeToggle: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, isAuthenticated } = useTheme();
 
   return (
     <div className="relative">
       <button 
-        className="theme-toggle-modern"
+        className={`theme-toggle-modern ${!isAuthenticated ? 'opacity-50 cursor-not-allowed' : ''}`}
         onClick={toggleTheme}
+        disabled={!isAuthenticated}
         aria-label={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}
-        title={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}
+        title={isAuthenticated ? `Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}` : 'Faça login para alterar o tema'}
       >
         {/* Background animado */}
         <div className={`theme-toggle-bg ${theme === 'dark' ? 'theme-toggle-bg-dark' : 'theme-toggle-bg-light'}`}></div>

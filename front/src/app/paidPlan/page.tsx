@@ -19,6 +19,7 @@
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
 import CreditCardForm from "@/components/payment/CreditCardForm";
 import PixForm from "@/components/payment/PixForm";
 import BoletoForm from "@/components/payment/BoletoForm";
@@ -49,7 +50,16 @@ export default function ModernPaidPlan() {
     initMercadoPago(process.env.NEXT_PUBLIC_MERCADO_PAGO_KEY!,{
         locale: 'pt-BR',
     });
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    
+    // Verificar autenticação ao carregar a página
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            setIsLoginModalOpen(true);
+        }
+    }, [status]);
+
     const planos = [
         {
             id: "anual",
@@ -1040,7 +1050,14 @@ export default function ModernPaidPlan() {
                     </div>
                 </div>
             </main>
-        <Footer />
+        
+        {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/paidPlan"
+        isRequired={status === 'unauthenticated'}
+      />        <Footer />
         </div>
     );
 }

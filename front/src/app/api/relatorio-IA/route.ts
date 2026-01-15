@@ -51,7 +51,7 @@ async function fetchUserDataFromDB(userId: string): Promise<UserData> {
       acertos: 352, 
       eficiencia: 78, 
       pacing: "3 minutos", 
-      resistencia: 80 
+      resistencia: 80
     },
     // --- Esta é a nova estrutura de dados detalhada ---
     subjectPerformance: [

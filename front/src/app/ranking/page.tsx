@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useTheme } from "@/contexts/ThemeContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
 import { Trophy, Medal, Award, Crown, BookOpen, Calendar, ChevronDown, ShieldCheck } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
 import UserAvatar from "@/components/UserAvatar";
@@ -37,6 +39,8 @@ const PERIOD_OPTIONS: FilterOption[] = [
 export default function RankingPage() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { status } = useSession();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [activeUniversityFilter, setActiveUniversityFilter] = useState<string>('geral');
   const [activePeriodFilter, setActivePeriodFilter] = useState<PeriodFilter>('mensal');
   
@@ -54,6 +58,13 @@ export default function RankingPage() {
   const [currentUser, setCurrentUser] = useState<UserRanking | null>(null);
   
   // --- EFEITOS (HOOKS) ---
+
+  // Efeito para verificar se o usuário está autenticado
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
 
   // Efeito para buscar a LISTA de vestibulares da API (executa apenas uma vez)
   useEffect(() => {
@@ -1128,6 +1139,13 @@ async function fetchUniversityFilters() {
           onClick={() => { setUniversityDropdownOpen(false); setPeriodDropdownOpen(false); }}
         />
       )}
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/ranking"
+        isRequired={status === 'unauthenticated'}
+      />
     </div>
   );
 }

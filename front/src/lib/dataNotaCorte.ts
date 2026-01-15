@@ -133,7 +133,7 @@ export const mockApiData: RawCourseData[] = [
   { id: '99', courseName: 'Engenharia de Produção', institution: 'UTFPR', cutoffScore: 73, area: 'Exatas' },
   { id: '100', courseName: 'Ciências Médicas', institution: 'UNIFESP', cutoffScore: 80, area: 'Biológicas' },
   // Adicionando mais universidades com Medicina para demonstrar múltiplos resultados
-  { id: '101', courseName: 'Medicina', institution: 'USP', cutoffScore: 85, area: 'Biológicas' },
+  { id: '101', courseName: 'Medicina', institution: 'FUVEST', cutoffScore: 85, area: 'Biológicas' },
   { id: '102', courseName: 'Medicina', institution: 'UNICAMP', cutoffScore: 84, area: 'Biológicas' },
   { id: '103', courseName: 'Medicina', institution: 'UNIFESP', cutoffScore: 83, area: 'Biológicas' },
   { id: '104', courseName: 'Medicina', institution: 'UFMG', cutoffScore: 81, area: 'Biológicas' },
@@ -144,12 +144,12 @@ export const mockApiData: RawCourseData[] = [
   { id: '109', courseName: 'Medicina', institution: 'UFC', cutoffScore: 77, area: 'Biológicas' },
   { id: '110', courseName: 'Medicina', institution: 'UFBA', cutoffScore: 80, area: 'Biológicas' },
   // Adicionando mais universidades com Engenharia de Software
-  { id: '111', courseName: 'Engenharia de Software', institution: 'USP', cutoffScore: 78, area: 'Exatas' },
+  { id: '111', courseName: 'Engenharia de Software', institution: 'FUVEST', cutoffScore: 78, area: 'Exatas' },
   { id: '112', courseName: 'Engenharia de Software', institution: 'UFMG', cutoffScore: 74, area: 'Exatas' },
   { id: '113', courseName: 'Engenharia de Software', institution: 'PUC-Rio', cutoffScore: 76, area: 'Exatas' },
   { id: '114', courseName: 'Engenharia de Software', institution: 'UFSC', cutoffScore: 73, area: 'Exatas' },
   // Adicionando mais universidades com Direito
-  { id: '115', courseName: 'Direito', institution: 'USP', cutoffScore: 80, area: 'Humanas' },
+  { id: '115', courseName: 'Direito', institution: 'FUVEST', cutoffScore: 80, area: 'Humanas' },
   { id: '116', courseName: 'Direito', institution: 'UFMG', cutoffScore: 76, area: 'Humanas' },
   { id: '117', courseName: 'Direito', institution: 'UFRJ', cutoffScore: 78, area: 'Humanas' },
   { id: '118', courseName: 'Direito', institution: 'UnB', cutoffScore: 75, area: 'Humanas' },
@@ -160,7 +160,7 @@ export const mockApiData: RawCourseData[] = [
  * Esta função simula a lógica do backend.
  * Ela recebe a nota do usuário e processa os dados brutos.
  */
-export const processCutoffResults = (userScore: number, targetCourse: string): ApiResponse => {
+export const processCutoffResults = (userScore: number, targetCourse: string, targetInstitution?: string): ApiResponse => {
   const BORDERLINE_MARGIN = 5; // Margem de 5 pontos para ser 'limítrofe'
   const targetCourseResults: CourseResult[] = []; // Array para armazenar TODOS os resultados do curso alvo
 
@@ -185,7 +185,11 @@ export const processCutoffResults = (userScore: number, targetCourse: string): A
     };
     
     // Verifica se este é o curso alvo e adiciona ao array
-    if (course.courseName.toLowerCase() === targetCourse.toLowerCase()) {
+    // MODIFICAÇÃO: Se targetInstitution for fornecido, filtra por ambos. Caso contrário, apenas pelo curso.
+    const courseMatches = course.courseName.toLowerCase() === targetCourse.toLowerCase();
+    const institutionMatches = !targetInstitution || course.institution.toLowerCase() === targetInstitution.toLowerCase();
+
+    if (courseMatches && institutionMatches) {
       targetCourseResults.push(result);
     }
     

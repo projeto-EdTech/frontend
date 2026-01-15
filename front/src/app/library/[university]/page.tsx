@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
 import { universities, type University } from "@/lib/dataUniversity";
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
@@ -16,6 +18,7 @@ export default function UniversityExamPage({ params }: { params: Promise<{ unive
 
 function UniversityExamPageClient({ params }: { params: { university: string } }) {
   const router = useRouter();
+  const { status } = useSession();
   const searchParams = useSearchParams();
   const yearParam = searchParams.get("year");
   const dayParam = searchParams.get("day");
@@ -28,6 +31,14 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usedFallback, setUsedFallback] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
   const [isNavigating, setIsNavigating] = useState(false);
 
   // Fetch com fallback local
@@ -467,6 +478,14 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
           </div>
         </div>
       </main>
+
+      {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo={`/library/${slug}`}
+        isRequired={status === 'unauthenticated'}
+      />
 
       {/* Footer component */}
       <Footer />
