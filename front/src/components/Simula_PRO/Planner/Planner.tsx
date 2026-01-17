@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useSession, signIn } from "next-auth/react";
 import { useDrag, useDrop } from "react-dnd";
 import Image from "next/image";
@@ -21,8 +22,13 @@ import {
   CheckCircle2,
   Check,
   Calendar,
-  Sparkles,
-  Zap,
+  Rocket,
+  Library,
+  Activity,
+  Cpu,
+  GraduationCap,
+  Headset,
+  Lightbulb
 } from "lucide-react";
 
 interface StudyEvent {
@@ -74,6 +80,11 @@ const Planner: React.FC = () => {
     []
   );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const stats: WeeklyStats = useMemo(() => {
     const eventsToCount = events;
@@ -1263,402 +1274,401 @@ const Planner: React.FC = () => {
               </div>
             )}
 
-            {selectedEvent && (
-              <div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
-                onClick={() => setSelectedEvent(null)}
-              >
-                <div
-                  className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200/60 relative"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="absolute top-4 right-4 opacity-15">
-                    <Image
-                      src={
-                        selectedEvent.completed
-                          ? "/Mascote/banners/Camaleão_21.png"
-                          : "/Mascote/banners/Camaleão_14.png"
-                      }
-                      alt="Evento"
-                      width={75}
-                      height={75}
-                    />
-                  </div>
-
-                  <div className="flex items-start justify-between mb-5 relative z-10">
-                    <div>
-                      <h2 className="text-2xl font-semibold text-gray-900 tracking-[-0.5px]">
-                        {selectedEvent.title}
-                      </h2>
-                      <p className="text-gray-500 text-[13px] mt-0.5">
-                        {selectedEvent.subject}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setSelectedEvent(null)}
-                      className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
-                      <Calendar size={18} className="text-gray-500" />
-                      <span className="font-medium text-gray-700 text-[13px]">
-                        {new Date(selectedEvent.start).toLocaleDateString(
-                          "pt-BR",
-                          { weekday: "long", day: "2-digit", month: "long" }
-                        )}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
-                      <Clock size={18} className="text-gray-500" />
-                      <span className="font-medium text-gray-700 text-[13px]">
-                        {formatTime(selectedEvent.start)} -{" "}
-                        {formatTime(selectedEvent.end)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
-                      <div
-                        className={`w-3.5 h-3.5 rounded-full ${priorityColors[selectedEvent.priority]}`}
-                      />
-                      <span className="font-medium text-gray-700 capitalize text-[13px]">
-                        Prioridade {selectedEvent.priority}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-3 pt-4 mt-5 border-t border-gray-200/60">
-                      {(() => {
-                        const eventDay = selectedEvent.start.getDay();
-                        const canComplete = eventDay <= todayWeekday;
-                        return (
-                          <button
-                            onClick={() => {
-                              if (!canComplete) return;
-                              setSelectedEvent(null);
-                              const newStatus = !selectedEvent.completed;
-                              handleCompleteEvent(selectedEvent.id, newStatus);
-                            }}
-                            disabled={!canComplete}
-                            title={
-                              !canComplete
-                                ? "Só pode concluir no dia ou depois do evento"
-                                : undefined
-                            }
-                            className={`flex-1 py-3 rounded-[10px] transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-[13px] cursor-pointer ${
-                              !canComplete
-                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                : selectedEvent.completed
-                                  ? "bg-gradient-to-b from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white"
-                                  : "bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
-                            }`}
-                          >
-                            {selectedEvent.completed
-                              ? "Marcar como Pendente"
-                              : "Marcar como Concluído"}
-                          </button>
-                        );
-                      })()}
-                      {isEditing && (
-                        <button
-                          onClick={() => {
-                            const id = selectedEvent.id;
-                            setSelectedEvent(null);
-                            handleUnscheduleEvent(id);
-                          }}
-                          className="flex-1 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-[10px] transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-[13px] cursor-pointer"
-                        >
-                          Excluir
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {showFilterModal && (
-              <div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
-                onClick={() => setShowFilterModal(false)}
-              >
-                <div
-                  className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
-                      Filtros
-                    </h2>
-                    <button
-                      onClick={() => setShowFilterModal(false)}
-                      className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
-                    >
-                      <X size={18} className="text-gray-700" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[13px] font-medium text-gray-700 mb-2">
-                        Matéria
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Pesquisar por matéria..."
-                        value={filters.subject}
-                        onChange={(e) =>
-                          setFilters((f) => ({ ...f, subject: e.target.value }))
-                        }
-                        className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[13px] font-medium text-gray-700 mb-2">
-                        Prioridade
-                      </label>
-                      <select
-                        value={filters.priority}
-                        onChange={(e) =>
-                          setFilters((f) => ({
-                            ...f,
-                            priority: e.target.value as "" | Priority,
-                          }))
-                        }
-                        className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
-                      >
-                        <option value="">Todas</option>
-                        <option value="alta">Alta</option>
-                        <option value="media">Média</option>
-                        <option value="baixa">Baixa</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[13px] font-medium text-gray-700 mb-2">
-                        Status
-                      </label>
-                      <select
-                        value={filters.completed}
-                        onChange={(e) =>
-                          setFilters((f) => ({
-                            ...f,
-                            completed: e.target.value as CompletedFilter,
-                          }))
-                        }
-                        className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
-                      >
-                        <option value="">Todos</option>
-                        <option value="completed">Concluído</option>
-                        <option value="pending">Pendente</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 mt-7">
-                    <button
-                      onClick={clearFilters}
-                      className="w-full bg-white text-gray-700 px-4 py-2.5 rounded-[10px] font-medium border border-gray-200 shadow-sm hover:!border-blue-500 hover:shadow-md transition-all active:scale-[0.98] text-[13px] cursor-pointer"
-                    >
-                      Limpar Filtros
-                    </button>
-                    <button
-                      onClick={applyFilters}
-                      className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] text-[13px] cursor-pointer"
-                    >
-                      Aplicar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {showScheduleModal && (
-              <div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
-                onClick={() => setShowScheduleModal(false)}
-              >
-                <div
-                  className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
-                      Gerar Sugestão
-                    </h2>
-                    <button
-                      onClick={() => setShowScheduleModal(false)}
-                      className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
-                    >
-                      <X size={18} className="text-gray-600" />
-                    </button>
-                  </div>
-
-                  <>
-                    <p className="text-gray-600 mb-5 text-[13px]">
-                      Selecione sua disponibilidade e nós criaremos um
-                      cronograma otimizado para você.
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      {(
-                        ["full", "morning", "afternoon", "evening"] as const
-                      ).map((pref) => (
-                        <button
-                          key={pref}
-                          onClick={() => setSchedulePref(pref)}
-                          className={`p-4 rounded-[12px] text-left transition-all duration-150 border-2 cursor-pointer ${
-                            schedulePref === pref
-                              ? "!bg-blue-100 border-blue-500 shadow-md"
-                              : "!bg-gray-200 border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                          }`}
-                        >
-                          <span className="font-semibold !text-gray-700 capitalize text-[13px] block">
-                            {
-                              {
-                                full: "Dia Inteiro",
-                                morning: "Manhã",
-                                afternoon: "Tarde",
-                                evening: "Noite",
-                              }[pref]
-                            }
-                          </span>
-                          <p className="text-[11px] text-gray-500 mt-0.5">
-                            {
-                              {
-                                full: "8h - 22h",
-                                morning: "8h - 12h",
-                                afternoon: "12h - 17h",
-                                evening: "17h - 22h",
-                              }[pref]
-                            }
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={handleGenerateSuggestion}
-                      className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-3 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-[13px] cursor-pointer"
-                    >
-                      <Wand2 size={16} />
-                      Gerar Cronograma Mágico
-                    </button>
-                  </>
-                </div>
-              </div>
-            )}
           </div>
         </div>
+      </div>
 
-        {showUpgradeModal && (
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300 bg-black/60 backdrop-blur-lg"
-            onClick={() => setShowUpgradeModal(false)}
-          >
+      {/* Modais Rendereizados via Portal na Raiz do body para evitar Clipping de Blur e Z-Index issues */}
+      {mounted && createPortal(
+        <>
+          {selectedEvent && (
             <div
-              className="relative max-w-2xl w-full bg-white/98 backdrop-blur-3xl rounded-[24px] p-8 md:p-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-gray-200/60"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
+              onClick={() => setSelectedEvent(null)}
             >
-              <div className="absolute top-0 right-0 w-40 h-40 md:w-48 md:h-48 opacity-50 pointer-events-none">
-                <Image
-                  src="/Mascote/banners/Camaleão_19.png"
-                  alt="Mascote incentivando upgrade"
-                  width={192}
-                  height={192}
-                  className="w-full h-full object-contain drop-shadow-2xl"
-                />
-              </div>
-
-              <div className="relative z-10 text-center max-w-xl mx-auto">
-                <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-1.5 rounded-full text-[12px] font-semibold mb-5 border border-purple-200/40">
-                  <Award size={14} />
-                  Recurso Premium
+              <div
+                className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200/60 relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="absolute top-4 right-4 opacity-15">
+                  <Image
+                    src={
+                      selectedEvent.completed
+                        ? "/Mascote/banners/Camaleão_21.png"
+                        : "/Mascote/banners/Camaleão_14.png"
+                    }
+                    alt="Evento"
+                    width={75}
+                    height={75}
+                  />
                 </div>
 
-                <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-3 tracking-[-0.7px]">
-                  Desbloqueie o Planner de Estudos
-                </h2>
-
-                <p className="text-[15px] text-gray-600 mb-7">
-                  O Planner é um recurso exclusivo para assinantes{" "}
-                  <span className="font-semibold text-purple-600">
-                    Simula PRO
-                  </span>
-                  . Faça o upgrade para organizar seus estudos e maximizar sua
-                  produtividade.
-                </p>
-
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-[16px] p-6 mb-8 border border-gray-200/60 shadow-sm text-left">
-                  <h3 className="text-[16px] font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Sparkles size={18} className="text-purple-500" />
-                    Vantagens do Plano PRO
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-x-6 gap-y-3">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle
-                        size={16}
-                        className="text-green-500 flex-shrink-0"
-                      />
-                      <span className="text-gray-700 text-[13px]">
-                        Planner de estudos inteligente
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle
-                        size={16}
-                        className="text-green-500 flex-shrink-0"
-                      />
-                      <span className="text-gray-700 text-[13px]">
-                        Simulados ilimitados
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle
-                        size={16}
-                        className="text-green-500 flex-shrink-0"
-                      />
-                      <span className="text-gray-700 text-[13px]">
-                        Análise de desempenho detalhada
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle
-                        size={16}
-                        className="text-green-500 flex-shrink-0"
-                      />
-                      <span className="text-gray-700 text-[13px]">
-                        Acesso a todas as questões
-                      </span>
-                    </div>
+                <div className="flex items-start justify-between mb-5 relative z-10">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-gray-900 tracking-[-0.5px]">
+                      {selectedEvent.title}
+                    </h2>
+                    <p className="text-gray-500 text-[13px] mt-0.5">
+                      {selectedEvent.subject}
+                    </p>
                   </div>
+                  <button
+                    onClick={() => setSelectedEvent(null)}
+                    className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
 
                 <div className="space-y-3">
+                  <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
+                    <Calendar size={18} className="text-gray-500" />
+                    <span className="font-medium text-gray-700 text-[13px]">
+                      {new Date(selectedEvent.start).toLocaleDateString(
+                        "pt-BR",
+                        { weekday: "long", day: "2-digit", month: "long" }
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
+                    <Clock size={18} className="text-gray-500" />
+                    <span className="font-medium text-gray-700 text-[13px]">
+                      {formatTime(selectedEvent.start)} -{" "}
+                      {formatTime(selectedEvent.end)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
+                    <div
+                      className={`w-3.5 h-3.5 rounded-full ${priorityColors[selectedEvent.priority]}`}
+                    />
+                    <span className="font-medium text-gray-700 capitalize text-[13px]">
+                      Prioridade {selectedEvent.priority}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-3 pt-4 mt-5 border-t border-gray-200/60">
+                    {(() => {
+                      const eventDay = selectedEvent.start.getDay();
+                      const canComplete = eventDay <= todayWeekday;
+                      return (
+                        <button
+                          onClick={() => {
+                            if (!canComplete) return;
+                            setSelectedEvent(null);
+                            const newStatus = !selectedEvent.completed;
+                            handleCompleteEvent(selectedEvent.id, newStatus);
+                          }}
+                          disabled={!canComplete}
+                          title={
+                            !canComplete
+                              ? "Só pode concluir no dia ou depois do evento"
+                              : undefined
+                          }
+                          className={`flex-1 py-3 rounded-[10px] transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-[13px] cursor-pointer ${
+                            !canComplete
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : selectedEvent.completed
+                                ? "bg-gradient-to-b from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white"
+                                : "bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                          }`}
+                        >
+                          {selectedEvent.completed
+                            ? "Marcar como Pendente"
+                            : "Marcar como Concluído"}
+                        </button>
+                      );
+                    })()}
+                    {isEditing && (
+                      <button
+                        onClick={() => {
+                          const id = selectedEvent.id;
+                          setSelectedEvent(null);
+                          handleUnscheduleEvent(id);
+                        }}
+                        className="flex-1 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-[10px] transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-[13px] cursor-pointer"
+                      >
+                        Excluir
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showFilterModal && (
+            <div
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
+              onClick={() => setShowFilterModal(false)}
+            >
+              <div
+                className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
+                    Filtros
+                  </h2>
                   <button
-                    onClick={() => (window.location.href = "/paidPlan")}
-                    className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white font-medium text-[14px] px-8 py-3.5 rounded-[12px] shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transform active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() => setShowFilterModal(false)}
+                    className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
                   >
-                    <Zap size={18} />
-                    Fazer Upgrade Agora
+                    <X size={18} className="text-gray-700" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-700 mb-2">
+                      Matéria
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Filtrar por matéria..."
+                      value={filters.subject}
+                      onChange={(e) =>
+                        setFilters((f) => ({ ...f, subject: e.target.value }))
+                      }
+                      className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-700 mb-2">
+                      Prioridade
+                    </label>
+                    <div className="flex gap-2">
+                      {(["alta", "media", "baixa"] as Priority[]).map(
+                        (p) => (
+                          <button
+                            key={p}
+                            onClick={() =>
+                              setFilters((f) => ({
+                                ...f,
+                                priority: f.priority === p ? "" : p,
+                              }))
+                            }
+                            className={`flex-1 px-3 py-2 rounded-[10px] text-[12px] font-medium border transition-all cursor-pointer ${
+                              filters.priority === p
+                                ? `${priorityColors[p]} text-white border-transparent shadow-md`
+                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                            }`}
+                          >
+                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={filters.completed}
+                      onChange={(e) =>
+                        setFilters((f) => ({
+                          ...f,
+                          completed: e.target.value as CompletedFilter,
+                        }))
+                      }
+                      className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
+                    >
+                      <option value="">Todos</option>
+                      <option value="completed">Concluído</option>
+                      <option value="pending">Pendente</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-7">
+                  <button
+                    onClick={clearFilters}
+                    className="w-full bg-white text-gray-700 px-4 py-2.5 rounded-[10px] font-medium border border-gray-200 shadow-sm hover:!border-blue-500 hover:shadow-md transition-all active:scale-[0.98] text-[13px] cursor-pointer"
+                  >
+                    Limpar Filtros
                   </button>
                   <button
-                    onClick={() => setShowUpgradeModal(false)}
-                    className="w-full text-gray-600 font-medium py-2.5 rounded-[10px] hover:bg-gray-100 transition-colors text-[13px] cursor-pointer"
+                    onClick={applyFilters}
+                    className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] text-[13px] cursor-pointer"
                   >
-                    Continuar no plano FREE
+                    Aplicar
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-    </>
+          )}
+
+          {showScheduleModal && (
+            <div
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
+              onClick={() => setShowScheduleModal(false)}
+            >
+              <div
+                className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
+                    Gerar Sugestão
+                  </h2>
+                  <button
+                    onClick={() => setShowScheduleModal(false)}
+                    className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
+                  >
+                    <X size={18} className="text-gray-600" />
+                  </button>
+                </div>
+
+                <>
+                  <p className="text-gray-600 mb-5 text-[13px]">
+                    Selecione sua disponibilidade e nós criaremos um
+                    cronograma otimizado para você.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {(
+                      ["full", "morning", "afternoon", "evening"] as const
+                    ).map((pref) => (
+                      <button
+                        key={pref}
+                        onClick={() => setSchedulePref(pref)}
+                        className={`p-4 rounded-[12px] text-left transition-all duration-150 border-2 cursor-pointer ${
+                          schedulePref === pref
+                            ? "!bg-blue-100 border-blue-500 shadow-md"
+                            : "!bg-gray-200 border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                        }`}
+                      >
+                        <span className="font-semibold !text-gray-700 capitalize text-[13px] block">
+                          {
+                            {
+                              full: "Dia Inteiro",
+                              morning: "Manhã",
+                              afternoon: "Tarde",
+                              evening: "Noite",
+                            }[pref]
+                          }
+                        </span>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          {
+                            {
+                              full: "8h - 22h",
+                              morning: "8h - 12h",
+                              afternoon: "12h - 17h",
+                              evening: "17h - 22h",
+                            }[pref]
+                          }
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleGenerateSuggestion}
+                    className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-3 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-[13px] cursor-pointer"
+                  >
+                    <Wand2 size={16} />
+                    Gerar Cronograma Mágico
+                  </button>
+                </>
+              </div>
+            </div>
+          )}
+
+          {showUpgradeModal && (
+            <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/10 backdrop-blur-[1px] transition-opacity duration-300 animate-in fade-in"
+              onClick={() => setShowUpgradeModal(false)}
+            >
+              <div
+                className="relative w-full max-w-[580px] bg-white/90 backdrop-blur-3xl rounded-[32px] p-[48px] shadow-[0_32px_80px_rgba(0,0,0,0.15)] border border-white/50 animate-[macOS-fade-in_0.3s_cubic-bezier(0.4,0,0.2,1)_forwards]"
+                style={{ fontFamily: '-apple-system, BlinkMacSystemFont, Arial, sans-serif' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative z-10 text-center mx-auto">
+                  <div className="inline-flex items-center gap-2 bg-[#5856D6]/10 text-[#5856D6] px-4 py-1.5 rounded-full text-[12px] font-bold mb-5 border border-purple-200/30 tracking-[0.3px] uppercase">
+                    <Award size={14} className="opacity-80" />
+                    Recurso Premium
+                  </div>
+
+                  <h2 className="text-[28px] font-bold text-[#1d1d1f] mb-3 tracking-tight leading-tight">
+                    Desbloqueie o Planner
+                  </h2>
+
+                  <p className="text-[15px] text-black/60 mb-8 leading-relaxed max-w-[340px] mx-auto">
+                    Organize seus estudos com inteligência e maximize sua produtividade com o{" "}
+                    <span className="font-bold text-[#5856D6]">
+                      Simula PRO
+                    </span>.
+                  </p>
+
+                  {/* Lista de benefícios (8 tópicos com ícones coloridos) */}
+                  <div className="mb-8 text-left max-w-2xl mx-auto px-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                      {[
+                        { icon: <Rocket className="w-5 h-5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
+                        { icon: <Library className="w-5 h-5" />, color: '#007AFF', text: "Biblioteca de provas" },
+                        { icon: <Activity className="w-5 h-5" />, color: '#34C759', text: "Estatística em tempo real" },
+                        { icon: <Cpu className="w-5 h-5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
+                        { icon: <Lightbulb className="w-5 h-5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
+                        { icon: <GraduationCap className="w-5 h-5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
+                        { icon: <BarChart3 className="w-5 h-5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
+                        { icon: <Headset className="w-5 h-5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
+                      ].map((benefit, index) => (
+                        <div key={index} className="flex items-center gap-3 group">
+                          <div 
+                            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                            style={{ backgroundColor: `${benefit.color}15`, color: benefit.color }}
+                          >
+                            {benefit.icon}
+                          </div>
+                          <span className={`text-[14.5px] font-medium leading-[1.3] text-black/85`} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                            {benefit.text}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => (window.location.href = "/paidPlan")}
+                        className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white font-bold text-[14px] px-8 py-3.5 rounded-[12px] shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:ring-offset-2 transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-blue-500/20"
+                      >
+                        Garantir meu Simula PRO agora
+                      </button>
+                      
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center justify-center gap-3 text-[13px] text-black/50 font-medium">
+                          <span className="bg-black/5 px-2 py-0.5 rounded-md text-black/70">R$ 41,50/mês</span>
+                          <div className="w-[1px] h-3 bg-black/10" />
+                          <div className="flex items-center gap-1.5">
+                            <CheckCircle2 size={14} className="text-[#34C759]" />
+                            <span>Sem fidelidade</span>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-black/30">Pagamento 100% seguro via Mercado Pago ou PIX</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowUpgradeModal(false)}
+                      className="w-full text-black/40 font-semibold py-1 hover:text-black/70 transition-all duration-200 text-[14px] cursor-pointer focus:outline-none focus:underline"
+                    >
+                      Continuar no plano FREE
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>,
+        document.body
+      )}    </>
   );
 };
 

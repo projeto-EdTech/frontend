@@ -1,12 +1,12 @@
 "use client";
 
 import Header from "@/components/Header";
-import DemoModal from "@/components/DemoModal";
 import Sidebar from "@/components/Sidebar";
 import Image from "next/image";
 import Link from "next/link";
-import {Check, BrainCircuit, BookOpen, AlertCircle, CheckCircle, BotMessageSquare,} from "lucide-react";
+import {BrainCircuit, BookOpen, Zap, ChartNoAxesCombined, ClipboardList, LifeBuoy, Earth, FilePen, Rocket, Library, Activity, Cpu, Lightbulb, GraduationCap, BarChart3, Headset, Gift, Crown, Gem, ShieldCheck, CalendarX, Lock} from "lucide-react";
 import Footer from "@/components/Footer";
+import { PricingCard, PricingPlans } from "@/components/PricingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react"; // Importar o useSession
@@ -17,11 +17,13 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { EstatisticasMockup, SimuladoMockup, BancoProvasMockup, CronogramaMockup, NotaDeCorteMockup, QuestoesIAMockup } from "@/components/mockups";
 import SphereCarousel from "@/components/SphereCarousel";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 // Dados das features para o carrossel 3D da Hero Section
 const HERO_FEATURES = [
   { id: 0, name: "Simulado Personalizado" },
-  { id: 1, name: "Banco de Provas" },
+  { id: 1, name: "Biblioteca de Provas" },
   { id: 2, name: "Cronograma de Estudos" },
   { id: 3, name: "Consulta de Nota de Corte" },
   { id: 4, name: "Questões com IA" },
@@ -83,6 +85,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [loginRedirectUrl, setLoginRedirectUrl] = useState<string | undefined>("/paidPlan");
   const router = useRouter();
 
   // Hook para o tema (dark/light mode)
@@ -145,6 +148,7 @@ export default function Home() {
       setIsNavigating(true);
       router.push("/paidPlan"); // Se autenticado, redireciona
     } else {
+      setLoginRedirectUrl("/paidPlan");
       setIsLoginModalOpen(true); // Se não, abre o modal de login
     }
   };
@@ -152,13 +156,15 @@ export default function Home() {
   // Função para lidar com cliques nos botões da landing page
   const handleLandingPageClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    destination: string = "/"
+    destination: string = "/",
+    shouldRedirect: boolean = true
   ) => {
     e.preventDefault();
     if (isAuthenticated) {
       setIsNavigating(true);
       router.push(destination);
     } else {
+      setLoginRedirectUrl(shouldRedirect ? "/paidPlan" : undefined);
       setIsLoginModalOpen(true); // Abre modal de login se não autenticado
     }
   };
@@ -234,7 +240,8 @@ export default function Home() {
   }
 
   return (
-    <div className="themed-main-container min-h-screen force-themed-bg flex flex-col">
+    <DndProvider backend={HTML5Backend}>
+      <div className="themed-main-container min-h-screen force-themed-bg flex flex-col">
       {/* Header component */}
       <Header />
       <main className="flex-1" id="inicio">
@@ -778,11 +785,11 @@ export default function Home() {
                       ? "Continue sua jornada de estudos. Acesse simulados, acompanhe seu progresso em tempo real e conquiste sua aprovação."
                       : "A plataforma completa com IA que personaliza seu estudo. Resolva simulados, acompanhe seu progresso e conquiste sua aprovação."}
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-4 pt-2 relative">
                     <a
                       href="/profile"
-                      onClick={(e) => handleLandingPageClick(e, "/profile")}
-                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 !text-white font-bold rounded-full hover:from-blue-700 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.5)] text-center font-sans cursor-pointer"
+                      onClick={(e) => handleLandingPageClick(e, "/profile", false)}
+                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 !text-white font-bold rounded-full hover:from-blue-700 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.5)] text-center font-sans cursor-pointer z-10"
                     >
                       {isAuthenticated ? "Ir para Dashboard" : "Entrar"}
                     </a>
@@ -854,23 +861,46 @@ export default function Home() {
                   {/* Left: Text Content */}
                   <div className="space-y-8">
                     <h2 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight font-sans">
-                      O Vestibuline vai ajudar você a <br />
-                      <span className="text-gray-900">
-                        conquistar sua aprovação
-                      </span>
+                      {isAuthenticated ? (
+                        <>
+                          Com o SimulaPRO, potencialize seus estudos e <br />
+                          <span className="text-gray-900">
+                            conquiste sua vaga
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          O Vestibuline vai ajudar você a <br />
+                          <span className="text-gray-900">
+                            conquistar sua aprovação
+                          </span>
+                        </>
+                      )}
                     </h2>
 
                     <div className="prose prose-lg text-gray-600 leading-relaxed font-sans">
-                      <p>
-                        Tenha acesso a mais de 150 mil questões para se preparar
-                        para o Enem e vestibulares de todo o Brasil.
-                      </p>
-                      <p>
-                        Monte listas de exercícios personalizadas com os
-                        conteúdos de cada matéria, resolva provas de exames
-                        anteriores e monitore o seu desempenho com relatórios de
-                        erros e acertos.
-                      </p>
+                      {isAuthenticated ? (
+                        <>
+                          <p>
+                            Faça seu upgrade de plano e aproveite ao máximo todas as ferramentas disponíveis. 
+                            Explore simulados inéditos, analise seu desempenho detalhado e monitore 
+                            seus pontos de melhoria, elabore cronograma de estudos personalizados e muito mais.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p>
+                            Tenha acesso a mais de 150 mil questões para se preparar
+                            para o Enem e vestibulares de todo o Brasil.
+                          </p>
+                          <p>
+                            Monte listas de exercícios personalizadas com os
+                            conteúdos de cada matéria, resolva provas de exames
+                            anteriores e monitore o seu desempenho com relatórios de
+                            erros e acertos.
+                          </p>
+                        </>
+                      )}
                     </div>
 
                     <div className="hidden pt-4">
@@ -879,12 +909,16 @@ export default function Home() {
                   </div>
 
                   {/* Right: Video/Image Area */}
-                  <div>
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl aspect-video">
+                  <div className="relative">
+                    <div className="relative rounded-2xl overflow-hidden shadow-2xl aspect-video z-10">
                       {/* YouTube Iframe Embed */}
                       <iframe
                         className="absolute inset-0 w-full h-full"
-                        src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                        src={
+                          isAuthenticated
+                            ? "https://www.youtube.com/embed/F3DxOuM7m7k" // Vídeo para usuários logados (VEM AI SABONETE)
+                            : "https://www.youtube.com/embed/dQw4w9WgXcQ" // Vídeo demo para visitantes (Rick Astley)
+                        }
                         title="Conheça o Vestibuline"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -895,6 +929,167 @@ export default function Home() {
                 </div>
               </div>
             </section>
+
+            {/* --- FREE USER SUBJECTS SECTION --- */}
+            {isAuthenticated && session?.user?.tier === "FREE" && (
+              <section className="bg-white py-16 font-sans relative overflow-hidden">
+                <div className="container mx-auto px-4 md:px-6 relative z-10">
+                  <div className="mb-12 relative" id="materias">
+                    {/* Header da seção melhorado */}
+                    <div className="text-center mb-8 relative z-10">
+                      <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+                        <span>📚</span>
+                        <span>Escolha sua área de foco</span>
+                      </div>
+
+                      <h2 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-4">
+                        Selecione a matéria para começar
+                      </h2>
+                      <p className="themed-text-secondary text-base md:text-lg max-w-2xl mx-auto">
+                        Veja o ranking{" "}
+                        <span className="font-semibold text-blue-600">
+                          do que mais cai no
+                        </span>
+                        <span className="font-semibold text-purple-600">
+                          {" "}
+                          vestibular de cada matéria
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* Grid de matérias com animações e interatividade melhorada */}
+                    <div className="relative z-10">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
+                        {loading
+                          ? Array.from({ length: 11 }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="flex flex-col items-center animate-pulse"
+                              >
+                                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl mb-3 relative overflow-hidden">
+                                  {/* Shimmer effect */}
+                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -skew-x-12 animate-shimmer"></div>
+                                </div>
+                                <div className="w-12 sm:w-16 h-3 bg-gray-200 rounded mb-1"></div>
+                                <div className="w-8 sm:w-12 h-2 bg-gray-200 rounded"></div>
+                              </div>
+                            ))
+                          : subjects.map((subject, index) => (
+                              <div
+                                key={subject.name}
+                                className="group flex flex-col items-center cursor-pointer transform transition-all duration-500 hover:scale-110 hover:-translate-y-3 animate-fade-in-up focus:outline-none focus:ring-4 focus:ring-blue-300 rounded-2xl"
+                                style={{
+                                  animationDelay: `${index * 0.1}s`,
+                                }}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`Selecionar matéria de ${subject.name}`}
+                                onClick={() => handleSubjectClick(subject.name)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    handleSubjectClick(subject.name);
+                                  }
+                                }}
+                              >
+                                {/* Container do ícone com efeitos 3D e responsividade */}
+                                <div className="relative mb-3">
+                                  {/* Sombra e brilho de fundo */}
+                                  <div className="absolute -inset-2 bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-pink-400/20 rounded-2xl scale-0 group-hover:scale-110 transition-all duration-500 ease-out blur-xl opacity-0 group-hover:opacity-100"></div>
+
+                                  {/* Anel de progresso simulado */}
+                                  <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 p-0.5">
+                                    <div className="w-full h-full bg-white rounded-2xl"></div>
+                                  </div>
+
+                                  {/* Card da matéria com glassmorphism responsivo */}
+                                  <div className="relative force-themed-card backdrop-blur-sm rounded-2xl shadow-xl themed-border group-hover:shadow-2xl group-hover:border-blue-300 transition-all duration-500 overflow-hidden">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 relative p-2 sm:p-3">
+                                      <div className="w-full h-full relative">
+                                        <Image
+                                          src={
+                                            subject.icon
+                                              ? `/Materias/${subject.icon}`
+                                              : "/placeholder.svg"
+                                          }
+                                          alt={`Ícone da matéria ${subject.name}`}
+                                          fill
+                                          className="object-cover rounded-lg"
+                                          sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, (max-width: 1024px) 96px, 112px"
+                                          loading="lazy"
+                                          placeholder="blur"
+                                          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjRjNGNEY2Ii8+Cjwvc3ZnPgo="
+                                        />
+                                      </div>
+
+                                      {/* Overlay com estatísticas no hover */}
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-end justify-center pb-2">
+                                        <div className="text-white text-xs font-bold">
+                                          {Math.floor(Math.random() * 500) + 100}+
+                                          questões
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Efeito de brilho animado */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                  </div>
+                                </div>
+
+                                {/* Nome da matéria com tipografia melhorada e responsiva */}
+                                <div className="text-center px-1">
+                                  <span className="text-xs sm:text-sm md:text-base font-semibold themed-text group-hover:text-blue-600 transition-colors duration-300 block leading-tight">
+                                    {subject.name}
+                                  </span>
+
+                                  {/* Indicador de popularidade */}
+                                  <div className="hidden sm:flex items-center justify-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div className="text-xs themed-text-secondary">
+                                      {Math.floor(Math.random() * 1000) + 500}{" "}
+                                      estudantes
+                                    </div>
+                                  </div>
+
+                                  {/* Barra de progresso de dificuldade */}
+                                  <div className="flex gap-0.5 sm:gap-1 mt-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    {Array.from({ length: 5 }).map((_, i) => {
+                                      const difficulty =
+                                        Math.floor(Math.random() * 5) + 1;
+                                      return (
+                                        <div
+                                          key={i}
+                                          className={`w-1 h-1 rounded-full transition-all duration-300 ${
+                                            i < difficulty
+                                              ? "bg-gradient-to-r from-blue-400 to-purple-500"
+                                              : "bg-gray-200"
+                                          }`}
+                                          style={{
+                                            transitionDelay: `${i * 50}ms`,
+                                          }}
+                                          aria-hidden="true"
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                      </div>
+
+                      {/* Tooltip flutuante */}
+                      <div
+                        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full mt-4 bg-black/80 text-white px-3 py-2 rounded-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300 whitespace-nowrap z-50"
+                        role="tooltip"
+                        aria-hidden="true"
+                      >
+                        Clique para ver estatísticas detalhadas
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black/80 rotate-45"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* --- ITEM 3: PROMOTIONAL BANNER --- */}
             <section className="bg-gradient-to-r from-blue-600 to-indigo-600 py-16 w-full relative overflow-hidden font-sans">
@@ -908,47 +1103,67 @@ export default function Home() {
                 }}
               ></div>
 
-              <div className="container mx-auto px-4 text-center relative z-10">
-                <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 leading-tight font-sans">
-                  {isAuthenticated ? (
-                    <>
-                      Continue seus estudos,{" "}
-                      {session?.user?.name?.split(" ")[0]}!
-                      <br />
-                      <span className="text-white">
-                        Sua aprovação está mais perto
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      Comece a estudar agora
-                      <br />
-                      <span className="text-white">com o Vestibuline</span>
-                    </>
-                  )}
-                </h2>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-8 relative z-10">
+                  <div className="hidden md:block transform -scale-x-100">
+                    <Image 
+                      src="/Mascote/banners/Camaleão_10.png" 
+                      alt="Mascote comemorando" 
+                      width={160} 
+                      height={160}
+                    />
+                  </div>
 
-                <div className="mt-8">
-                  <a
-                    href={isAuthenticated ? "/library" : "/"}
-                    onClick={(e) =>
-                      handleLandingPageClick(
-                        e,
-                        isAuthenticated ? "/library" : "/"
-                      )
-                    }
-                    className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold !text-indigo-600 !bg-white !rounded-full !hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl font-sans cursor-pointer"
-                  >
-                    {isAuthenticated
-                      ? "Ir para biblioteca 📚"
-                      : "Acesse o Vestibuline"}
-                  </a>
+                  <div className="text-center">
+                    <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 leading-tight font-sans">
+                      {isAuthenticated ? (
+                        <>
+                          Continue seus estudos,{" "}
+                          {session?.user?.name?.split(" ")[0]}!
+                          <br />
+                          <span className="text-white">
+                            Sua aprovação está mais perto
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          Comece a estudar agora
+                          <br />
+                          <span className="text-white">com o Vestibuline</span>
+                        </>
+                      )}
+                    </h2>
+
+                    <div className="mt-8">
+                      <a
+                        href={isAuthenticated ? "/library" : "/"}
+                        onClick={(e) =>
+                          handleLandingPageClick(
+                            e,
+                            isAuthenticated ? "/library" : "/"
+                          )
+                        }
+                        className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold !text-indigo-600 !bg-white !rounded-full !hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl font-sans cursor-pointer"
+                      >
+                        {isAuthenticated
+                          ? "Ir para biblioteca 📚"
+                          : "Acesse o Vestibuline"}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="hidden md:block">
+                    <Image 
+                      src="/Mascote/banners/Camaleão_10.png" 
+                      alt="Mascote comemorando" 
+                      width={160} 
+                      height={160}
+                    />
+                  </div>
                 </div>
-              </div>
             </section>
 
             {/* --- ITEM 4: FEATURES GRID  --- */}
-            <section className="bg-white py-24 font-sans relative overflow-hidden">
+            <section className="bg-white py-24 font-sans relative overflow-hidden transition-colors duration-500">
               {/* Subtle background pattern */}
               <div
                 className="absolute inset-0 opacity-30"
@@ -959,44 +1174,40 @@ export default function Home() {
                 }}
               ></div>
 
-              <div className="container mx-auto px-4 md:px-6 relative z-10">
+              <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+                <div className="flex flex-col items-center mb-20">
+                  <h2 className="text-4xl md:text-5xl font-extrabold text-gray-800 text-center tracking-tight">
+                    Funcionalidades pensadas para você
+                  </h2>
+                  <div className="mt-4 w-20 h-1.5 bg-blue-600 rounded-full"></div>
+                </div>
+                
                 <motion.div
                   variants={MAC_VARIANTS.container}
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true, margin: "-100px" }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10"
                 >
                   {isAuthenticated ? (
                     <>
                       {/* PRO CARD 1: Acesso Ilimitado */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(79,70,229,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-indigo-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-gray-200/50 group-hover:scale-110 group-hover:border-gray-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-indigo-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M13 10V3L4 14h7v7l9-11h-7z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-sm border border-indigo-100/50 group-hover:scale-110 group-hover:shadow-indigo-200/50 transition-all duration-700">
+                            <Zap className="w-8 h-8 text-indigo-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Acesso ilimitado
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Simulados sem restrições. Pratique o quanto quiser,
                             quando quiser.
                           </p>
@@ -1004,33 +1215,23 @@ export default function Home() {
                       </motion.div>
 
                       {/* PRO CARD 2: Biblioteca de Provas */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(37,99,235,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-blue-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-blue-200/50 group-hover:scale-110 group-hover:border-blue-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-blue-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-sm border border-blue-100/50 group-hover:scale-110 group-hover:shadow-blue-200/50 transition-all duration-700">
+                            <BookOpen className="w-8 h-8 text-blue-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Biblioteca de Provas
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Acervo completo de exames anteriores dos maiores
                             vestibulares do país.
                           </p>
@@ -1038,33 +1239,23 @@ export default function Home() {
                       </motion.div>
 
                       {/* PRO CARD 3: Questões com IA */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(124,58,237,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-violet-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-violet-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-violet-200/50 group-hover:scale-110 group-hover:border-violet-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-violet-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-violet-50 to-white rounded-2xl shadow-sm border border-violet-100/50 group-hover:scale-110 group-hover:shadow-violet-200/50 transition-all duration-700">
+                            <BrainCircuit className="w-8 h-8 text-violet-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Resoluções com IA
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Entenda cada questão com explicações detalhadas
                             geradas por Inteligência Artificial.
                           </p>
@@ -1072,33 +1263,23 @@ export default function Home() {
                       </motion.div>
 
                       {/* PRO CARD 4: Plano Otimizado */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(5,150,105,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-emerald-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-emerald-200/50 group-hover:scale-110 group-hover:border-emerald-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-emerald-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-emerald-50 to-white rounded-2xl shadow-sm border border-emerald-100/50 group-hover:scale-110 group-hover:shadow-emerald-200/50 transition-all duration-700">
+                            <ClipboardList className="w-8 h-8 text-emerald-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Plano de Estudos
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Cronograma de estudos personalizado e otimizado para
                             o seu tempo disponível.
                           </p>
@@ -1106,33 +1287,23 @@ export default function Home() {
                       </motion.div>
 
                       {/* PRO CARD 5: Estatísticas Avançadas */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(234,88,12,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-orange-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-orange-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-orange-200/50 group-hover:scale-110 group-hover:border-orange-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-orange-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h3.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-orange-50 to-white rounded-2xl shadow-sm border border-orange-100/50 group-hover:scale-110 group-hover:shadow-orange-200/50 transition-all duration-700">
+                            <ChartNoAxesCombined className="w-8 h-8 text-orange-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Análise Avançada
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Relatórios detalhados e estatísticas de desempenho
                             em tempo real.
                           </p>
@@ -1140,33 +1311,23 @@ export default function Home() {
                       </motion.div>
 
                       {/* PRO CARD 6: Suporte 24/7 */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(236,72,153,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-transparent to-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-pink-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-pink-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-pink-200/50 group-hover:scale-110 group-hover:border-pink-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-pink-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-pink-50 to-white rounded-2xl shadow-sm border border-pink-100/50 group-hover:scale-110 group-hover:shadow-pink-200/50 transition-all duration-700">
+                            <LifeBuoy className="w-8 h-8 text-pink-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Suporte 24/7
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Atendimento prioritário a qualquer momento para
                             tirar suas dúvidas.
                           </p>
@@ -1175,209 +1336,144 @@ export default function Home() {
                     </>
                   ) : (
                     <>
-                      {/* Card 1: Milhares de Questões (Indigo Accent) */}
+                      {/* Card 1: Questões IA */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(30,27,75,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        {/* Colored accent gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                        {/* Glow effect */}
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-indigo-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-indigo-200/50 group-hover:scale-110 group-hover:border-indigo-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-indigo-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-violet-50 to-white rounded-2xl shadow-sm border border-violet-100/50 group-hover:scale-110 group-hover:shadow-violet-200/50 transition-all duration-700">
+                            <BrainCircuit className="w-8 h-8 text-violet-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Questões Resolvidas com IA
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Questões resolvidas e comentadas com IA para
                             aprimorar seus estudos.
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* Card 2: Questões ENEM e Vestibulares (Cyan Accent) */}
+                      {/* Card 2: ENEM e Vestibulares */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(6,182,212,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-cyan-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-full border border-gray-200 shadow-sm group-hover:shadow-cyan-200/50 group-hover:scale-110 group-hover:border-cyan-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-cyan-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-cyan-50 to-white rounded-2xl shadow-sm border border-cyan-100/50 group-hover:scale-110 group-hover:shadow-cyan-200/50 transition-all duration-700">
+                            <Earth className="w-8 h-8 text-cyan-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             ENEM e Vestibulares
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Acesso completo a questões do ENEM e dos principais
                             vestibulares do país.
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* Card 3: Próprias Listas (Emerald Accent) */}
+                      {/* Card 3: Listas Personalizadas */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-emerald-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-emerald-200/50 group-hover:scale-110 group-hover:border-emerald-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-emerald-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-emerald-50 to-white rounded-2xl shadow-sm border border-emerald-100/50 group-hover:scale-110 group-hover:shadow-emerald-200/50 transition-all duration-700">
+                            <BookOpen className="w-8 h-8 text-emerald-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Listas Personalizadas
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Crie seu próprio simulado sob medida para seus
                             estudos.
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* Card 4: Provas Prontas (Emerald Accent) */}
+                      {/* Card 4: Provas Anteriores */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-emerald-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-emerald-200/50 group-hover:scale-110 group-hover:border-emerald-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-emerald-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2h-2a2 2 0 01-2-2v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-emerald-50 to-white rounded-2xl shadow-sm border border-emerald-100/50 group-hover:scale-110 group-hover:shadow-emerald-200/50 transition-all duration-700">
+                            <FilePen className="w-8 h-8 text-emerald-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Provas Anteriores
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Simule exames reais com provas anteriores completas
                             para você treinar.
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* Card 5: Estude Assuntos (Indigo Accent) */}
+                      {/* Card 5: Foco no Essencial */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(30,27,75,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-indigo-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-indigo-200/50 group-hover:scale-110 group-hover:border-indigo-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-indigo-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M7 12l3-3 3 3 4-4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-sm border border-indigo-100/50 group-hover:scale-110 group-hover:shadow-indigo-200/50 transition-all duration-700">
+                            <ChartNoAxesCombined className="w-8 h-8 text-indigo-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Foco no Essencial
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Estude os assuntos que mais caem filtrando por
                             matéria e conteúdo específico.
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* Card 6: Acompanhe Resultados (Purple Accent) */}
+                      {/* CARD 6: Acompanhe Resultados */}
+                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
-                        className="group relative h-full bg-white backdrop-blur-xl p-8 rounded-3xl shadow-md border border-gray-200 hover:shadow-[0_20px_60px_-15px_rgba(126,34,206,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-purple-400/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-purple-400/30 transition-colors duration-500"></div>
-
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-6 w-16 h-16 flex items-center justify-center !bg-white backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-purple-200/50 group-hover:scale-110 group-hover:border-purple-300/70 transition-all duration-500">
-                            <svg
-                              className="w-8 h-8 text-purple-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
-                              />
-                            </svg>
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-sm border border-purple-100/50 group-hover:scale-110 group-hover:shadow-purple-200/50 transition-all duration-700">
+                            <LifeBuoy className="w-8 h-8 text-purple-600" strokeWidth={2.5}/>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Resultados em Tempo Real
                           </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed">
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Acompanhe seu desempenho e evolução detalhada após
                             cada simulação.
                           </p>
@@ -1397,7 +1493,7 @@ export default function Home() {
                   <h2
                     className={`text-3xl md:text-5xl font-extrabold mb-6 font-sans transition-colors duration-300 ${isDark ? "text-white" : "text-[#1a103c]"}`}
                   >
-                    Por dentro do Vestibuline{hasPaidPlan && " PRO"}
+                    {isAuthenticated ? "Veja os Recursos do Simula PRO" : "Por dentro do Vestibuline"}
                   </h2>
                 </div>
 
@@ -1456,7 +1552,7 @@ export default function Home() {
                           borderColor: "border-purple-600",
                         },
                         {
-                          title: "Banco de provas",
+                          title: "Biblioteca de provas",
                           subtitle:
                             "Acesse provas completas de vestibulares anteriores e simule o exame real.",
                           icon: "📚",
@@ -1572,7 +1668,7 @@ export default function Home() {
                         case 0: // Simulado Personalizado - Layout de Simulação
                           return (<SimuladoMockup isDark={isDark} selectedAnswer={selectedAnswer} />);
 
-                        case 1: // Banco de provas - Biblioteca
+                        case 1: // Biblioteca de provas - Biblioteca
                           return (<BancoProvasMockup isDark={isDark} />);
 
                         case 2: // Cronograma de Estudos (Calendar View)
@@ -1989,51 +2085,75 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 {/* Antes */}
-                <div className="themed-card bg-white rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-red-400">
-                  <h4 className="text-base md:text-lg font-bold text-red-600 mb-3 md:mb-4 flex items-center gap-2">
-                    😰 Antes - Estudando Sozinho
-                  </h4>
-                  <ul className="space-y-2 md:space-y-3">
-                    {[
-                      "Sem direcionamento de estudos",
-                      "Dificuldade para identificar pontos fracos",
-                      "Ansiedade antes das provas",
-                      "Perda de tempo com materiais desatualizados",
-                      "Falta de feedback sobre desempenho",
-                    ].map((item, index) => (
-                      <li
-                        key={index}
-                        className="flex items-start gap-2 themed-text text-gray-600 text-sm md:text-base"
-                      >
-                        <span className="text-red-500 mt-1">❌</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="themed-card bg-white rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-red-400 relative overflow-hidden group">
+                  <div className="relative z-10">
+                    <h4 className="text-base md:text-lg font-bold text-red-600 mb-3 md:mb-4 flex items-center gap-2">
+                      😰 Antes - Estudando Sozinho
+                    </h4>
+                    <ul className="space-y-2 md:space-y-3">
+                      {[
+                        "Sem direcionamento de estudos",
+                        "Dificuldade para identificar pontos fracos",
+                        "Ansiedade antes das provas",
+                        "Perda de tempo com materiais desatualizados",
+                        "Falta de feedback sobre desempenho",
+                      ].map((item, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start gap-2 themed-text text-gray-600 text-sm md:text-base"
+                        >
+                          <span className="text-red-500 mt-1">❌</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {/* Mascote em camada inferior */}
+                  <div className="absolute -bottom-2 -right-6 z-0 transform group-hover:rotate-0 group-hover:scale-110 transition-all duration-700 pointer-events-none">
+                    <Image 
+                      src="/Mascote/banners/Camaleão_triste/Camaleão_2.png" 
+                      alt="Mascote desanimado background" 
+                      width={200} 
+                      height={200}
+                    />
+                  </div>
                 </div>
 
                 {/* Depois */}
-                <div className="themed-card bg-white rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-green-400">
-                  <h4 className="text-base md:text-lg font-bold text-green-600 mb-3 md:mb-4 flex items-center gap-2">
-                    🚀 Depois - Com Vestibuline
-                  </h4>
-                  <ul className="space-y-2 md:space-y-3">
-                    {[
-                      "Feedback personalizado e direcionado",
-                      "Identificação precisa de lacunas de conhecimento",
-                      "Confiança total no dia da prova",
-                      "Provas sempre atualizados e relevantes",
-                      "Feedback em tempo real com IA",
-                    ].map((item, index) => (
-                      <li
-                        key={index}
-                        className="flex items-start gap-2 themed-text text-gray-600 text-sm md:text-base"
-                      >
-                        <span className="text-green-500 mt-1">✅</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="themed-card bg-white rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-green-400 relative overflow-hidden group">
+                  <div className="relative z-10">
+                    <h4 className="text-base md:text-lg font-bold text-green-600 mb-3 md:mb-4 flex items-center gap-2">
+                      🚀 Depois - Com Vestibuline
+                    </h4>
+                    <ul className="space-y-2 md:space-y-3">
+                      {[
+                        "Feedback personalizado e direcionado",
+                        "Identificação precisa de lacunas de conhecimento",
+                        "Confiança total no dia da prova",
+                        "Provas sempre atualizados e relevantes",
+                        "Feedback em tempo real com IA",
+                      ].map((item, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start gap-2 themed-text text-gray-600 text-sm md:text-base"
+                        >
+                          <span className="text-green-500 mt-1">✅</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Mascote em camada inferior */}
+                  <div className="absolute -bottom-2 -right-6 z-0 transform group-hover:rotate-0 group-hover:scale-110 transition-all duration-700 pointer-events-none">
+                    <Image 
+                      src="/Mascote/banners/Camaleão_8.png" 
+                      alt="Mascote motivado background" 
+                      width={200} 
+                      height={200}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -2087,13 +2207,17 @@ export default function Home() {
         {!hasPaidPlan && (
           <div
             id="planos"
-            className="themed-section py-16 force-themed-bg relative overflow-hidden"
+            className="py-24 relative overflow-hidden"
+            style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, #F5F5F7 100%)' }}
           >
-            {/* Background decorativo */}
-            <div className="absolute inset-0">
-              <div className="absolute top-10 left-20 w-24 h-24 bg-blue-200/20 rounded-full blur-2xl"></div>
-              <div className="absolute bottom-10 right-20 w-32 h-32 bg-purple-200/20 rounded-full blur-2xl"></div>
-            </div>
+            {/* Background decorativo - Pattern sutil de pontos */}
+            <div 
+              className="absolute inset-0 opacity-[0.02] pointer-events-none" 
+              style={{ 
+                backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', 
+                backgroundSize: '32px 32px' 
+              }}
+            ></div>
 
             <div className="container mx-auto px-6 relative z-10">
               {/* Header com urgência */}
@@ -2109,324 +2233,55 @@ export default function Home() {
                   />
                 </div>
 
-                <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3">
-                  Planos feitos para você
+                <h2 className="text-[40px] font-bold text-[#1d1d1f] mb-3 leading-tight tracking-tight">
+                  Escolha Seu Plano
                 </h2>
-                <p className="themed-text text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
-                  Escolha o plano ideal para sua jornada de aprovação e comece a
-                  estudar hoje mesmo.
+                <p className="text-[18px] text-black/60 font-normal leading-relaxed max-w-[600px] mx-auto">
+                  Escolha o plano ideal para sua jornada
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                {loading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-96 rounded-2xl" />
-                  ))
-                ) : (
-                  <>
-                    {/* Plano Gratuito */}
-                    <div className="group relative themed-card bg-white border border-gray-200 rounded-2xl p-6 md:p-8 flex flex-col text-center shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 ease-out">
-                      <div className="themed-plan-hover free-plan absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="relative z-10">
-                        <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-                          🆓
-                        </div>
-
-                        <h3 className="themed-text text-xl md:text-2xl font-bold mb-2 text-gray-900">
-                          Gratuito
-                        </h3>
-                        <p className="themed-text text-gray-500 mb-6">
-                          Para começar a explorar
-                        </p>
-
-                        <div className="mb-6">
-                          <p className="text-4xl md:text-5xl font-bold text-green-600">
-                            R$ 0
-                          </p>
-                          <p className="themed-text text-sm text-gray-500 mt-1">
-                            Para sempre
-                          </p>
-                        </div>
-
-                        <ul className="space-y-3 text-left mb-8">
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-green-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Acesso ilimitado a simulados
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-green-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Biblioteca de provas
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-green-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Estatística de desempenho em tempo real
-                            </span>
-                          </li>
-                        </ul>
-                        <button
-                          disabled
-                          className="block w-full bg-gray-200 text-gray-500 font-semibold py-3 px-6 rounded-xl transition-all duration-300 cursor-not-allowed"
-                        >
-                          FREE
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Plano Simula Pro Anual (Destaque) */}
-                    <div className="group relative themed-card bg-white border-2 border-blue-500 rounded-2xl p-6 md:p-8 flex flex-col text-center shadow-2xl scale-105 hover:scale-110 transition-all duration-500 ease-out">
-                      <div className="themed-plan-hover absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                      {/* Mascote premium - mantém visível com animação sutil pois é o plano destaque */}
-                      <div className="absolute -top-0 -right-0 z-20">
-                        <Image
-                          src="/Mascote/banners/Camaleão_2.png"
-                          alt="Mascote plano premium"
-                          width={200}
-                          height={200}
-                          className="w-25 h-25 object-contain animate-float"
-                          style={{ animationDuration: "5s" }}
-                        />
-                      </div>
-
-                      <div className="relative z-10">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-                          👑
-                        </div>
-
-                        <h3 className="themed-text text-xl md:text-2xl font-bold mb-2 text-gray-900">
-                          Simula Pro Anual
-                        </h3>
-                        <p className="text-blue-600 mb-6 font-medium">
-                          <b>Economize R$ 103! (Ganhe 2 meses grátis)</b>
-                        </p>
-
-                        <div className="mb-6">
-                          <div className="flex items-center justify-center gap-2 mb-2">
-                            <span className="themed-text text-lg text-gray-400 line-through">
-                              R$ 600
-                            </span>
-                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
-                              -17%
-                            </span>
-                          </div>
-                          <p className="text-4xl md:text-5xl font-bold text-blue-600">
-                            R$ 41,5
-                            <span className="themed-text text-lg font-normal text-gray-600">
-                              /mês
-                            </span>
-                          </p>
-                          <p className="themed-text text-sm text-gray-500 mt-1">
-                            (R$ 497 cobrado em parcela unica)
-                          </p>
-                        </div>
-
-                        <ul className="space-y-3 text-left mb-8">
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Acesso ilimitado a simulados
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Biblioteca de provas
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Estatística de desempenho em tempo real
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Questões de provas resolvidas com IA
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Plano de estudos otimizado
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Estatísticas avançadas
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-blue-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Suporte prioritário 24/7
-                            </span>
-                          </li>
-                        </ul>
-
-                        <a
-                          href="/paidPlan"
-                          onClick={handlePlanClick}
-                          className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/40 group-hover:scale-105"
-                        >
-                          🚀 Quero Economizar
-                        </a>
-                      </div>
-                    </div>
-
-                    {/* Plano Simula Pro Mensal */}
-                    <div className="group relative themed-card bg-white border border-gray-200 rounded-2xl p-6 md:p-8 flex flex-col text-center shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 ease-out">
-                      <div className="themed-plan-hover absolute inset-0 bg-gradient-to-br from-purple-50/50 to-pink-50/30 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                      {/* Mascote plano mensal - aparece no hover */}
-                      <div className="absolute -top-0 -right-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <Image
-                          src="/Mascote/banners/Camaleão_4.png"
-                          alt="Mascote plano mensal"
-                          width={200}
-                          height={200}
-                          className="w-25 h-25 object-contain"
-                        />
-                      </div>
-
-                      <div className="relative z-10">
-                        <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-                          💎
-                        </div>
-
-                        <h3 className="themed-text text-xl md:text-2xl font-bold mb-2 text-gray-900">
-                          Simula Pro Mensal
-                        </h3>
-                        <p className="themed-text text-gray-500 mb-6">
-                          Flexibilidade total
-                        </p>
-
-                        <div className="mb-6">
-                          <p className="text-4xl md:text-5xl font-bold text-purple-600">
-                            R$ 50
-                            <span className="themed-text text-lg font-normal text-gray-600">
-                              /mês
-                            </span>
-                          </p>
-                          <p className="themed-text text-sm text-gray-500 mt-1">
-                            Cancele quando quiser
-                          </p>
-                        </div>
-
-                        <ul className="space-y-3 text-left mb-8">
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Acesso ilimitado a simulados
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Biblioteca de provas
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Estatísticas de desempenho em tempo real
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Questões de Provas resolvidas com IA
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Plano de estudos otimizado
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Estatísticas avançadas
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="themed-text text-gray-700">
-                              Suporte prioritário 24/7
-                            </span>
-                          </li>
-                        </ul>
-
-                        <a
-                          href="/paidPlan"
-                          onClick={handlePlanClick}
-                          className="block w-full bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-800 font-semibold py-3 px-6 rounded-xl border-2 border-purple-200 hover:border-purple-300 hover:shadow-lg hover:shadow-purple-500/40 transition-all duration-300 group-hover:scale-105"
-                        >
-                          Assinar Agora
-                        </a>
-                      </div>
-                    </div>
-                  </>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start justify-center max-w-[1120px] mx-auto px-4">
+                <PricingPlans 
+                  loading={loading} 
+                  onPlanClick={handlePlanClick} 
+                />
               </div>
+
+              {/* Trust Badges */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="mt-16 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12"
+              >
+                <div className="flex items-center gap-2 text-black/40">
+                  <ShieldCheck className="w-5 h-5" />
+                  <span className="text-[13px] font-medium" style={{ fontFamily: 'SF Pro Text, sans-serif' }}>Pagamento 100% Seguro</span>
+                </div>
+                <div className="flex items-center gap-2 text-black/40">
+                  <CalendarX className="w-5 h-5" />
+                  <span className="text-[13px] font-medium" style={{ fontFamily: 'SF Pro Text, sans-serif' }}>Cancele a qualquer momento</span>
+                </div>
+                <div className="flex items-center gap-2 text-black/40">
+                  <Lock className="w-5 h-5" />
+                  <span className="text-[13px] font-medium" style={{ fontFamily: 'SF Pro Text, sans-serif' }}>Privacidade Protegida</span>
+                </div>
+              </motion.div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Modal de demonstração - deve ser renderizado aqui para overlay global */}
-      <DemoModal open={showDemoModal} onClose={() => setShowDemoModal(false)} />
-
-      {/* Modal de login para a nova funcionalidade */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        redirectTo="/paidPlan"
+        redirectTo={loginRedirectUrl}
       />
 
       <Footer />
     </div>
+    </DndProvider>
   );
 }

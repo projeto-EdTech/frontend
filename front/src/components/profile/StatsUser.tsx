@@ -12,7 +12,7 @@ import MonthlyProgressChart from "@/components/Simula_PRO/graficos_stats/Monthly
 import { useTheme } from "@/contexts/ThemeContext";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Lock, X, Zap, ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
+import { Lock, X, Zap, ArrowUpNarrowWide, ArrowDownNarrowWide, Target, BarChart3, Lightbulb, Rocket, ChevronRight, Users, Check, Library, Activity, Cpu, GraduationCap, Headset } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 // --- Tipagens (sem alterações) ---
@@ -66,8 +66,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, theme }) =
     <>
       {/* Overlay (fundo) com animação suave */}
       <div
-        className={`fixed inset-0 z-40 backdrop-blur-sm transition-all duration-500 ease-out
-          ${isOpen ? 'opacity-100 bg-black/60' : 'opacity-0 bg-black/0 pointer-events-none'}
+        className={`fixed inset-0 z-40 backdrop-blur-[1px] transition-all duration-200 ease-out
+          ${isOpen ? 'opacity-100 bg-black/40' : 'opacity-0 bg-black/0 pointer-events-none'}
         `}
         onClick={onClose}
         aria-hidden="true"
@@ -75,127 +75,72 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, theme }) =
       
       {/* Conteúdo do Modal */}
       <div
-        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95%] max-w-2xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-500 ease-out overflow-hidden
+        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95%] max-w-[600px] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.25)] transition-all duration-[350ms] overflow-hidden focus-visible:outline-none
           ${theme === 'dark'
-            ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
-            : 'bg-gradient-to-br from-white via-purple-50/30 to-blue-50/30'}
-          ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}
+            ? 'bg-[#1c1c1e]'
+            : 'bg-gradient-to-b from-white to-[#fafafa]'}
+          ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.96] pointer-events-none'}
         `}
+        style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="upgrade-modal-title"
+        tabIndex={-1}
       >
-        {/* Efeitos decorativos de fundo */}
-        <div className="absolute inset-0 opacity-30 pointer-events-none">
-          <div className={`absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl
-            ${theme === 'dark' 
-              ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20' 
-              : 'bg-gradient-to-br from-purple-400/30 to-blue-400/30'}
-          `} />
-          <div className={`absolute bottom-0 left-0 w-96 h-96 rounded-full blur-3xl
-            ${theme === 'dark' 
-              ? 'bg-gradient-to-tr from-blue-600/20 to-indigo-600/20' 
-              : 'bg-gradient-to-tr from-blue-400/30 to-indigo-400/30'}
-          `} />
-        </div>
-
-        {/* Border gradient animado */}
-        <div className={`absolute inset-0 rounded-3xl p-[2px] pointer-events-none
-          ${theme === 'dark'
-            ? 'bg-gradient-to-r from-purple-500/50 via-blue-500/50 to-indigo-500/50'
-            : 'bg-gradient-to-r from-purple-400/40 via-blue-400/40 to-indigo-400/40'}
-        `}>
-          <div className={`w-full h-full rounded-3xl
-            ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}
-          `} />
-        </div>
 
         <div className="relative z-10">
           {/* Botão de Fechar aprimorado */}
           <button
             onClick={onClose}
-            className={`absolute top-5 right-5 p-2.5 rounded-full transition-all duration-300 group z-20
+            className={`absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-150 z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF] cursor-pointer
               ${theme === 'dark' 
-                ? 'bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white border border-gray-700' 
-                : 'bg-white/80 hover:bg-gray-100 text-gray-500 hover:text-gray-700 border border-gray-200 shadow-lg'}
+                ? 'text-white/30 hover:text-white/60 hover:bg-white/10' 
+                : 'text-black/30 hover:text-black/60 hover:bg-black/10'}
             `}
             aria-label="Fechar modal"
           >
-            <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+            <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
 
-          {/* Imagem do Mascote com animação */}
-          <div className="flex justify-center pt-8 pb-4">
-            <div className="relative">
-              {/* Efeito de brilho atrás do mascote */}
-              <div className={`absolute inset-0 blur-2xl opacity-60 animate-pulse
-                ${theme === 'dark' 
-                  ? 'bg-gradient-to-br from-purple-500 to-blue-500' 
-                  : 'bg-gradient-to-br from-purple-400 to-blue-400'}
-              `} />
-              <div className="relative transform hover:scale-110 transition-transform duration-500">
-                <Image
-                  src="/Mascote/banners/Camaleão_7.png"
-                  alt="Mascote Vestibuline"
-                  width={140}
-                  height={140}
-                  className="drop-shadow-2xl"
-                  priority
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Conteúdo principal */}
-          <div className="px-8 pb-8 text-center">
-            {/* Badge Premium */}
-            <div className="flex justify-center mb-5">
-              <span className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 hover:scale-105
-                ${theme === 'dark' 
-                  ? 'bg-gradient-to-r from-purple-600/20 to-blue-600/20 text-purple-300 border-2 border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.3)]'
-                  : 'bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-purple-700 border-2 border-purple-400/40 shadow-lg'}
-              `}>
-                <Zap className="w-4 h-4 animate-pulse" />
-                Recurso Premium
-              </span>
-            </div>
-
-            {/* Título */}
-            <h2 id="upgrade-modal-title" className={`text-3xl lg:text-4xl font-black mb-4 tracking-tight
-              ${theme === 'dark' 
-                ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-blue-300 to-indigo-300' 
-                : 'text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600'}
-            `}>
-              Desbloqueie seu Potencial Máximo
+          <div className="px-10 pt-12 pb-10 text-center">
+            {/* Título - Máximo Contraste */}
+            <h2 id="upgrade-modal-title" className={`text-[28px] font-normal mb-2 tracking-tight leading-[1.2]
+              ${theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'}
+            `} style={{ fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+              Desbloqueie seu <span className="font-bold">Potencial Máximo</span>
             </h2>
             
-            {/* Descrição */}
-            <p className={`text-lg mb-8 max-w-xl mx-auto leading-relaxed
-              ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}
-            `}>
-              Tenha acesso ao <strong>Relatório Completo</strong> com análise de IA personalizada, identificação de pontos fortes e fracos, e um plano de estudos sob medida para você.
+            {/* Subtítulo - Contexto (Terciário) */}
+            <p className={`text-[18px] mb-6 max-w-[480px] mx-auto leading-[1.4] font-normal
+              ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}
+            `} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+              Acesse <strong>relatório completo</strong> com análise de IA, identificação de pontos fortes e fracos, e plano de estudos personalizado.
             </p>
 
-            {/* Lista de benefícios */}
-            <div className={`mb-8 p-6 rounded-2xl border backdrop-blur-sm
-              ${theme === 'dark' 
-                ? 'bg-gray-800/40 border-gray-700/50' 
-                : 'bg-white/60 border-gray-200/60'}
-            `}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+            {/* Lista de features - Informativo (Secundário) */}
+            <div className="mb-8 text-left max-w-2xl mx-auto px-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                 {[
-                  { icon: '🎯', text: 'Análise detalhada com IA' },
-                  { icon: '📊', text: 'Relatórios personalizados' },
-                  { icon: '💡', text: 'Plano de estudos otimizado' },
-                  { icon: '🚀', text: 'Acompanhamento evolutivo' }
+                  { icon: <Rocket className="w-5 h-5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
+                  { icon: <Library className="w-5 h-5" />, color: '#007AFF', text: "Biblioteca de provas" },
+                  { icon: <Activity className="w-5 h-5" />, color: '#34C759', text: "Estatística em tempo real" },
+                  { icon: <Cpu className="w-5 h-5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
+                  { icon: <Lightbulb className="w-5 h-5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
+                  { icon: <GraduationCap className="w-5 h-5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
+                  { icon: <BarChart3 className="w-5 h-5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
+                  { icon: <Headset className="w-5 h-5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-center gap-3 group">
-                    <span className="text-2xl group-hover:scale-125 transition-transform duration-300">
+                    <div 
+                      className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                      style={{ backgroundColor: `${benefit.color}15`, color: benefit.color }}
+                    >
                       {benefit.icon}
-                    </span>
-                    <span className={`text-sm font-semibold
-                      ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}
-                    `}>
+                    </div>
+                    <span className={`text-[14.5px] font-medium leading-[1.3]
+                      ${theme === 'dark' ? 'text-white/85' : 'text-black/85'}
+                    `} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
                       {benefit.text}
                     </span>
                   </div>
@@ -203,48 +148,57 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, theme }) =
               </div>
             </div>
 
-            {/* Botões de ação */}
-            <div className="flex flex-col gap-3 max-w-md mx-auto">
+            {/* Botões de ação - CTA Vibrante */}
+            <div className="flex flex-col gap-4 max-w-sm mx-auto">
               <button
                 onClick={handleUpgradeClick}
-                className={`group relative w-full px-8 py-4 rounded-xl font-bold text-white text-lg shadow-2xl transition-all duration-300 overflow-hidden
-                  bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-500 hover:via-blue-500 hover:to-indigo-500
-                  hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(139,92,246,0.4)] active:scale-[0.98]
-                `}
+                className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white font-bold text-[14px] px-8 py-3.5 rounded-[12px] shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transform active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-blue-500/20"
+                style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}
               >
-                {/* Efeito de brilho animado */}
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                
-                <span className="relative flex items-center justify-center gap-2">
-                  <Zap className="w-5 h-5 group-hover:animate-pulse" />
-                  Fazer Upgrade Agora
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </span>
+                Fazer Upgrade para PRO
+                <ChevronRight className="w-5 h-5 opacity-70 group-hover:translate-x-0.5 transition-transform duration-200" />
               </button>
               
               <button
                 onClick={onClose}
-                className={`w-full px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-[1.02]
+                className={`w-full px-6 py-1 rounded-xl text-[18.6px] font-normal transition-all duration-[150ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/30 cursor-pointer
                   ${theme === 'dark' 
-                    ? 'text-gray-400 hover:bg-gray-800/60 hover:text-gray-300' 
-                    : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-800'}
+                    ? 'text-white/50 hover:text-white/70' 
+                    : 'text-black/50 hover:text-black/70'}
                 `}
+                style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}
               >
                 Continuar no plano gratuito
               </button>
             </div>
 
-            {/* Texto de garantia/segurança */}
-            <p className={`mt-6 text-xs flex items-center justify-center gap-2
-              ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}
-            `}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Pagamento 100% seguro • Cancele quando quiser
-            </p>
+            {/* Elementos secundários - Badge e Segurança (Subtle) */}
+            <div className="mt-6 flex flex-col items-center gap-3">
+              {/* Indicador de Preço e Valor */}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className={`text-[16px] font-medium
+                  ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}
+                `} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                  A partir de R$ 41,50/mês
+                </span>
+              </div>
+
+              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold tracking-wide transition-all duration-300
+                ${theme === 'dark' 
+                  ? 'bg-white/5 text-white/40 border border-white/10'
+                  : 'bg-black/5 text-black/40 border border-black/10'}
+              `} style={{ letterSpacing: '0.3px', fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                <Zap className="w-3 h-3" />
+                Recurso Premium
+              </span>
+
+              <p className={`flex items-center justify-center gap-1.5 text-[14px] font-normal
+                ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}
+              `} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                <Lock className="w-3 h-3 opacity-80" />
+                Pagamento seguro • Cancele quando quiser
+              </p>
+            </div>
           </div>
         </div>
       </div>

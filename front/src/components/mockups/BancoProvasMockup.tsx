@@ -87,7 +87,7 @@ export function BancoProvasMockup({ isDark }: BancoProvasMockupProps) {
         <h3
           className={`font-bold text-sm transition-colors duration-300 ${isDark ? "text-white" : "text-gray-900"}`}
         >
-          Banco de Provas
+          Biblioteca de provas
         </h3>
         <p
           className={`text-xs transition-colors duration-300 ${isDark ? "text-gray-400" : "text-gray-600"}`}

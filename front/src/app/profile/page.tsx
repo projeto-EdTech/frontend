@@ -478,12 +478,9 @@ export default function ProfilePage() {
                 </TabsContent>
 
                 <TabsContent value="planner" className="mt-6">
-                  {/* O container abaixo ajuda a dar o fundo escuro */}
-                  <div className="backdrop-blur-md">
-                      <DndProvider backend={HTML5Backend}>
-                        <Planner />
-                      </DndProvider>
-                  </div>
+                  <DndProvider backend={HTML5Backend}>
+                    <Planner />
+                  </DndProvider>
                 </TabsContent>
 
                 {/* Configuracoes Tab Content */}
