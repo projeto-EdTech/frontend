@@ -2,12 +2,13 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { BookOpen, CheckCircle, AlertCircle, BotMessageSquare } from "lucide-react"
+import { BookOpen, CheckCircle, AlertCircle, BotMessageSquare, Sparkles, Infinity, Bot, Layout, BarChart3, ArrowRight, X, Target, Rocket, ChevronRight, Library, Activity, Cpu, GraduationCap, Headset, Lightbulb } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
+import { useTheme } from '@/contexts/ThemeContext'
 import 'katex/dist/katex.min.css'
 
 // A interface da questão permanece a mesma
@@ -48,6 +49,7 @@ const Gemini: React.FC<GeminiProps> = ({
   universityLogoUrl // <-- 2. RECEBEMOS A NOVA PROP AQUI
 }) => {
   const { data: session, status } = useSession();
+  const { theme } = useTheme();
   
   // Estado para rastrear quantas vezes o usuário FREE já usou a IA (máximo 5)
   const [freeUsageCount, setFreeUsageCount] = useState<number>(() => {
@@ -156,7 +158,7 @@ const Gemini: React.FC<GeminiProps> = ({
         <div className="absolute top-0 right-0 w-28 h-28 opacity-80 hover:opacity-100 transition-opacity duration-300">
           <Image 
             src="/Mascote/banners/Camaleão_34.png" 
-            alt="Mascote SimulaVest" 
+            alt="Mascote Vestibuline" 
             width={112}
             height={112}
             className="w-full h-full object-contain drop-shadow-md"
@@ -555,165 +557,106 @@ const Gemini: React.FC<GeminiProps> = ({
       {/* Modal de Upgrade - Aparece quando usuário FREE esgota os usos gratuitos */}
       {showUpgradeModal && (
       <div 
-        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)' }}
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-500 backdrop-blur-[1px]"
         onClick={() => setShowUpgradeModal(false)}
       >
         <div 
-          className="relative max-w-4xl w-full max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95 duration-500 border border-gray-100/60 backdrop-blur-xl"
+          className={`relative max-w-xl w-full max-h-[90vh] overflow-y-auto ${
+            theme === 'dark' 
+              ? 'bg-[#1C1C1E]/95 border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.6)]' 
+              : 'bg-white/90 border-white/50 shadow-[0_40px_100px_rgba(0,0,0,0.2)]'
+          } backdrop-blur-[50px] rounded-[32px] p-6 md:p-10 animate-in fade-in zoom-in-100 duration-500 ease-out border`}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Botão de fechar animado */}
+          {/* Brilho interno Liquid Glass Refinado */}
+          <div className={`absolute inset-0 bg-gradient-to-tr ${
+            theme === 'dark' ? 'from-white/10' : 'from-white'
+          } to-transparent pointer-events-none rounded-[32px]`}></div>
+          {/* Botão de fechar nativo macOS style - Mais discreto */}
           <button
             onClick={() => setShowUpgradeModal(false)}
-            className="absolute top-3 right-3 w-9 h-9 bg-white/80 hover:bg-red-500 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-110 hover:rotate-90 transition-all duration-300 z-10 group"
+            className="absolute top-4 right-4 w-7 h-7 bg-transparent hover:bg-red-200/50 text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out z-10 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF] cursor-pointer"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600 group-hover:text-white transition-colors duration-300">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
+            <X size={16} />
           </button>
 
-          {/* Partículas decorativas flutuantes */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl">
-            <div className="absolute top-10 left-10 w-16 h-16 bg-purple-400/15 rounded-full blur-xl animate-pulse"></div>
-            <div className="absolute top-40 right-20 w-24 h-24 bg-blue-400/15 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute bottom-20 left-40 w-20 h-20 bg-cyan-400/15 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute bottom-10 right-10 w-24 h-24 bg-purple-400/15 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-          </div>
 
-          {/* Mascote incentivando o upgrade com animação */}
-          <div className="absolute top-0 right-0 w-32 h-32 md:w-40 md:h-40 opacity-60 md:opacity-70 pointer-events-none">
-            <Image 
-              src="/Mascote/banners/Camaleão_26.png" 
-              alt="Mascote incentivando upgrade" 
-              width={160}
-              height={160}
-              className="w-full h-full object-contain"
-            />
-          </div>
           
           <div className="relative z-10 text-center max-w-3xl mx-auto">
-            {/* Badge com efeito de brilho */}
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm px-5 py-2.5 rounded-full mb-5 border border-purple-300/50 shadow-md animate-in slide-in-from-top duration-500">
-              <div className="relative">
-                <div className="absolute inset-0 bg-yellow-400 rounded-full blur-md opacity-40 animate-pulse"></div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative text-yellow-600 animate-spin" style={{ animationDuration: '3s' }}>
-                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-                  <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
-                </svg>
-              </div>
-              <span className="text-[13px] font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 tracking-tight">
-                PLANO PREMIUM DISPONÍVEL
-              </span>
-            </div>
-
-            {/* Título principal com gradiente estático */}
-            <h2 className="text-2xl md:text-4xl font-bold mb-3 animate-in slide-in-from-bottom duration-700 tracking-tight" style={{ animationDuration: '700ms' }}>
-              <span className="text-3xl md:text-4xl">🎓</span>{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
-                Você esgotou seus 5 usos gratuitos!
-              </span>
+            {/* Título principal (SF Pro Bold) - Compacto */}
+            <h2 className={`text-[22px] md:text-[25px] font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'} mb-2 tracking-tight`}>
+              Desbloqueie o Simula PRO
             </h2>
             
-            {/* Subtítulo */}
-            <p className="text-base md:text-lg text-gray-700 mb-6 animate-in slide-in-from-bottom duration-500" style={{ animationDelay: '200ms' }}>
-              Você já utilizou seus <span className="font-semibold text-purple-600">5 análises gratuitas com IA</span>. Faça upgrade para <span className="font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">Simula PRO</span> e tenha acesso ilimitado! 🚀
+            {/* Subtítulo persuasivo - Compacto */}
+            <p className={`text-[13px] ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-8 max-w-md mx-auto leading-relaxed`}>
+              Você atingiu o limite gratuito. Tenha acesso a <span className={`font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>análises ilimitadas, IA exclusiva e banco completo.</span>
             </p>
 
-            {/* Lista de benefícios com cards animados */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5 mb-6 shadow-md border border-purple-200/30 animate-in slide-in-from-bottom" style={{ animationDelay: '400ms', animationDuration: '500ms' }}>
-              <h3 className="text-lg font-semibold text-gray-800 mb-5 flex items-center justify-center gap-2">
-                <span className="animate-bounce">✨</span>
-                <span>Com o Simula PRO você terá:</span>
-                <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>✨</span>
-              </h3>
+            <div className={`w-full h-px ${theme === 'dark' ? 'bg-white/[0.05]' : 'bg-black/[0.03]'} mb-10`}></div>
+
+            {/* Lista de benefícios (Compact Premium Glass Tiles) */}
+            <div className="mb-8">
+              <p className={`text-[9px] font-bold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} uppercase tracking-[0.2em] mb-4 text-center`}>
+                VANTAGENS EXCLUSIVAS DO SIMULA PRO
+              </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-w-3xl mx-auto">
-                {/* Benefício 1 */}
-                <div className="group bg-gradient-to-br from-purple-50/90 to-purple-100/50 rounded-xl p-3.5 border border-purple-200/50 hover:border-purple-400 hover:shadow-lg transform hover:scale-[1.02] hover:-translate-y-0.5 transition-all animate-in slide-in-from-left" style={{ animationDelay: '600ms', animationDuration: '500ms' }}>
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md group-hover:animate-bounce">
-                      <span className="text-lg">🔄</span>
+            {/* Lista de benefícios (8 tópicos com ícones coloridos) */}
+            <div className="mb-8 text-left max-w-2xl mx-auto px-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                {[
+                  { icon: <Rocket className="w-5 h-5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
+                  { icon: <Library className="w-5 h-5" />, color: '#007AFF', text: "Biblioteca de provas" },
+                  { icon: <Activity className="w-5 h-5" />, color: '#34C759', text: "Estatística em tempo real" },
+                  { icon: <Cpu className="w-5 h-5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
+                  { icon: <Lightbulb className="w-5 h-5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
+                  { icon: <GraduationCap className="w-5 h-5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
+                  { icon: <BarChart3 className="w-5 h-5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
+                  { icon: <Headset className="w-5 h-5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
+                ].map((benefit, index) => (
+                  <div key={index} className="flex items-center gap-3 group">
+                    <div 
+                      className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                      style={{ backgroundColor: `${benefit.color}15`, color: benefit.color }}
+                    >
+                      {benefit.icon}
                     </div>
-                    <div className="text-left">
-                      <p className="font-semibold text-gray-800 mb-0.5 text-[15px] tracking-tight">Análises Ilimitadas</p>
-                      <p className="text-[13px] text-gray-600">Explicações detalhadas por IA para todas as suas questões</p>
-                    </div>
+                    <span className={`text-[14.5px] font-medium leading-[1.3]
+                      ${theme === 'dark' ? 'text-white/85' : 'text-black/85'}
+                    `} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                      {benefit.text}
+                    </span>
                   </div>
-                </div>
-
-                {/* Benefício 2 */}
-                <div className="group bg-gradient-to-br from-blue-50/90 to-blue-100/50 rounded-xl p-3.5 border border-blue-200/50 hover:border-blue-400 hover:shadow-lg transform hover:scale-[1.02] hover:-translate-y-0.5 transition-all animate-in slide-in-from-right" style={{ animationDelay: '800ms', animationDuration: '500ms' }}>
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md group-hover:animate-bounce">
-                      <span className="text-lg">🤖</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-semibold text-gray-800 mb-0.5 text-[15px] tracking-tight">IA Personalizada</p>
-                      <p className="text-[13px] text-gray-600">Análise do seu raciocínio e dicas personalizadas</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Benefício 3 */}
-                <div className="group bg-gradient-to-br from-cyan-50/90 to-cyan-100/50 rounded-xl p-3.5 border border-cyan-200/50 hover:border-cyan-400 hover:shadow-lg transform hover:scale-[1.02] hover:-translate-y-0.5 transition-all animate-in slide-in-from-left" style={{ animationDelay: '1000ms', animationDuration: '500ms' }}>
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md group-hover:animate-bounce">
-                      <span className="text-lg">🎯</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-semibold text-gray-800 mb-0.5 text-[15px] tracking-tight">Simulados Ilimitados</p>
-                      <p className="text-[13px] text-gray-600">Acesso completo a questões e simulados exclusivos</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Benefício 4 */}
-                <div className="group bg-gradient-to-br from-indigo-50/90 to-indigo-100/50 rounded-xl p-3.5 border border-indigo-200/50 hover:border-indigo-400 hover:shadow-lg transform hover:scale-[1.02] hover:-translate-y-0.5 transition-all animate-in slide-in-from-right" style={{ animationDelay: '1200ms', animationDuration: '500ms' }}>
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md group-hover:animate-bounce">
-                      <span className="text-lg">📊</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-semibold text-gray-800 mb-0.5 text-[15px] tracking-tight">Conteúdo Premium</p>
-                      <p className="text-[13px] text-gray-600">Materiais exclusivos e relatórios avançados</p>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
+            </div>
 
-            {/* Botões de ação */}
-            <div className="space-y-3.5 animate-in slide-in-from-bottom" style={{ animationDelay: '1400ms', animationDuration: '500ms' }}>
+            <div className={`w-full h-px ${theme === 'dark' ? 'bg-white/[0.05]' : 'bg-black/[0.03]'} mb-10`}></div>
+
+            {/* Botões de ação (High-End Commercial Style) */}
+            <div className="flex flex-col items-center space-y-5 animate-in slide-in-from-bottom duration-300 ease-in-out" style={{ animationDelay: '300ms' }}>
               <button
                 onClick={() => window.location.href = '/paidPlan'}
-                className="group relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white font-semibold text-base px-8 py-4 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.15)] hover:shadow-purple-500/40 transform hover:scale-[1.02] active:scale-95 transition-all duration-300 w-full md:w-auto mx-auto animate-pulse"
+                className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white font-bold text-[14px] px-8 py-3.5 rounded-[12px] shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transform active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-blue-500/20"
               >
-                {/* Efeito de brilho deslizante */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                
-                {/* Partículas de energia */}
-                <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-white rounded-full animate-ping opacity-75"></div>
-                <div className="absolute bottom-0 left-0 w-1.5 h-1.5 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0.5s' }}></div>
-                
-                <div className="relative flex items-center justify-center gap-2.5">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-12 transition-transform duration-300">
-                    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-                  </svg>
-                  <span>Fazer Upgrade para PRO Agora</span>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform duration-300">
-                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-                  </svg>
-                </div>
+                Garantir Simula PRO agora
               </button>
 
-              {/* Texto secundário */}
-              <p className="text-[13px] text-gray-600 flex items-center justify-center gap-2">
-                <span className="animate-bounce">💰</span>
-                <strong>Planos a partir de R$ 41,50/mês</strong>
-                <span>•</span>
-                <span>Cancele quando quiser</span>
-              </p>
+              {/* Trust signals e preço clear */}
+              <div className="flex flex-col items-center gap-2">
+                <div className={`flex items-center gap-3 text-[13px] ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} font-medium`}>
+                   <div className={`flex items-center gap-1.5 ${theme === 'dark' ? 'bg-white/[0.05]' : 'bg-gray-100'} px-2.5 py-1 rounded-lg`}>
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                      <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-bold`}>R$ 41,50/mês</span>
+                   </div>
+                   <div className="flex items-center gap-1">
+                      <CheckCircle size={14} className="text-emerald-500" />
+                      <span>Sem fidelidade</span>
+                   </div>
+                </div>
+                <p className={`text-[11px] ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>Pagamento 100% seguro via Mercado pago ou PIX</p>
+              </div>
             </div>
           </div>
         </div>

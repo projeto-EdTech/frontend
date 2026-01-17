@@ -155,7 +155,7 @@ export default function PrivacyPolicyPage() {
                     ? 'text-gray-300'
                     : 'text-[#1d1d1f]'
                 }`}>
-                  Sua privacidade é fundamental para nós. Esta Política de Privacidade explica como coletamos, usamos, protegemos e compartilhamos suas informações ao utilizar o site www.simulavest.com e nossos serviços digitais.
+                  Sua privacidade é fundamental para nós. Esta Política de Privacidade explica como coletamos, usamos, protegemos e compartilhamos suas informações ao utilizar o site www.vestibuline.com e nossos serviços digitais.
                 </p>
               </motion.div>
 
@@ -455,14 +455,14 @@ export default function PrivacyPolicyPage() {
                       }`}>
                         Em caso de dúvidas sobre esta Política de Privacidade, entre em contato pelo e-mail{" "}
                         <a 
-                          href="mailto:simulavest_suporte@gmail.com" 
+                          href="mailto:suporte@vestibuline.com" 
                           className={`font-semibold transition-colors duration-200 break-all ${
                             theme === 'dark'
                               ? 'text-blue-400 hover:text-blue-300'
                               : 'text-blue-600 hover:text-blue-700'
                           }`}
                         >
-                          simulavest_suporte@gmail.com
+                          suporte@vestibuline.com
                         </a>.
                       </p>
                     </div>

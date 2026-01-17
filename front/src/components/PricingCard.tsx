@@ -1,0 +1,342 @@
+"use client";
+
+import React from "react";
+import { motion } from "framer-motion";
+import { Rocket, Library, Activity, Cpu, Lightbulb, GraduationCap, BarChart3, Headset, Gift, Crown, Gem } from "lucide-react";
+
+interface Benefit {
+  icon: React.ReactNode;
+  color?: string;
+  text: string;
+}
+
+interface PricingCardProps {
+  title: string;
+  subtitle: string;
+  pricePrefix?: string;
+  priceMain: string;
+  priceDecimal?: string;
+  priceSuffix?: string;
+  billingCycleInfo?: string;
+  oldPrice?: string;
+  badge?: string;
+  highlighted?: boolean;
+  icon: React.ReactNode;
+  benefits: Benefit[];
+  buttonText: string;
+  buttonLink: string;
+  buttonVariant: "primary" | "secondary" | "outline";
+  onButtonClick?: (e: React.MouseEvent<any>) => void;
+  delay?: number;
+}
+
+const PricingCard: React.FC<PricingCardProps> = ({
+  title,
+  subtitle,
+  pricePrefix = "R$",
+  priceMain,
+  priceDecimal,
+  priceSuffix,
+  billingCycleInfo,
+  oldPrice,
+  badge,
+  highlighted = false,
+  icon,
+  benefits,
+  buttonText,
+  buttonLink,
+  buttonVariant,
+  onButtonClick,
+  delay = 0,
+}) => {
+  const isPrimary = buttonVariant === "primary";
+  const isOutline = buttonVariant === "outline";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: delay, ease: "easeOut" }}
+      whileHover={{ y: -4, boxShadow: "0 12px 30px rgba(0,0,0,0.06)" }}
+      className={`w-full max-w-[340px] md:max-w-[350px] mx-auto relative rounded-[12px] p-6 md:p-8 flex flex-col text-center transition-all duration-250 ease-out h-full min-h-[720px] ${
+        highlighted
+          ? "bg-white border-[2.5px] border-[#007AFF] shadow-[0_20px_40px_rgba(0,122,255,0.15)] scale-[1.02] lg:scale-105 z-10 p-6 md:p-10 rounded-[14px] min-h-[740px]"
+          : "bg-white/80 backdrop-blur-sm border border-black/[0.04] shadow-[0_2px_12px_rgba(0,0,0,0.03)]"
+      }`}
+    >
+      {badge && (
+        <div className={`absolute -top-[16px] left-1/2 -translate-x-1/2 z-20`}>
+          <div className="bg-[#007AFF] text-white px-4 py-1.5 rounded-full text-[12px] font-bold tracking-[0.8px] shadow-[0_4px_12px_rgba(0,122,255,0.3)] uppercase whitespace-nowrap">
+            {badge}
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10 flex flex-col h-full">
+        <div className={`flex justify-center mb-6 ${
+          highlighted ? "text-[#007AFF] drop-shadow-[0_4px_8px_rgba(0,122,255,0.3)]" : "text-black/40"
+        }`}>
+          {highlighted ? (
+            <div className="w-[48px] h-[48px] flex items-center justify-center">
+              {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 48 }) : icon}
+            </div>
+          ) : (
+            <div className="w-[40px] h-[40px] flex items-center justify-center">
+              {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 40 }) : icon}
+            </div>
+          )}
+        </div>
+
+        <h3
+          className={`${
+            highlighted ? "text-[22pt] md:text-[26pt]" : "text-[24pt] md:text-[32px]"
+          } font-bold text-[#1d1d1f] mb-2`}
+          style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+        >
+          {title}
+        </h3>
+        <p
+          className={`${
+            highlighted ? "text-[14px]" : "text-[14px] md:text-[18px]"
+          } text-black/50 font-normal mb-8`}
+          style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+        >
+          {subtitle}
+        </p>
+
+        {highlighted && (
+          <div className="inline-block mx-auto mb-8 px-4 py-2 bg-[#007AFF]/10 rounded-[8px] border border-[#007AFF]/10">
+            <span
+              className="text-[12pt] md:text-[14pt] font-bold text-[#007AFF]"
+              style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            >
+              Economize 20% agora
+            </span>
+          </div>
+        )}
+
+        <div className={`${highlighted ? "mb-10" : "mb-8"}`}>
+          {oldPrice && (
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span
+                className="text-[14pt] md:text-[16pt] text-black/30 line-through"
+                style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              >
+                {oldPrice}
+              </span>
+            </div>
+          )}
+          <div className="flex items-baseline justify-center">
+            <span
+              className={`${
+                highlighted ? "text-[26pt] md:text-[34pt]" : "text-[20pt] md:text-[32pt]"
+              } font-bold ${highlighted ? "text-[#007AFF]" : "text-black/40"} mr-1`}
+              style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            >
+              {pricePrefix}
+            </span>
+            <span
+              className={`${
+                highlighted ? "text-[44pt] md:text-[60pt] font-black" : "text-[36pt] md:text-[64px] font-bold"
+              } ${highlighted ? "text-[#007AFF]" : "text-[#1d1d1f]"} leading-none`}
+              style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            >
+              {priceMain}
+            </span>
+            {priceDecimal && (
+              <span
+                className={`${
+                  highlighted ? "text-[30pt] md:text-[42pt]" : "text-[20pt] md:text-[42pt]"
+                } font-bold ${highlighted ? "text-[#007AFF]" : "text-[#1d1d1f]"} leading-none`}
+                style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              >
+                {priceDecimal}
+              </span>
+            )}
+            {priceSuffix && (
+              <span
+                className={`${
+                  highlighted ? "text-[16pt] md:text-[20pt]" : "text-[14pt] md:text-[18pt]"
+                } font-medium text-black/40 ml-1`}
+                style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              >
+                {priceSuffix}
+              </span>
+            )}
+          </div>
+          {billingCycleInfo && (
+            <p
+              className={`${
+                highlighted ? "text-[11pt] md:text-[13pt]" : "text-[11pt] md:text-[13pt]"
+              } font-medium text-black/40 mt-3`}
+              style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            >
+              {billingCycleInfo}
+            </p>
+          )}
+          {!billingCycleInfo && !highlighted && (
+             <p className="text-[14px] md:text-[17px] font-medium text-black/40 mt-1" style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+             Para sempre
+           </p>
+          )}
+        </div>
+
+        <div className={`space-y-[12px] text-left ${highlighted ? "mb-10" : "mb-10"} flex-grow`}>
+          {benefits.map((benefit, index) => (
+            <div key={index} className="flex items-center gap-3">
+              <div
+                className={`flex-shrink-0 ${
+                  highlighted ? "w-[34px] h-[34px]" : "w-[32px] h-[32px]"
+                } rounded-full flex items-center justify-center shadow-sm transition-all duration-300`}
+                style={{
+                  backgroundColor: benefit.color ? `${benefit.color}15` : "#34C75915",
+                  color: benefit.color || "#34C759",
+                }}
+              >
+                {benefit.icon}
+              </div>
+              <span
+                className={`text-[14.5px] ${
+                  highlighted ? "font-semibold text-[#1d1d1f]" : "font-medium text-black/60"
+                } leading-tight`}
+                style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              >
+                {benefit.text}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {buttonVariant === "outline" ? (
+          <a
+            href={buttonLink}
+            onClick={onButtonClick}
+            className="h-[46px] w-full bg-transparent border-2 border-[#5856D6]/40 text-[#5856D6] font-semibold text-[15px] rounded-[10px] hover:bg-[#5856D6]/[0.05] transition-all duration-200 flex items-center justify-center active:scale-[0.98]"
+            style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+          >
+            {buttonText}
+          </a>
+        ) : highlighted ? (
+          <a
+            href={buttonLink}
+            onClick={onButtonClick}
+            className="h-[52px] w-full bg-[#007AFF] text-white font-bold text-[17px] rounded-[12px] shadow-[0_8px_20px_rgba(0,122,255,0.4)] hover:bg-[#0051D5] hover:shadow-[0_12px_28px_rgba(0,122,255,0.5)] transition-all duration-200 flex items-center justify-center active:scale-[0.97]"
+            style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+          >
+            {buttonText}
+          </a>
+        ) : (
+          <button
+            onClick={onButtonClick}
+            className="h-[46px] w-full bg-black/[0.03] border border-black/[0.08] text-black/50 font-semibold text-[15px] rounded-[10px] hover:bg-black/[0.06] transition-all duration-200 flex items-center justify-center active:scale-[0.98]"
+            style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+          >
+            {buttonText}
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+export { PricingCard };
+
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface PricingPlansProps {
+  loading: boolean;
+  onPlanClick: (e: React.MouseEvent<any>) => void;
+}
+
+export const PricingPlans: React.FC<PricingPlansProps> = ({ loading, onPlanClick }) => {
+  const plansData = [
+    {
+      title: "Gratuito",
+      subtitle: "Para começar a explorar",
+      priceMain: "0",
+      icon: <Gift className="text-gray-700" size={48}/>,
+      benefits: [
+        { icon: <Rocket className="w-full h-full p-1.5" />, text: "Acesso ilimitado a simulados" },
+        { icon: <Library className="w-full h-full p-1.5" />, text: "Biblioteca de provas" },
+        { icon: <Activity className="w-full h-full p-1.5" />, text: "Estatística em tempo real" }
+      ],
+      buttonText: "Começar Grátis",
+      buttonLink: "/library",
+      buttonVariant: "secondary" as const,
+      onButtonClick: undefined, // Gratuito usa link direto ou comportamento padrão
+      delay: 0
+    },
+    {
+      title: "Simula Pro Anual",
+      subtitle: "Treine como um profissional",
+      highlighted: true,
+      badge: "Mais Popular",
+      oldPrice: "R$ 600",
+      priceMain: "41",
+      priceDecimal: ",50",
+      priceSuffix: "/mês",
+      billingCycleInfo: "Pago anualmente (R$ 497)",
+      icon: <Crown />,
+      benefits: [
+        { icon: <Rocket className="w-full h-full p-1.5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
+        { icon: <Library className="w-full h-full p-1.5" />, color: '#007AFF', text: "Biblioteca de provas" },
+        { icon: <Activity className="w-full h-full p-1.5" />, color: '#34C759', text: "Estatística em tempo real" },
+        { icon: <Cpu className="w-full h-full p-1.5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
+        { icon: <Lightbulb className="w-full h-full p-1.5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
+        { icon: <GraduationCap className="w-full h-full p-1.5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
+        { icon: <BarChart3 className="w-full h-full p-1.5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
+        { icon: <Headset className="w-full h-full p-1.5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
+      ],
+      buttonText: "Assinar Plano Anual",
+      buttonLink: "/paidPlan",
+      buttonVariant: "primary" as const,
+      onButtonClick: onPlanClick,
+      delay: 0.1
+    },
+    {
+      title: "Simula Pro Mensal",
+      subtitle: "Flexibilidade total",
+      priceMain: "50",
+      priceSuffix: "/mês",
+      billingCycleInfo: "Cancele quando quiser",
+      icon: <Gem className="text-gray-700" size={48} />,
+      benefits: [
+        { icon: <Rocket className="w-full h-full p-1.5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
+        { icon: <Library className="w-full h-full p-1.5" />, color: '#007AFF', text: "Biblioteca de provas" },
+        { icon: <Activity className="w-full h-full p-1.5" />, color: '#34C759', text: "Estatística em tempo real" },
+        { icon: <Cpu className="w-full h-full p-1.5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
+        { icon: <Lightbulb className="w-full h-full p-1.5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
+        { icon: <GraduationCap className="w-full h-full p-1.5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
+        { icon: <BarChart3 className="w-full h-full p-1.5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
+        { icon: <Headset className="w-full h-full p-1.5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
+      ],
+      buttonText: "Assinar Agora",
+      buttonLink: "/paidPlan",
+      buttonVariant: "outline" as const,
+      onButtonClick: onPlanClick,
+      delay: 0.2
+    }
+  ];
+
+  if (loading) {
+    return (
+      <>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-96 rounded-2xl" />
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {plansData.map((plan, index) => (
+        <PricingCard key={index} {...plan} />
+      ))}
+    </>
+  );
+};
+
+export default PricingCard;
+

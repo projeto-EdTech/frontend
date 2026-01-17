@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   try {
     // 1. Ler o corpo da requisição (que vem do frontend)
     const body = await request.json();
-    const { userScore, targetCourse } = body;
+    const { userScore, targetCourse, targetInstitution } = body;
 
     // 2. Validar os dados recebidos
     if (userScore === undefined || targetCourse === undefined) {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     await delay(1500); // 1.5 segundos
 
     // 4. Chamar a lógica de processamento
-    const results = processCutoffResults(userScore, targetCourse);
+    const results = processCutoffResults(userScore, targetCourse, targetInstitution);
 
     // 5. Retornar os resultados como JSON
     return NextResponse.json(results);

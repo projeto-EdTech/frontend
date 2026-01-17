@@ -215,7 +215,7 @@ export default function AccessibilityMenu({
                   <div className="relative w-20 h-20 flex-shrink-0">
                     <Image
                       src="/Mascote/banners/Camaleão_4.png"
-                      alt="Mascote SimulaVest"
+                      alt="Mascote Vestibuline"
                       width={120}
                       height={120}
                       className="object-contain"

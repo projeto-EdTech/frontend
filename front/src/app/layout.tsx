@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NextAuthProvider } from "./providers";
 import { ProfileIconProvider } from "@/contexts/ProfileIconContext";
+import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import SyncUserEffect from "@/components/SyncUserEffect";
 import NavigationSound from "@/components/NavigationSound";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
@@ -29,7 +30,7 @@ const openDyslexic = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SimulaVest",
+  title: "Vestibuline",
   description: "Prepare-se para os principais vestibulares com simulados e automatize seus estudos.",
   icons: {
     icon: "/favicon.ico",
@@ -48,8 +49,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${openDyslexic.variable} antialiased`}
       >
-        <ThemeProvider>
-          <NextAuthProvider>
+        <NextAuthProvider>
+          <ThemeProviderWrapper>
             <ProfileIconProvider>
               <NavigationSound />
               <AccessibilityProvider>
@@ -58,8 +59,8 @@ export default function RootLayout({
                 {children}
               </AccessibilityProvider>
             </ProfileIconProvider>
-          </NextAuthProvider>
-        </ThemeProvider>
+          </ThemeProviderWrapper>
+        </NextAuthProvider>
       </body>
     </html>
   );

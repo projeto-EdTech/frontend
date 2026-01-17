@@ -11,8 +11,33 @@ import {
   CartesianGrid,
   TooltipProps 
 } from "recharts";
-import { TrendingUp, Target, Award, Lock } from "lucide-react"; // Adicionado o ícone Lock
+import { TrendingUp, Target, Award, Lock, Calendar } from "lucide-react";
 import { useTheme } from '@/contexts/ThemeContext';
+
+const monthFullNames: { [key: string]: string } = {
+  "Jan": "Janeiro",
+  "Fev": "Fevereiro",
+  "Mar": "Março",
+  "Abr": "Abril",
+  "Mai": "Maio",
+  "Jun": "Junho",
+  "Jul": "Julho",
+  "Ago": "Agosto",
+  "Set": "Setembro",
+  "Out": "Outubro",
+  "Nov": "Novembro",
+  "Dez": "Dezembro"
+};
+
+// Definição de Pontuação máxima
+const MAX_SCORE = 1000;
+
+// MUDANÇA: Helper para centralizar a lógica de cores e status
+const getScoreStatus = (value: number) => {
+  if (value >= 800) return { color: '#10B981', label: 'Excelente' }; // >= 800 pts
+  if (value >= 600) return { color: '#3B82F6', label: 'Bom progresso' }; // >= 600 pts
+  return { color: '#F59E0B', label: 'Podemos melhorar' }; // < 600 pts
+};
 
 // 1. MAPEAMENTO DOS MESES
 // Usado para encontrar o índice do mês atual
@@ -37,8 +62,20 @@ interface ProgressData {
 
 interface MonthlyProgressChartProps {
   data?: ProgressData[];
-  isPremiumUser?: boolean; // 1. Nova prop para status do plano
+  isPremiumUser?: boolean; // prop para status do plano
+  maxScore?: number; // prop para a pontuação máxima
 }
+
+// Tipo para os períodos de visualização
+type PeriodType = 'bimestral' | 'trimestral' | 'semestral' | 'anual';
+
+// Configuração dos períodos
+const periodConfig: Record<PeriodType, { label: string; months: number; shortLabel: string }> = {
+  bimestral: { label: 'Bimestral', months: 2, shortLabel: '2M' },
+  trimestral: { label: 'Trimestral', months: 3, shortLabel: '3M' },
+  semestral: { label: 'Semestral', months: 6, shortLabel: '6M' },
+  anual: { label: 'Anual', months: 12, shortLabel: '12M' },
+};
 
 type DotRendererProps = {
   cx?: number;
@@ -67,22 +104,23 @@ const LockedTooltip = ({ theme }: { theme: string }) => (
   </div>
 );
 
-// --- Tooltip Padrão (sem alterações) ---
+// --- Tooltip Padrão ---
 const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   const { theme } = useTheme();
   
   if (active && payload && payload.length) {
-    // 3. VERIFICA SE O DADO ESTÁ BLOQUEADO
     const dataPoint = payload[0].payload as ProgressData;
-    if (dataPoint.isLocked) {
-      return <LockedTooltip theme={theme} />;
-    }
+    if (dataPoint.isLocked) return <LockedTooltip theme={theme} />;
 
     const raw = payload[0].value;
     if (raw == null || typeof raw !== 'number') return null;
+    
     const value = raw as number;
-    const isHigh = value >= 80;
-    const isMedium = value >= 60 && value < 80;
+    const status = getScoreStatus(value);
+    
+    // MUDANÇA: Busca o nome completo e converte para MAIÚSCULO
+    // Se não encontrar no mapa, usa o label original como fallback
+    const fullMonthName = (monthFullNames[label] || label).toUpperCase(); 
     
     return (
       <div 
@@ -91,23 +129,24 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
             ? 'bg-gray-800/95 border-gray-700/60 shadow-[0_8px_24px_rgba(0,0,0,0.4)]' 
             : 'bg-white/95 border-gray-200/60 shadow-[0_8px_24px_rgba(0,0,0,0.12)]'
         }`}
-        style={{ borderColor: isHigh ? '#10B981' : isMedium ? '#3B82F6' : '#F59E0B' }}
+        style={{ borderColor: status.color }}
       >
-        <p className={`font-semibold mb-2 text-[13px] ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>{label}</p>
+        {/* MUDANÇA: Aqui usamos fullMonthName ao invés de label */}
+        <p className={`font-semibold mb-2 text-[13px] ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
+          {fullMonthName}
+        </p>
+        
         <div className="flex items-center gap-2.5">
           <div 
             className="w-3 h-3 rounded-full shadow-lg"
-            style={{
-              backgroundColor: isHigh ? '#10B981' : isMedium ? '#3B82F6' : '#F59E0B',
-              boxShadow: `0 0 8px ${isHigh ? '#10B98140' : isMedium ? '#3B82F640' : '#F59E0B40'}`,
-            }}
+            style={{ backgroundColor: status.color, boxShadow: `0 0 8px ${status.color}40` }}
           />
-          <p className="font-semibold text-2xl tracking-tight" style={{ color: isHigh ? '#10B981' : isMedium ? '#3B82F6' : '#F59E0B' }}>
-            {value.toFixed(0)}%
+          <p className="font-semibold text-2xl tracking-tight" style={{ color: status.color }}>
+            {value.toFixed(0)} <span className="text-sm font-medium">pts</span>
           </p>
         </div>
         <p className={`text-[13px] mt-2 font-normal ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-          {isHigh ? '🎉 Excelente desempenho!' : isMedium ? '👍 Bom progresso' : '💪 Continue assim!'}
+          {status.label}
         </p>
       </div>
     );
@@ -211,12 +250,14 @@ const PaywallCTA = ({ theme }: { theme: string }) => (
 
 const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({ 
   data = sampleData, 
-  isPremiumUser = false // 1. Prop recebida, default para 'false'
+  isPremiumUser = false, // 1. Prop recebida, default para 'false'
+  maxScore = MAX_SCORE
 }) => {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('semestral');
   const { theme } = useTheme();
 
-  // 4. PROCESSAMENTO DE DADOS (Clamping e Locking) - BASEADO EM SEMESTRES
+  // 4. PROCESSAMENTO DE DADOS (Clamping e Locking) - BASEADO NO PERÍODO SELECIONADO
   const currentMonthIndex = new Date().getMonth(); // 0 = Jan, 1 = Fev, ..., 11 = Dez
   
   const processedData = useMemo(() => {
@@ -227,26 +268,62 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
       
       return {
         ...item,
-        value: Math.max(0, Math.min(item.value, 100)), // Garante 0-100
+        value: Math.max(0, Math.min(item.value, maxScore)), // Garante 0-maxScore
         isLocked: !isPremiumUser && isFuture // Define se o dado é bloqueado
       };
     });
 
-    // Determina o semestre atual
-    // Se estamos antes de julho (mês 0-5): 1º semestre (Jan-Jun, índices 0-5)
-    // Se estamos em julho ou depois (mês 6-11): 2º semestre (Jul-Dez, índices 6-11)
-    const isFirstSemester = currentMonthIndex < 6;
-    const startIndex = isFirstSemester ? 0 : 6;  // Jan = 0, Jul = 6
-    const endIndex = isFirstSemester ? 6 : 12;   // Jun = 6, Dez = 12
+    // Calcula o intervalo de meses baseado no período selecionado
+    const monthsToShow = periodConfig[selectedPeriod].months;
+    
+    if (selectedPeriod === 'anual') {
+      // Mostra o ano inteiro
+      return allProcessedData;
+    }
+    
+    // Nova lógica: Mostra uma "janela" de X meses centrada no contexto atual
+    // Se estamos no início do ano, mostra os primeiros X meses
+    // Se estamos mais avançados, mostra os últimos X meses até o mês atual
+    
+    // Calcula quantos meses já passaram (incluindo o atual)
+    const monthsElapsed = currentMonthIndex + 1;
+    
+    let startIndex: number;
+    let endIndex: number;
+    
+    if (monthsElapsed <= monthsToShow) {
+      // Se ainda não passaram meses suficientes, mostra do início até completar o período
+      // Ex: Em Janeiro com Trimestral, mostra Jan, Fev, Mar
+      startIndex = 0;
+      endIndex = monthsToShow;
+    } else {
+      // Se já passaram meses suficientes, mostra os últimos X meses até o atual
+      // Ex: Em Abril com Trimestral, mostra Fev, Mar, Abr
+      endIndex = currentMonthIndex + 1;
+      startIndex = endIndex - monthsToShow;
+    }
     
     return allProcessedData.slice(startIndex, endIndex);
-  }, [data, isPremiumUser, currentMonthIndex]);
+  }, [data, isPremiumUser, currentMonthIndex, selectedPeriod, maxScore]);
   
   // 5. CÁLCULO DE ESTATÍSTICAS (APENAS com dados visíveis)
   // Filtra os dados para incluir apenas os que NÃO estão bloqueados
   const visibleData = useMemo(() => {
     return processedData.filter(d => !d.isLocked);
   }, [processedData]);
+
+  // Calcula o intervalo de meses sendo exibidos para o indicador
+  const periodRangeText = useMemo(() => {
+    if (selectedPeriod === 'anual') return 'Ano completo';
+    if (processedData.length === 0) return '';
+    
+    const firstMonth = processedData[0]?.label;
+    const lastMonth = processedData[processedData.length - 1]?.label;
+    
+    if (firstMonth === lastMonth) return monthFullNames[firstMonth] || firstMonth;
+    
+    return `${monthFullNames[firstMonth] || firstMonth} - ${monthFullNames[lastMonth] || lastMonth}`;
+  }, [processedData, selectedPeriod]);
 
   // Todas as estatísticas agora usam 'visibleData'
   const currentValue = visibleData.length > 0 ? visibleData[visibleData.length - 1].value : 0;
@@ -267,7 +344,7 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
     } shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl`}>
       {/* Header com Título e Indicadores (usando 'visibleData') */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-7">
           <div>
             <h2 className={`text-2xl font-semibold mb-1.5 tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
               Progresso Mensal
@@ -276,14 +353,66 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
               Acompanhe sua evolução ao longo do tempo
             </p>
           </div>
-          <div className={`px-5 py-3 rounded-lg transition-all duration-300 ${
-            theme === 'dark'
-              ? 'bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20'
-              : 'bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200/50'
-          } backdrop-blur-sm`}>
-            <p className={`text-[11px] font-medium mb-0.5 uppercase tracking-wide ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Atual</p>
-            <p className={`text-3xl font-semibold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{currentValue.toFixed(0)}%</p>
+          
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Seletor de Período estilo macOS - Segmented Control */}
+            <div 
+              className={`relative inline-flex items-center p-[3px] transition-all duration-300
+                ${theme === 'dark' 
+                  ? 'bg-[#1c1c1e] rounded-[14px] shadow-[inset_0_1px_3px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.05)]' 
+                  : 'bg-[#e8e8ed] rounded-[14px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08),0_1px_0_rgba(255,255,255,0.9)]'}`}
+              style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif' }}
+            >
+              {/* Botões de período com slider integrado */}
+              {(['bimestral', 'trimestral', 'semestral', 'anual'] as PeriodType[]).map((period) => (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => setSelectedPeriod(period)}
+                  className={`relative z-10 px-4 py-[7px] text-center text-[13px] font-medium transition-all duration-200 rounded-[11px] cursor-pointer
+                    ${selectedPeriod === period 
+                      ? theme === 'dark'
+                        ? 'text-white bg-[#3a3a3c] shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]'
+                        : 'text-gray-900 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]'
+                      : theme === 'dark'
+                        ? 'text-gray-500 hover:text-gray-300 bg-transparent'
+                        : 'text-gray-500 hover:text-gray-700 bg-transparent'
+                    }`}
+                  title={`Visualizar últimos ${periodConfig[period].months} meses`}
+                >
+                  <span className="hidden sm:inline">{periodConfig[period].label}</span>
+                  <span className="sm:hidden">{periodConfig[period].shortLabel}</span>
+                </button>
+              ))}
+            </div>
+            
+            {/* Badge de pontuação atual - Glassmorphism style */}
+            <div className={`px-5 py-3 rounded-2xl transition-all duration-300 ${
+              theme === 'dark'
+                ? 'bg-gradient-to-br from-[#2c2c2e]/90 to-[#1c1c1e]/90 border border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.2)]'
+                : 'bg-white/90 border border-black/[0.04] shadow-[0_4px_24px_rgba(0,0,0,0.06)]'
+            } backdrop-blur-xl`}>
+              <p className={`text-[10px] font-semibold mb-1 uppercase tracking-wider ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>Atual</p>
+              <p className={`text-3xl font-bold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{currentValue.toFixed(0)}<span className="text-lg font-medium text-gray-400 ml-0.5">pts</span></p>
+            </div>
           </div>
+        </div>
+        
+        {/* Indicador do período selecionado - Subtle info bar */}
+        <div className={`inline-flex items-center gap-2.5 mb-5 px-4 py-2.5 rounded-full text-[13px] font-medium transition-all duration-300
+          ${theme === 'dark' 
+            ? 'bg-[#2c2c2e]/60 text-gray-300 border border-white/[0.06]' 
+            : 'bg-gray-100/80 text-gray-600 border border-black/[0.04]'}`}
+        >
+          <Calendar className={`w-4 h-4 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+          <span>
+            <span className={`${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>Período:</span>{' '}
+            <strong className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{periodConfig[selectedPeriod].label}</strong>
+            <span className={`mx-1.5 ${theme === 'dark' ? 'text-gray-600' : 'text-gray-300'}`}>•</span>
+            <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+              {periodRangeText}
+            </span>
+          </span>
         </div>
 
         {/* Cards de Estatísticas (usando 'visibleData') */}
@@ -300,7 +429,7 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
               <p className={`text-[13px] font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Tendência</p>
             </div>
             <p className={`text-2xl font-semibold tracking-tight ${trend >= 0 ? (theme === 'dark' ? 'text-green-400' : 'text-green-600') : (theme === 'dark' ? 'text-red-400' : 'text-red-600')}`}>
-              {trend >= 0 ? '+' : ''}{trend.toFixed(1)}%
+              {trend >= 0 ? '+' : ''}{trend.toFixed(1)}pts
             </p>
           </div>
           <div className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${
@@ -314,7 +443,7 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
               </div>
               <p className={`text-[13px] font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Média</p>
             </div>
-            <p className={`text-2xl font-semibold tracking-tight ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{average.toFixed(1)}%</p>
+            <p className={`text-2xl font-semibold tracking-tight ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{average.toFixed(1)}pts</p>
           </div>
           <div className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${
             theme === 'dark' 
@@ -335,15 +464,15 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
         <div className="flex items-center gap-5 text-[13px]">
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${theme === 'dark' ? 'bg-gradient-to-br from-orange-400 to-red-500' : 'bg-gradient-to-br from-orange-500 to-red-600'}`}></div>
-            <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>0-59% Podemos melhorar</span>
+            <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>0-599 Podemos melhorar</span>
           </div>
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${theme === 'dark' ? 'bg-gradient-to-br from-blue-400 to-blue-600' : 'bg-gradient-to-br from-blue-500 to-blue-700'}`}></div>
-            <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>60-79% Em Progresso</span>
+            <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>600-799 Em Progresso</span>
           </div>
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${theme === 'dark' ? 'bg-gradient-to-br from-green-400 to-emerald-600' : 'bg-gradient-to-br from-green-500 to-emerald-700'}`}></div>
-            <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>80-100% Excelente</span>
+            <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>800-1000 Excelente</span>
           </div>
         </div>
       </div>
@@ -402,8 +531,8 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
               tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} 
               axisLine={false} 
               tickLine={false} 
-              tickFormatter={(value) => `${value}%`} 
-              domain={[0, 100]}
+              tickFormatter={(value) => `${value}`} 
+              domain={[0, maxScore]}
               dx={-8}
             />
             
@@ -434,13 +563,13 @@ const MonthlyProgressChart: React.FC<MonthlyProgressChartProps> = ({
                 if (cx == null || cy == null || !payload) return (<g />);
                 const isSelected = payload.label === selectedMonth;
                 const value = payload.value;
-                const color = value >= 80 ? '#10B981' : value >= 60 ? '#3B82F6' : '#F59E0B';
+                const status = getScoreStatus(value);
                 return (
                   <circle 
                     cx={cx} 
                     cy={cy} 
                     r={isSelected ? 6 : 4} 
-                    stroke={color} 
+                    stroke={status.color} 
                     strokeWidth={isSelected ? 2 : 1.5} 
                     fill={theme === 'dark' ? '#1F2937' : '#FFFFFF'} 
                     className="transition-all duration-200" 

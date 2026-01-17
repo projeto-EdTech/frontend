@@ -6,14 +6,10 @@ import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
 import { type CourseResult, type ApiResponse } from '@/lib/dataNotaCorte';
 
-// Define as props que o componente recebe do page.tsx
 interface Props {
   userScore: number;
   defaultTargetCourse: string;
 }
-
-// --- DADOS MOCKADOS E LÓGICA FORAM REMOVIDOS DAQUI ---
-
 
 // --- COMPONENTES AUXILIARES ---
 
@@ -42,7 +38,26 @@ const ResultSkeleton: React.FC<{ theme: string }> = ({ theme }) => (
  */
 const CourseResultCard: React.FC<{ result: CourseResult; theme: string }> = ({ result, theme }) => {
   const isDark = theme === 'dark';
+  const [logoPath, setLogoPath] = React.useState<string | null>(null);
+  const [logoError, setLogoError] = React.useState(false);
   
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const response = await fetch(`/api/get-logo?name=${encodeURIComponent(result.institution)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLogoPath(data.path);
+        } else {
+          setLogoError(true);
+        }
+      } catch (err) {
+        setLogoError(true);
+      }
+    };
+    fetchLogo();
+  }, [result.institution]);
+
   const visuals = {
     approved: {
       icon: CheckCircle,
@@ -87,15 +102,31 @@ const CourseResultCard: React.FC<{ result: CourseResult; theme: string }> = ({ r
       <div className="relative z-10">
         {/* Header com Badge de Status */}
         <div className="flex justify-between items-start mb-5">
-          <div className="flex-1 pr-3">
-            <h3 className={`text-lg font-semibold mb-1.5 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {result.courseName}
-            </h3>
-            <div className="flex items-center gap-1.5">
-              <Building size={14} className={isDark ? 'text-gray-400' : 'text-gray-500'} strokeWidth={2} />
-              <p className={`text-[13px] font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                {result.institution}
-              </p>
+          <div className="flex items-center gap-4 flex-1 pr-3">
+            {/* Logo da Universidade Dinâmica - Agora com busca automática via API interna */}
+            {logoPath && !logoError && (
+              <div className={`relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border ${isDark ? 'bg-white border-gray-700/50' : 'bg-white border-gray-100'} shadow-sm flex items-center justify-center p-1.5 group-hover:scale-105 transition-transform duration-300`}>
+                <Image 
+                  src={logoPath}
+                  alt={`Logo ${result.institution}`}
+                  width={56}
+                  height={56}
+                  className="object-contain"
+                  onError={() => setLogoError(true)}
+                />
+              </div>
+            )}
+
+            <div className="flex-1">
+              <h3 className={`text-lg font-semibold mb-1 tracking-tight leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {result.courseName}
+              </h3>
+              <div className="flex items-center gap-1.5">
+                <Building size={13} className={isDark ? 'text-gray-400' : 'text-gray-500'} strokeWidth={2.5} />
+                <p className={`text-[12px] font-bold ${isDark ? 'text-gray-300' : 'text-gray-600'} uppercase tracking-wider`}>
+                  {result.institution}
+                </p>
+              </div>
             </div>
           </div>
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold ${v.badgeBg} ${v.textColor} border ${v.borderColor} shadow-sm`}>
@@ -174,6 +205,26 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Effect para carregar dados do perfil do sessionStorage ao montar o componente
+   */
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("user_profile_data");
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.targetCourse) {
+          setLocalTargetCourse(parsedData.targetCourse);
+        }
+        if (parsedData.targetExam) {
+          setLocalTargetInstitution(parsedData.targetExam);
+        }
+      } catch (err) {
+        console.error("NotaCorteConsulta: Erro ao carregar dados do sessionStorage:", err);
+      }
+    }
+  }, []);
 
   /**
    * Função principal de consulta (MODIFICADA)
@@ -499,10 +550,23 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
                           </p>
                         </div>
                       </div>
-                      <div className={`px-5 py-2.5 rounded-lg ${isDark ? 'bg-gradient-to-r from-blue-600/25 to-indigo-600/25 border border-blue-500/40' : 'bg-white/80 border border-blue-200'} shadow-md`}>
-                        <p className={`text-[13px] font-medium ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
-                          Curso: <span className={`font-bold text-[15px] ${isDark ? 'text-white' : 'text-gray-900'}`}>{localTargetCourse}</span>
-                        </p>
+                      
+                      <div className="flex flex-wrap gap-3">
+                        {/* Balão do Curso */}
+                        <div className={`px-5 py-2.5 rounded-lg ${isDark ? 'bg-gradient-to-r from-blue-600/25 to-indigo-600/25 border border-blue-500/40' : 'bg-white/80 border border-blue-200'} shadow-md transition-all duration-300`}>
+                          <p className={`text-[13px] font-medium ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
+                            Curso: <span className={`font-bold text-[15px] ${isDark ? 'text-white' : 'text-gray-900'}`}>{localTargetCourse}</span>
+                          </p>
+                        </div>
+
+                        {/* Balão da Instituição (Apenas se houver filtro) */}
+                        {localTargetInstitution && (
+                          <div className={`px-5 py-2.5 rounded-lg ${isDark ? 'bg-gradient-to-r from-purple-600/25 to-indigo-600/25 border border-purple-500/40' : 'bg-white/80 border border-purple-200'} shadow-md animate-in slide-in-from-right-2 duration-300`}>
+                            <p className={`text-[13px] font-medium ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>
+                              Instituição: <span className={`font-bold text-[15px] ${isDark ? 'text-white' : 'text-gray-900'}`}>{localTargetInstitution}</span>
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

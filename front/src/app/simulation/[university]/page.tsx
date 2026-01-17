@@ -25,6 +25,16 @@ interface ErroDetalhado {
   indiceAlternativaCorreta: number;
 }
 
+interface AcertoDetalhado {
+  numero: number;
+  enunciado: string;
+  alternativaCorreta: string;
+  indiceAlternativaCorreta: number;
+  tempoGasto: number;
+  materia: string;
+  conteudo: string;
+}
+
 interface SummaryData {
   university: string;
   year: string | null;
@@ -57,6 +67,9 @@ export default function SimulationPage() {
   const day = searchParams.get("day") || "1";
   const currentUni = universities.find(u => u.slug === universitySlug);
   const numberOfQuestions = currentUni?.totalQuestions ?? Number.parseInt(searchParams.get("totalQuestions") || "3");
+  const simIdParam = searchParams.get("simId");
+
+  const storageKey = `simulation_progress_${universitySlug}_${examYear || 'any'}_${day || 'any'}_${simIdParam || 'none'}`;
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -84,9 +97,28 @@ export default function SimulationPage() {
     // Verificamos se 'questions' não está mais vazio.
     if (questions.length > 0) {
       // Atualizamos o estado 'userAnswers'.
-      setUserAnswers(new Array(questions.length).fill(null));
+      setUserAnswers(prev => {
+        if (prev.length === questions.length) return prev;
+        return new Array(questions.length).fill(null);
+      });
     }
   }, [questions]);
+
+  // Salvar progresso no localStorage
+  useEffect(() => {
+    if (questions.length > 0 && !isFinishing && !isLoading) {
+      const elapsedSeconds = Math.round((Date.now() - startTimestampRef.current) / 1000);
+      const stateToSave = {
+        questions,
+        userAnswers,
+        currentQuestion,
+        timeRemaining,
+        elapsedSeconds,
+        savedAt: Date.now(),
+      };
+      localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    }
+  }, [questions, userAnswers, currentQuestion, timeRemaining, isFinishing, isLoading, storageKey]);
 
   // Buscar dados (API + fallback local) filtrando por year & day
   useEffect(() => {
@@ -194,6 +226,44 @@ export default function SimulationPage() {
     (async () => {
       // --- INÍCIO DA NOVA LÓGICA ---
       try {
+        // 0) Tentar recuperar progresso salvo no localStorage
+        const savedProgressJSON = localStorage.getItem(storageKey);
+        if (savedProgressJSON) {
+          try {
+            const savedState = JSON.parse(savedProgressJSON);
+            // Validação básica
+            if (savedState.questions && savedState.questions.length > 0) {
+              console.log("Restaurando progresso do localStorage...");
+              setQuestions(savedState.questions);
+              setUserAnswers(savedState.userAnswers);
+              setCurrentQuestion(savedState.currentQuestion);
+              if (savedState.timeRemaining !== undefined) {
+                setTimeRemaining(savedState.timeRemaining);
+              }
+              // Restaurar o tempo decorrido
+              if (savedState.elapsedSeconds) {
+                startTimestampRef.current = Date.now() - (savedState.elapsedSeconds * 1000);
+              }
+
+              // Precisamos garantir que os dados da universidade estejam carregados
+              const uniRes = await fetch(`/api/universities/${universitySlug}`, { cache: "no-store" });
+              if (uniRes.ok) {
+                const uData = await uniRes.json();
+                if (!cancelled) setCurrentUniversity(uData);
+              } else {
+                const localUni = universities.find((u) => u.slug === universitySlug);
+                if (localUni && !cancelled) setCurrentUniversity(localUni);
+              }
+
+              setIsLoading(false);
+              return; // Interrompe para não buscar do zero
+            }
+          } catch (e) {
+            console.error("Erro ao restaurar progresso salvo:", e);
+            localStorage.removeItem(storageKey);
+          }
+        }
+
         // 1) Se houver simId via query param, tentamos buscar no store do servidor
         const simId = searchParams.get('simId');
         if (simId) {
@@ -257,12 +327,16 @@ export default function SimulationPage() {
 
   // Função para salvar resultado (declarada cedo para uso em handleFinishExam)
   const saveResultToBackend = useCallback(
-    async (summaryData: SummaryData, errorsData: ErroDetalhado[]) => {
+    async (summaryData: SummaryData, errorsData: ErroDetalhado[], acertosData: AcertoDetalhado[]) => {
       try {
         const response = await fetch("/api/simulations/save-result", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ summary: summaryData, errors: errorsData }),
+          body: JSON.stringify({ 
+            summary: summaryData, 
+            errors: errorsData,
+            acertos: acertosData 
+          }),
         });
         if (!response.ok) {
           const errorResult = await response.json();
@@ -279,17 +353,20 @@ export default function SimulationPage() {
 
   // Função de finalização (declarada antes de timer para evitar closure stale)
   const handleFinishExam = useCallback(async () => {
-    setIsFinishing(true); // <-- SET LOADING STATE TO TRUE
+    setIsFinishing(true);
     console.log("Finalizando o simulado...");
     const finalUserAnswers = [...userAnswers];
     finalUserAnswers[currentQuestion] = selectedAnswer;
 
     const finalErrosDetalhados: ErroDetalhado[] = [];
+    const finalAcertosDetalhados: AcertoDetalhado[] = [];
+
     finalUserAnswers.forEach((userAnswer, index) => {
       const question = questions[index];
       const isCorrect = userAnswer === question.correctAnswer;
+      const textoDoEnunciado = typeof question.text === "string" ? question.text : question.text.principal;
+      
       if (!isCorrect) {
-        const textoDoEnunciado = typeof question.text === "string" ? question.text : question.text.principal;
         finalErrosDetalhados.push({
           numero: index + 1,
           enunciado: textoDoEnunciado,
@@ -297,6 +374,16 @@ export default function SimulationPage() {
           indiceAlternativaCorreta: question.correctAnswer,
           alternativaEscolhida: userAnswer !== null ? question.options[userAnswer] : "Não respondida",
           indiceAlternativaEscolhida: userAnswer,
+          tempoGasto: 0,
+          materia: question.materia?.join(", ") || "Não especificada",
+          conteudo: question.conteudo?.join(", ") || "Não especificado",
+        });
+      } else {
+        finalAcertosDetalhados.push({
+          numero: index + 1,
+          enunciado: textoDoEnunciado,
+          alternativaCorreta: question.options[question.correctAnswer],
+          indiceAlternativaCorreta: question.correctAnswer,
           tempoGasto: 0,
           materia: question.materia?.join(", ") || "Não especificada",
           conteudo: question.conteudo?.join(", ") || "Não especificado",
@@ -328,9 +415,13 @@ export default function SimulationPage() {
       conteudos: Array.from(new Set(questions.flatMap((q) => q.conteudo).filter(Boolean))),
     };
 
+    // Limpar o progresso salvo ao finalizar
+    localStorage.removeItem(storageKey);
+
     sessionStorage.setItem("simulationSummary", JSON.stringify(summaryData));
     sessionStorage.setItem("simulationErrors", JSON.stringify(finalErrosDetalhados));
-    await saveResultToBackend(summaryData, finalErrosDetalhados);
+    sessionStorage.setItem("simulationCorrect", JSON.stringify(finalAcertosDetalhados));
+    await saveResultToBackend(summaryData, finalErrosDetalhados, finalAcertosDetalhados);
     router.push(`/simulation/${universitySlug}/summary?year=${examYear || ""}&day=${day}`);
   }, [userAnswers, currentQuestion, selectedAnswer, questions, universitySlug, examYear, day, saveResultToBackend, router]);
 
@@ -472,7 +563,7 @@ export default function SimulationPage() {
               <div className="absolute top-5 right-75 z-10 hidden sm:block">
                 <Image 
                   src="/Mascote/banners/Camaleão_24.png" 
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   className="w-16 h-16 sm:w-20 sm:h-20 object-contain opacity-90 hover:opacity-100 transition-opacity"
                   width={100}
                   height={100}
@@ -632,7 +723,7 @@ export default function SimulationPage() {
                 <button
                     onClick={handlePreviousQuestion}
                     disabled={currentQuestion === 0}
-                    className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 sm:py-4 px-4 sm:px-8 rounded-xl sm:rounded-2xl transition-all duration-300 active:scale-95 sm:transform sm:hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base flex-1 sm:flex-initial"
+                    className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 sm:py-4 px-4 sm:px-8 rounded-xl sm:rounded-2xl transition-all duration-300 active:scale-95 sm:transform sm:hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base flex-1 sm:flex-initial cursor-pointer"
                 >
                     Voltar
                 </button>
@@ -640,7 +731,7 @@ export default function SimulationPage() {
                 {/* Botão Próximo/Concluir */}
                 <button
                     onClick={handleNextQuestion}
-                    className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 sm:py-4 px-4 sm:px-8 rounded-xl sm:rounded-2xl transition-all duration-300 active:scale-95 sm:transform sm:hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base flex-1 sm:flex-initial"
+                    className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 sm:py-4 px-4 sm:px-8 rounded-xl sm:rounded-2xl transition-all duration-300 active:scale-95 sm:transform sm:hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base flex-1 sm:flex-initial cursor-pointer"
                 >
                     {currentQuestion === questions.length - 1 ? 'Concluir' : 'Próximo'}
                 </button>

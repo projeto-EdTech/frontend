@@ -1,28 +1,12 @@
 "use client"
 
-/* 
- * ESTILO MACOS - Design System
- * Cores principais:
- * - Azul: #0071e3 (Primary)
- * - Verde: #34c759 (Success)
- * - Laranja: #ff9500 (Warning)
- * - Cinza Claro: #f5f5f7 (Background)
- * - Cinza Médio: #86868b (Secondary Text)
- * - Cinza Escuro: #1d1d1f (Primary Text)
- * - Borda: #d2d2d7
- * 
- * Tipografia: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto
- * Bordas: rounded-xl (12px), rounded-2xl (16px)
- * Sombras: shadow-md, shadow-lg
- * Transições: duration-300, duration-500
- */
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
 import CreditCardForm from "@/components/payment/CreditCardForm";
 import PixForm from "@/components/payment/PixForm";
 import BoletoForm from "@/components/payment/BoletoForm";
-import { Check, CreditCard, Smartphone, FileText, Shield, Sparkles, ArrowRight, Lock, Users, Clock, ArrowLeft, NotebookPen, Library, ChartNoAxesCombined, Bot, CalendarDays, ChartSpline } from "lucide-react";
+import { Check, CreditCard, Smartphone, FileText, Shield, Sparkles, ArrowRight, Lock, Users, Clock, ArrowLeft, NotebookPen, Library, ChartNoAxesCombined, Bot, CalendarDays, ChartSpline, Rocket, Activity, Cpu, Lightbulb, GraduationCap, BarChart3, Headset } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { initMercadoPago } from '@mercadopago/sdk-react';
@@ -49,7 +33,27 @@ export default function ModernPaidPlan() {
     initMercadoPago(process.env.NEXT_PUBLIC_MERCADO_PAGO_KEY!,{
         locale: 'pt-BR',
     });
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    
+    // Verificar autenticação ao carregar a página
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            setIsLoginModalOpen(true);
+        }
+    }, [status]);
+
+    const beneficiosPadrao = [
+        { texto: "Acesso ilimitado a simulados", icone: <Rocket className="w-5 h-5" />, color: '#5856D6' },
+        { texto: "Biblioteca de provas", icone: <Library className="w-5 h-5" />, color: '#007AFF' },
+        { texto: "Estatística em tempo real", icone: <Activity className="w-5 h-5" />, color: '#34C759' },
+        { texto: "Resolução com IA (PRO)", icone: <Cpu className="w-5 h-5" />, color: '#FF2D55' },
+        { texto: "Plano de estudos otimizado", icone: <Lightbulb className="w-5 h-5" />, color: '#FFCC00' },
+        { texto: "Consulta de notas de corte", icone: <GraduationCap className="w-5 h-5" />, color: '#FF3B30' },
+        { texto: "Estatísticas avançadas", icone: <BarChart3 className="w-5 h-5" />, color: '#5E5CE6' },
+        { texto: "Suporte prioritário 24/7", icone: <Headset className="w-5 h-5" />, color: '#FF9500' }
+    ];
+
     const planos = [
         {
             id: "anual",
@@ -59,15 +63,7 @@ export default function ModernPaidPlan() {
             precoTotal: 497,
             desconto: "Estude o ano todo e ganhe 2 meses grátis!",
             popular: true,
-            beneficios: [
-                { texto: "Acesso ilimitado a simulados", icone: <NotebookPen className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Biblioteca de provas", icone: <Library className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Estatísticas de desempenho em tempo real", icone: <ChartNoAxesCombined className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Questões de provas resolvidas com IA", icone: <Bot className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Plano de estudos otimizado", icone: <CalendarDays className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Estatísticas avançadas", icone: <ChartSpline className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Suporte prioritário 24/7", icone: <Users className="w-5 h-5 text-emerald-500" /> }
-            ]
+            beneficios: beneficiosPadrao
         },
         {
             id: "mensal",
@@ -76,15 +72,7 @@ export default function ModernPaidPlan() {
             precoMensal: 50,
             precoTotal: 50,
             popular: false,
-            beneficios: [
-                { texto: "Acesso ilimitado a simulados", icone: <NotebookPen className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Biblioteca de provas", icone: <Library className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Estatísticas de desempenho em tempo real", icone: <ChartNoAxesCombined className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Questões de provas resolvidas com IA", icone: <Bot className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Plano de estudos otimizado", icone: <CalendarDays className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Estatísticas avançadas", icone: <ChartSpline className="w-5 h-5 text-emerald-500" /> },
-                { texto: "Suporte prioritário 24/7", icone: <Users className="w-5 h-5 text-emerald-500" /> }
-            ]
+            beneficios: beneficiosPadrao
         }
     ];
 
@@ -609,7 +597,7 @@ export default function ModernPaidPlan() {
                 <div className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 hidden md:block transition-transform duration-700 hover:scale-110">
                     <Image 
                         src="/Mascote/banners/Camaleão_13.png" 
-                        alt="Mascote SimulaVest" 
+                        alt="Mascote Vestibuline" 
                         width={180} 
                         height={180}
                         className="drop-shadow-2xl"
@@ -620,7 +608,7 @@ export default function ModernPaidPlan() {
                 <div className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 hidden md:block transition-transform duration-700 hover:scale-110">
                     <Image 
                         src="/Mascote/banners/Camaleão_19.png" 
-                        alt="Mascote SimulaVest" 
+                        alt="Mascote Vestibuline" 
                         width={220} 
                         height={220}
                         className="drop-shadow-2xl"
@@ -762,14 +750,21 @@ export default function ModernPaidPlan() {
                                             </div>
                                         </div>
 
-                                        <ul className="space-y-3 mb-8 flex-grow">
-                                            {plano.beneficios.map((beneficio, idx) => (
-                                                <li key={idx} className="flex items-center text-gray-700 transition-all" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-                                                    {beneficio.icone}
-                                                    <span className="ml-3 text-[15px]">{beneficio.texto}</span>
-                                                </li>
+                                        <div className="grid grid-cols-1 gap-3 mb-8 flex-grow">
+                                            {plano.beneficios.map((beneficio: any, idx) => (
+                                                <div key={idx} className="flex items-center gap-3 group/item">
+                                                    <div 
+                                                        className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover/item:scale-110 shadow-sm border border-black/5"
+                                                        style={{ backgroundColor: `${beneficio.color}15`, color: beneficio.color }}
+                                                    >
+                                                        {beneficio.icone}
+                                                    </div>
+                                                    <span className="text-gray-700 text-[14.5px] font-medium leading-tight" style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                                                        {beneficio.texto}
+                                                    </span>
+                                                </div>
                                             ))}
-                                        </ul>
+                                        </div>
 
                                         <button
                                             type="button"
@@ -1040,7 +1035,14 @@ export default function ModernPaidPlan() {
                     </div>
                 </div>
             </main>
-        <Footer />
+        
+        {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/paidPlan"
+        isRequired={status === 'unauthenticated'}
+      />        <Footer />
         </div>
     );
 }

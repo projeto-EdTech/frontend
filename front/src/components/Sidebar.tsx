@@ -280,7 +280,7 @@ export default function Sidebar() {
           <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 relative transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
             <Image 
               src="/Mascote/banners/Camaleão_15.png" 
-              alt="Mascote SimulaVest" 
+              alt="Mascote Vestibuline" 
               width={80} 
               height={80} 
               className="object-contain w-full h-full drop-shadow-xl" 

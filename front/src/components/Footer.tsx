@@ -14,10 +14,10 @@ export default function Footer() {
             <Link href="/" className="group flex items-center mb-6 hover:scale-105 transition-all duration-300 w-fit">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
-                <Image src="/favicon.ico" alt="SimulaVest Logo" width={48} height={48} className="relative z-10" />
+                <Image src="/favicon.ico" alt="Vestibuline Logo" width={48} height={48} className="relative z-10" />
               </div>
               <span className="themed-logo-gradient font-bold text-2xl ml-3 group-hover:from-blue-500 group-hover:via-purple-500 group-hover:to-cyan-500 transition-all duration-300">
-                SimulaVest
+                Vestibuline
               </span>
             </Link>
             <p className="themed-text-secondary text-base leading-relaxed max-w-sm">
@@ -98,7 +98,7 @@ export default function Footer() {
         <div className="relative mt-16 pt-8 border-t themed-border">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
             <p className="themed-text-secondary text-sm font-medium">
-              © 2025 <span className="font-bold themed-text">SimulaVest</span>. Todos os direitos reservados. 💙
+              © 2025 <span className="font-bold themed-text">Vestibuline</span>. Todos os direitos reservados. 💙
             </p>
             
             {/* Redes sociais com animações aprimoradas */}
@@ -106,7 +106,7 @@ export default function Footer() {
               <span className="themed-text-secondary text-sm font-medium mr-2 animate-pulse">Siga-nos:</span>
               <div className="flex gap-3">
                 {/* Instagram */}
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" 
+                <a href="https://instagram.com/vestibuline" target="_blank" rel="noopener noreferrer" aria-label="Instagram" 
                    className="group relative p-2.5 themed-card-bg themed-border rounded-lg overflow-hidden transition-all duration-300 hover:scale-110 hover:-translate-y-1 hover:shadow-lg hover:shadow-pink-500/20">
                   {/* Efeito de brilho */}
                   <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-orange-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
@@ -121,7 +121,7 @@ export default function Footer() {
                 </a>
                 
                 {/* Twitter/X */}
-                <a href="https://x.com/SimulaVest" target="_blank" rel="noopener noreferrer" aria-label="Twitter" 
+                <a href="https://x.com/vestibuline" target="_blank" rel="noopener noreferrer" aria-label="Twitter" 
                    className="group relative p-2.5 themed-card-bg themed-border rounded-lg overflow-hidden transition-all duration-300 hover:scale-110 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/20">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   <div className="absolute inset-0 rounded-lg bg-blue-500 opacity-0 group-hover:opacity-20 scale-0 group-hover:scale-100 transition-all duration-500"></div>
@@ -145,7 +145,7 @@ export default function Footer() {
                 </a>
                 
                 {/* TikTok */}
-                <a href="https://www.tiktok.com/@simulavest" target="_blank" rel="noopener noreferrer" aria-label="TikTok" 
+                <a href="https://www.tiktok.com/@vestibuline" target="_blank" rel="noopener noreferrer" aria-label="TikTok" 
                    className="group relative p-2.5 themed-card-bg themed-border rounded-lg overflow-hidden transition-all duration-300 hover:scale-110 hover:-translate-y-1 hover:shadow-lg hover:shadow-gray-500/20">
                   <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   <div className="absolute inset-0 rounded-lg bg-gray-600 opacity-0 group-hover:opacity-20 scale-0 group-hover:scale-100 transition-all duration-500"></div>
@@ -157,7 +157,7 @@ export default function Footer() {
                 </a>
                 
                 {/* YouTube */}
-                <a href="https://www.youtube.com/@SimulaVest" target="_blank" rel="noopener noreferrer" aria-label="YouTube" 
+                <a href="https://www.youtube.com/@vestibuline" target="_blank" rel="noopener noreferrer" aria-label="YouTube" 
                    className="group relative p-2.5 themed-card-bg themed-border rounded-lg overflow-hidden transition-all duration-300 hover:scale-110 hover:-translate-y-1 hover:shadow-lg hover:shadow-red-500/20">
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   <div className="absolute inset-0 rounded-lg bg-red-500 opacity-0 group-hover:opacity-20 scale-0 group-hover:scale-100 transition-all duration-500"></div>

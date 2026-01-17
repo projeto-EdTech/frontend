@@ -53,7 +53,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${post.title} | Blog Simulavest`,
+    title: `${post.title} | Blog Vestibuline`,
     description: post.excerpt,
     openGraph: {
       title: post.title,
@@ -95,7 +95,7 @@ export default async function BlogPostPage({
   }
 
   // Garante que métricas existam mesmo se ausentes na fonte
-  const stats = post.stats ?? { views: 0, likes: 0 };
+  const stats = post.stats ?? { views: 0.0, likes: 0.0 };
 
   return (
     <div className="themed-main-container min-h-screen force-themed-bg flex flex-col bg-[#f5f5f7]">
@@ -144,7 +144,7 @@ export default async function BlogPostPage({
               >
                 <Image
                   src="/Mascote/banners/Camaleão_5.png"
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   width={200}
                   height={200}
                   className="drop-shadow-2xl hover:scale-110 transition-transform duration-300"
@@ -158,7 +158,7 @@ export default async function BlogPostPage({
               >
                 <Image
                   src="/Mascote/banners/Camaleão_15.png"
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   width={200}
                   height={200}
                   className="drop-shadow-2xl hover:scale-110 transition-transform duration-300"
@@ -253,7 +253,7 @@ export default async function BlogPostPage({
                   <div className="absolute right-4 bottom-0 opacity-60 pointer-events-none">
                     <Image
                       src="/Mascote/banners/Camaleão_24.png"
-                      alt="Mascote SimulaVest"
+                      alt="Mascote Vestibuline"
                       width={150}
                       height={150}
                       className="drop-shadow-lg"
@@ -266,7 +266,7 @@ export default async function BlogPostPage({
                     </div>
                     <div className="flex-1">
                       <h4 className="text-xl font-bold text-gray-900 mb-2">
-                        Equipe SimulaVest
+                        Equipe Vestibuline
                       </h4>
                       <p className="text-gray-600 mb-4 leading-relaxed">
                         Especialistas em vestibulares com mais de 10 anos de
@@ -472,7 +472,7 @@ export default async function BlogPostPage({
                   <div className="absolute inset-0 bg-white rounded-full blur-3xl"></div>
                   <Image
                     src="/Mascote/banners/Camaleão_18.png"
-                    alt="Mascote SimulaVest Comemorando"
+                    alt="Mascote Vestibuline Comemorando"
                     width={180}
                     height={180}
                     className="drop-shadow-2xl relative z-10"

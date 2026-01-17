@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -45,6 +45,13 @@ export default function ArenaPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const router = useRouter();
 
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
+
   // Verificar se o usuário tem plano pago
   const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
 
@@ -83,7 +90,7 @@ export default function ArenaPage() {
 
               {/* Título - macOS Style */}
               <h1 className="text-5xl md:text-7xl font-bold themed-text mb-6 tracking-tight">
-                Arena SimulaVest
+                Arena Vestibuline
               </h1>
 
               {/* Subtítulo - macOS Style */}
@@ -148,7 +155,7 @@ export default function ArenaPage() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Image
                       src="/Mascote/banners/Camaleão_22.png"
-                      alt="Mascote SimulaVest Arena"
+                      alt="Mascote Vestibuline Arena"
                       width={220}
                       height={220}
                       className="w-52 h-52 md:w-60 md:h-60 object-contain drop-shadow-2xl"
@@ -445,11 +452,11 @@ export default function ArenaPage() {
           </div>
         </div>
       </main>
-
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        redirectTo="/paidPlan"
+        redirectTo="/Arena"
+        isRequired={status === 'unauthenticated'}
       />
 
       <Footer />

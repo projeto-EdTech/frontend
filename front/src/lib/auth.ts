@@ -94,7 +94,7 @@ export const authOptions: NextAuthOptions = {
   let userTier: "FREE" | "Simula PRO" = "FREE"; // Padrão é FREE
         // Verifica se o e-mail do usuário é o específico para o teste
         if (user.email === "fegrolla0210@gmail.com") {
-          userTier = "Simula PRO"; // Atribui o tier de teste
+          userTier = "FREE"; // Atribui o tier de teste
           console.log(`[JWT] Usuário de teste ${user.email} identificado. Atribuindo tier: ${userTier}`);
         }
         // Calcula expiracao com fallback de 1h quando não fornecida

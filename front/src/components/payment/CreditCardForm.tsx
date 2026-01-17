@@ -161,7 +161,7 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                     <div className="relative w-24 h-24 flex-shrink-0">
                         <Image 
                             src="/Mascote/banners/Camaleão_1.png" 
-                            alt="Mascote SimulaVest"
+                            alt="Mascote Vestibuline"
                             width={96}
                             height={96}
                             className="object-contain transition-transform duration-700 hover:scale-110"
@@ -172,7 +172,7 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                             Estamos quase lá! 🎉
                         </h3>
                         <p className="text-[#86868b] leading-relaxed" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-                            Complete o pagamento e comece sua jornada de preparação com o SimulaVest
+                            Complete o pagamento e comece sua jornada de preparação com o Vestibuline
                         </p>
                     </div>
                 </div>
@@ -245,7 +245,7 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                             💪 Invista no seu futuro!
                         </h4>
                         <p className="text-white/90 leading-relaxed mb-4" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-                            Milhares de estudantes já conquistaram suas aprovações com o SimulaVest. 
+                            Milhares de estudantes já conquistaram suas aprovações com o Vestibuline. 
                             Você é o próximo!
                         </p>
                         <div className="flex flex-wrap gap-3">

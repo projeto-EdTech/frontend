@@ -56,7 +56,7 @@ const LoadingScreen = ({ message = "Carregando vestibulares" }: LoadingScreenPro
                   loop
                   muted
                   playsInline
-                  aria-label="Mascote animado do SimulaVest"
+                  aria-label="Mascote animado do Vestibuline"
                 >
                 </video>
               </div>
@@ -102,10 +102,10 @@ const LoadingScreen = ({ message = "Carregando vestibulares" }: LoadingScreenPro
           </div>
         </div>
 
-        {/* Marca SimulaVest discreta e refinada */}
+        {/* Marca Vestibuline discreta e refinada */}
         <div className="mt-10 text-center">
           <p className="text-xs text-slate-400 font-semibold tracking-[0.2em] mb-1.5">
-            SIMULAVEST
+            vestibuline
           </p>
           <p className="text-[10px] text-slate-500 tracking-wide">
             Plataforma de Simulados

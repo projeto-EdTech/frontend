@@ -41,7 +41,7 @@ export default function NotFound() {
                 <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96">
                   <Image
                     src="/Mascote/banners/Camaleão_34.png"
-                    alt="Mascote SimulaVest"
+                    alt="Mascote Vestibuline"
                     fill
                     className="object-contain drop-shadow-2xl"
                     priority
@@ -182,7 +182,7 @@ export default function NotFound() {
               {/* Footer */}
               <div className="pt-6 border-t border-gray-200">
                 <p className="text-xs text-gray-500 text-center sm:text-left">
-                  © {new Date().getFullYear()} SimulaVest · Prepare-se para os principais vestibulares
+                  © {new Date().getFullYear()} Vestibuline · Prepare-se para os principais vestibulares
                 </p>
               </div>
             </div>

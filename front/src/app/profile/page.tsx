@@ -268,7 +268,7 @@ export default function ProfilePage() {
       
       const fetchCutoff = async () => {
         try {
-          const response = await fetch('/api/Nota-corte/att-progress', {
+          const response = await fetch('/api/Nota-corte', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ targetExam, targetCourse }),
@@ -478,12 +478,9 @@ export default function ProfilePage() {
                 </TabsContent>
 
                 <TabsContent value="planner" className="mt-6">
-                  {/* O container abaixo ajuda a dar o fundo escuro */}
-                  <div className="backdrop-blur-md">
-                      <DndProvider backend={HTML5Backend}>
-                        <Planner />
-                      </DndProvider>
-                  </div>
+                  <DndProvider backend={HTML5Backend}>
+                    <Planner />
+                  </DndProvider>
                 </TabsContent>
 
                 {/* Configuracoes Tab Content */}

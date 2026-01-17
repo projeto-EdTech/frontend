@@ -1,14 +1,17 @@
 "use client"
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header"
+import LoginModal from "@/components/Login-modal";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { CheckSquare, Square } from "lucide-react";
 import Footer from "@/components/Footer";
 import { universities,  allQuestions } from "@/lib/dataUniversity";
 import { useRouter } from 'next/navigation';
@@ -62,6 +65,8 @@ const generateSubjectsData = (universitySlug: string | null) => {
 
 export default function CreatePage() {
   const router = useRouter();
+  const { status } = useSession();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedUniversity, setSelectedUniversity] = useState<string | null>(null);
@@ -71,6 +76,35 @@ export default function CreatePage() {
   const [selectedRealYear, setSelectedRealYear] = useState<string | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const subjectsData = useMemo(() => generateSubjectsData(selectedUniversity), [selectedUniversity]);
+
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
+
+  // Função para lidar com a seleção de todos os tópicos de uma matéria
+  const handleSelectAll = (subjectName: string, topics: string[]) => {
+    const topicKeys = topics.map(topic => `${subjectName}-${topic}`);
+    const allSelected = topicKeys.every(key => selectedSubjects.includes(key));
+
+    if (allSelected) {
+      // Desmarcar tudo desta matéria
+      setSelectedSubjects(prev => prev.filter(key => !topicKeys.includes(key)));
+    } else {
+      // Selecionar tudo desta matéria (evitando duplicatas)
+      setSelectedSubjects(prev => {
+        const newSelection = [...prev];
+        topicKeys.forEach(key => {
+          if (!newSelection.includes(key)) {
+            newSelection.push(key);
+          }
+        });
+        return newSelection;
+      });
+    }
+  };
 
   // Função para lidar com a seleção de universidade no simulado real
   const handleRealUniversityChange = (slug: string) => {
@@ -223,7 +257,7 @@ export default function CreatePage() {
                     value="real" 
                     className="flex items-center gap-1 sm:gap-2 rounded-[10px] py-2.5 sm:py-3 px-2 sm:px-4 font-semibold text-[13px] sm:text-[14px] transition-all duration-300 ease-in-out
                               data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-[0_2px_8px_rgba(0,122,255,0.25)] data-[state=active]:scale-[1.02]
-                              hover:bg-[#f5f5f7] text-gray-700 relative overflow-hidden cursor-pointer"
+                              text-gray-700 hover:!text-white hover:bg-blue-500 relative overflow-hidden cursor-pointer"
                   >
                     <span className="text-sm sm:text-lg transition-transform duration-300">🎯</span>
                     <span className="relative z-10 transition-all duration-300">Simulado Mix</span>
@@ -232,7 +266,7 @@ export default function CreatePage() {
                     value="estudo" 
                     className="flex items-center gap-1 sm:gap-2 rounded-[10px] py-2.5 sm:py-3 px-2 sm:px-4 font-semibold text-[13px] sm:text-[14px] transition-all duration-300 ease-in-out
                               data-[state=active]:bg-[#6366f1] data-[state=active]:text-white data-[state=active]:shadow-[0_2px_8px_rgba(88,86,214,0.25)] data-[state=active]:scale-[1.02]
-                              hover:bg-[#f5f5f7] text-gray-700 relative overflow-hidden cursor-pointer"
+                              text-gray-700 hover:bg-[#6366f1] hover:!text-white relative overflow-hidden cursor-pointer"
                   >
                     <span className="text-sm sm:text-lg transition-transform duration-300">📚</span>
                     <span className="relative z-10 transition-all duration-300">Simulado Personalizado</span>
@@ -251,7 +285,7 @@ export default function CreatePage() {
                       <div className="hidden lg:block absolute top-1 right-1 z-20">
                         <Image 
                           src="/Mascote/banners/Camaleão_10.png" 
-                          alt="Mascote SimulaVest" 
+                          alt="Mascote Vestibuline" 
                           width={120} 
                           height={120}
                           className="w-24 h-24 object-contain opacity-90 hover:opacity-100 transition-opacity"
@@ -274,7 +308,7 @@ export default function CreatePage() {
                                 <SelectItem 
                                   key={uni.slug} 
                                   value={uni.slug}
-                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:bg-[#f5f5f7] transition-colors"
+                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:!text-blue-500 hover:bg-gray-200 transition-colors cursor-pointer"
                                 >
                                   {uni.name.toUpperCase()}
                                 </SelectItem>
@@ -298,7 +332,7 @@ export default function CreatePage() {
                                 <SelectItem 
                                   key={qtd} 
                                   value={qtd.toString()}
-                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:bg-[#f5f5f7] transition-colors"
+                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:!text-blue-500 hover:bg-gray-200 transition-colors cursor-pointer"
                                 >
                                   {qtd} questões
                                 </SelectItem>
@@ -364,7 +398,7 @@ export default function CreatePage() {
                       <div className="hidden lg:block absolute top-1 right-1 z-20">
                         <Image 
                           src="/Mascote/banners/Camaleão_10.png" 
-                          alt="Mascote SimulaVest" 
+                          alt="Mascote Vestibuline" 
                           width={120} 
                           height={120}
                           className="w-24 h-24 object-contain opacity-90 hover:opacity-100 transition-opacity"
@@ -387,7 +421,7 @@ export default function CreatePage() {
                                 <SelectItem 
                                   key={uni.slug} 
                                   value={uni.slug}
-                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:bg-[#f5f5f7] transition-colors"
+                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:!text-[#5856D6] hover:bg-gray-200 transition-colors cursor-pointer"
                                 >
                                   {uni.name.toUpperCase()}
                                 </SelectItem>
@@ -408,7 +442,7 @@ export default function CreatePage() {
                               <div className="flex flex-col items-center gap-4">
                                 <Image 
                                   src="/Mascote/banners/Camaleão_5.png" 
-                                  alt="Mascote SimulaVest" 
+                                  alt="Mascote Vestibuline" 
                                   width={100} 
                                   height={100}
                                   className="w-20 h-20 sm:w-24 sm:h-24 object-contain opacity-50"
@@ -422,46 +456,71 @@ export default function CreatePage() {
                             // CASO 2: Universidade selecionada E HÁ matérias
                             <div className="bg-white rounded-[12px] p-4 sm:p-6 border border-gray-200">
                               <Accordion type="multiple" className="w-full space-y-2">
-                                {subjectsData.map((subject) => (
-                                  <AccordionItem 
-                                    value={subject.name} 
-                                    key={subject.name}
-                                    className="border border-gray-200 rounded-[10px] px-3 sm:px-4 bg-white hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200"
-                                  >
-                                    <AccordionTrigger className="font-semibold text-[14px] sm:text-[15px] hover:text-[#5856D6] transition-colors py-3 sm:py-4">
-                                      <span className="flex items-center gap-2">
-                                        <span>📖</span>
-                                        {subject.name}
-                                      </span>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pt-3 sm:pt-4 pb-4">
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                                        {subject.topics.map((topic) => {
-                                          const key = `${subject.name}-${topic}`;
-                                          const isSelected = selectedSubjects.includes(key);
-                                          return (
-                                            <label 
-                                              key={key} 
-                                              className={`flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-[8px] border cursor-pointer transition-all duration-200 ${
-                                                isSelected 
-                                                  ? 'border-[#5856D6] bg-white text-[#5856D6]' 
-                                                  : 'border-gray-200 bg-white hover:border-[#5856D6]/50 hover:bg-[#f5f5f7]'
-                                              }`}
-                                            >
-                                              <Checkbox
-                                                id={key}
-                                                checked={isSelected}
-                                                onCheckedChange={(checked) => handleTopicChange(subject.name, topic, !!checked)}
-                                                className="data-[state=checked]:bg-[#5856D6] data-[state=checked]:border-[#5856D6] mt-0.5 flex-shrink-0"
-                                              />
-                                              <span className="text-[12px] sm:text-[13px] font-medium leading-tight">{topic}</span>
-                                            </label>
-                                          );
-                                        })}
-                                      </div>
-                                    </AccordionContent>
-                                  </AccordionItem>
-                                ))}
+                                {subjectsData.map((subject) => {
+                                  const topicKeys = subject.topics.map(t => `${subject.name}-${t}`);
+                                  const isAllSelected = topicKeys.length > 0 && topicKeys.every(key => selectedSubjects.includes(key));
+                                  
+                                  return (
+                                    <AccordionItem 
+                                      value={subject.name} 
+                                      key={subject.name}
+                                      className="border border-gray-200 rounded-[10px] px-3 sm:px-4 bg-white hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200"
+                                    >
+                                      <AccordionTrigger className="font-semibold text-[14px] sm:text-[15px] hover:text-[#5856D6] transition-colors py-3 sm:py-4 cursor-pointer">
+                                        <span className="flex items-center gap-2">
+                                          <span>📖</span>
+                                          {subject.name}
+                                        </span>
+                                      </AccordionTrigger>
+                                      <AccordionContent className="pt-3 sm:pt-4 pb-4">
+                                        <div className="flex justify-end mb-3">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleSelectAll(subject.name, subject.topics)}
+                                            className="text-[#5856D6] hover:text-[#4640B8] hover:bg-[#5856D6]/10 text-[12px] font-semibold h-8 px-2 cursor-pointer"
+                                          >
+                                            {isAllSelected ? (
+                                              <span className="flex items-center gap-1.5">
+                                                <CheckSquare className="w-4 h-4" />
+                                                Desmarcar todos
+                                              </span>
+                                            ) : (
+                                              <span className="flex items-center gap-1.5">
+                                                <Square className="w-4 h-4" />
+                                                Selecionar todos
+                                              </span>
+                                            )}
+                                          </Button>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                                          {subject.topics.map((topic) => {
+                                            const key = `${subject.name}-${topic}`;
+                                            const isSelected = selectedSubjects.includes(key);
+                                            return (
+                                              <label 
+                                                key={key} 
+                                                className={`flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-[8px] border cursor-pointer transition-all duration-200 ${
+                                                  isSelected 
+                                                    ? 'border-[#5856D6] bg-white text-[#5856D6]' 
+                                                    : 'border-gray-200 bg-white hover:border-[#5856D6]/50 hover:bg-[#f5f5f7]'
+                                                }`}
+                                              >
+                                                <Checkbox
+                                                  id={key}
+                                                  checked={isSelected}
+                                                  onCheckedChange={(checked) => handleTopicChange(subject.name, topic, !!checked)}
+                                                  className="data-[state=checked]:bg-[#5856D6] data-[state=checked]:border-[#5856D6] mt-0.5 flex-shrink-0"
+                                                />
+                                                <span className="text-[12px] sm:text-[13px] font-medium leading-tight">{topic}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  );
+                                })}
                               </Accordion>
                             </div>
                           ) : (
@@ -470,7 +529,7 @@ export default function CreatePage() {
                               <div className="flex flex-col items-center gap-4">
                                 <Image 
                                   src="/Mascote/banners/Camaleão_7.png" 
-                                  alt="Mascote SimulaVest" 
+                                  alt="Mascote Vestibuline" 
                                   width={100} 
                                   height={100}
                                   className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
@@ -498,7 +557,7 @@ export default function CreatePage() {
                                 <SelectItem 
                                   key={qtd} 
                                   value={qtd.toString()}
-                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:bg-[#f5f5f7] transition-colors"
+                                  className="text-[14px] sm:text-[15px] py-2.5 text-gray-700 hover:!text-[#5856D6] hover:bg-gray-200 transition-colors cursor-pointer"
                                 >
                                   {qtd} questões
                                 </SelectItem>
@@ -572,6 +631,15 @@ export default function CreatePage() {
           </div>
         </div>
       </main>
+
+      {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/create"
+        isRequired={status === 'unauthenticated'}
+      />
+
       <Footer />
     </div>
   )

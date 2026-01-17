@@ -2,6 +2,7 @@
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -44,8 +45,9 @@ const staggerItem = {
 };
 
 export default function ContatoPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { theme } = useTheme();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -57,7 +59,12 @@ export default function ContatoPage() {
   const [submitMessage, setSubmitMessage] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // Refs para animações de scroll
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);  // Refs para animações de scroll
   const heroRef = useRef(null);
   const formSectionRef = useRef(null);
   const socialSectionRef = useRef(null);
@@ -197,7 +204,7 @@ export default function ContatoPage() {
               >
                 <Image
                   src="/Mascote/banners/Camaleão_1.png"
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   width={160}
                   height={160}
                   className="drop-shadow-2xl"
@@ -226,7 +233,7 @@ export default function ContatoPage() {
               >
                 <Image
                   src="/Mascote/banners/Camaleão_3.png"
-                  alt="Mascote SimulaVest"
+                  alt="Mascote Vestibuline"
                   width={140}
                   height={140}
                   className="drop-shadow-2xl"
@@ -364,7 +371,7 @@ export default function ContatoPage() {
                           Email
                         </h3>
                         <p className={`font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                          simulavest_suporte@gmail.com
+                          suporte@vestibuline.com
                         </p>
                         <p className={`text-sm mt-2 flex items-center gap-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                           <CheckCircle size={12} className="text-green-500" />
@@ -796,14 +803,14 @@ export default function ContatoPage() {
                   Acompanhe nossas novidades
                 </p>
                 <a 
-                  href="https://www.instagram.com/simulavest/" 
+                  href="https://www.instagram.com/Vestibuline/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className={`inline-flex items-center gap-2 font-semibold ${
                     theme === 'dark' ? 'text-pink-400 hover:text-pink-300' : 'text-pink-600 hover:text-pink-500'
                   }`}
                 >
-                  @simulavest
+                  @vestibuline
                 </a>
               </motion.div>
 
@@ -936,7 +943,6 @@ export default function ContatoPage() {
           }}
         />
       </main>
-
       <motion.div
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
@@ -944,6 +950,14 @@ export default function ContatoPage() {
       >
         <Footer />
       </motion.div>
+
+      {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/contato"
+        isRequired={status === 'unauthenticated'}
+      />
     </div>
   );
 }

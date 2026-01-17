@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { User, Bot, Menu, FileText, FileImage, FileAudio, FileVideo, File } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ChatSidebar from "@/components/Simula_PRO/chatbot/ChatSidebar";
 import ChatInput from "@/components/Simula_PRO/chatbot/ChatInput";
+import LoginModal from "@/components/Login-modal";
+import PremiumFeatureModal from "@/components/PremiumFeatureModal";
 import Image from "next/image";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -20,6 +23,9 @@ interface Message {
 
 export default function IATutorPage() {
   const { theme } = useTheme();
+  const { data: session, status } = useSession();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +34,18 @@ export default function IATutorPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+
+  // Verificar se o usuário tem plano pago
+  const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
+
+  // Efeito para verificar se o usuário está autenticado e se tem plano pago
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    } else if (status === 'authenticated' && !hasPaidPlan) {
+      setIsPremiumModalOpen(true);
+    }
+  }, [status, hasPaidPlan]);
 
   // Função para obter o ícone apropriado baseado no tipo de arquivo
   const getFileIcon = (fileType: string, fileName: string) => {
@@ -492,6 +510,20 @@ export default function IATutorPage() {
         </main>
       </div>
       <Footer />
+
+      <PremiumFeatureModal
+        isOpen={isPremiumModalOpen}
+        onClose={() => setIsPremiumModalOpen(false)}
+        featureName="VestIA"
+        featureDescription="Seu tutor de IA personalizado para vestibulares"
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo="/VestIA"
+        isRequired={status === 'unauthenticated'}
+      />
     </div>
   );
 }

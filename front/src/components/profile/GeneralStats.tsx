@@ -123,7 +123,7 @@ const GeneralStats: React.FC<GeneralStatsProps> = ({ session, status, formData, 
             <div className="relative mb-6 group">
               {/* AQUI ESTÁ A SUBSTITUIÇÃO */}
               <UserAvatar 
-                name={session?.user?.name || ''}
+                name={session?.user?.name}
                 className="w-28 h-28 text-4xl ring-4 ring-white shadow-lg group-hover:scale-105 transition-all duration-300"
                 customIcon={formData.useInitialAvatar ? undefined : formData.profileIcon}
               />

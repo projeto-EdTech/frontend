@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Edit, Settings } from "lucide-react";
@@ -33,6 +33,102 @@ interface UserConfigProps {
 export default function UserConfig({ formData, setFormData, onSave, onCancel }: UserConfigProps) {
   const { data: session } = useSession();
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [universitiesList, setUniversitiesList] = useState<{ name: string; slug: string }[]>([]);
+  const [coursesList, setCoursesList] = useState<string[]>([]);
+  const [filteredExams, setFilteredExams] = useState<string[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<string[]>([]);
+  const [showExamAutocomplete, setShowExamAutocomplete] = useState(false);
+  const [showCourseAutocomplete, setShowCourseAutocomplete] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{ targetExam?: string; targetCourse?: string }>({});
+
+  // Carregar dados das universidades para o autocomplete
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      try {
+        const response = await fetch('/api/universities');
+        if (response.ok) {
+          const data = await response.json();
+          setUniversitiesList(data);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar universidades:", error);
+      }
+    };
+    fetchUniversities();
+  }, []);
+
+  // Carregar dados dos cursos para o autocomplete
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        // Como a rota Nota-corte é POST, podemos ter que adaptar ou usar os dados diretamente se houver um GET.
+        // Se não houver GET, buscamos de dataNotaCorte.ts (simulando a API)
+        const response = await fetch('/api/Nota-corte', {
+          method: 'POST',
+          body: JSON.stringify({ userScore: 0, targetCourse: '' })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const uniqueCourses = Array.from(new Set(data.allResults.map((r: any) => r.courseName))) as string[];
+          setCoursesList(uniqueCourses);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar cursos:", error);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  // Carregar dados do sessionStorage ao carregar a página
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("user_profile_data");
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setFormData((prev) => ({
+          ...prev,
+          ...parsedData,
+        }));
+      } catch (error) {
+        console.error("Erro ao carregar dados do SessionStorage:", error);
+      }
+    }
+  }, [setFormData]);
+
+  // Função para salvar no SessionStorage e avisar o componente pai
+  const handleSaveInternal = () => {
+    // Validação antes de salvar
+    const errors: { targetExam?: string; targetCourse?: string } = {};
+    
+    const isValidExam = universitiesList.some(uni => uni.name.toLowerCase() === formData.targetExam.toLowerCase());
+    const isValidCourse = coursesList.some(course => course.toLowerCase() === formData.targetCourse.toLowerCase());
+
+    if (formData.targetExam && !isValidExam) {
+      errors.targetExam = "Por favor, selecione uma universidade válida.";
+    }
+
+    if (formData.targetCourse && !isValidCourse) {
+      errors.targetCourse = "Por favor, selecione um curso válido.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return; // Interrompe o salvamento
+    }
+
+    setValidationErrors({}); // Limpa erros se tudo estiver ok
+
+    const dataToSave = {
+      institution: formData.institution,
+      targetExam: formData.targetExam,
+      targetCourse: formData.targetCourse,
+      profileIcon: formData.profileIcon,
+      useInitialAvatar: formData.useInitialAvatar,
+    };
+    
+    sessionStorage.setItem("user_profile_data", JSON.stringify(dataToSave));
+    onSave();
+  };
 
   // Lista de ícones disponíveis organizados por categoria
   const availableIcons = {
@@ -48,6 +144,50 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Limpar o erro do campo quando o usuário digita
+    if (validationErrors[name as keyof typeof validationErrors]) {
+      setValidationErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+
+    // Lógica específica para o autocomplete da Prova Alvo
+    if (name === 'targetExam') {
+      if (value.length > 0) {
+        const filtered = universitiesList
+          .filter(uni => uni.name.toLowerCase().includes(value.toLowerCase()))
+          .map(uni => uni.name);
+        setFilteredExams(filtered);
+        setShowExamAutocomplete(true);
+      } else {
+        setFilteredExams([]);
+        setShowExamAutocomplete(false);
+      }
+    }
+
+    // Lógica específica para o autocomplete do Curso Alvo
+    if (name === 'targetCourse') {
+      if (value.length > 0) {
+        const filtered = coursesList
+          .filter(course => course.toLowerCase().includes(value.toLowerCase()));
+        setFilteredCourses(filtered);
+        setShowCourseAutocomplete(true);
+      } else {
+        setFilteredCourses([]);
+        setShowCourseAutocomplete(false);
+      }
+    }
+  };
+
+  const selectExam = (examName: string) => {
+    setFormData(prev => ({ ...prev, targetExam: examName }));
+    setShowExamAutocomplete(false);
+    setValidationErrors(prev => ({ ...prev, targetExam: undefined }));
+  };
+
+  const selectCourse = (courseName: string) => {
+    setFormData(prev => ({ ...prev, targetCourse: courseName }));
+    setShowCourseAutocomplete(false);
+    setValidationErrors(prev => ({ ...prev, targetCourse: undefined }));
   };
 
   const handleIconSelect = (iconPath: string) => {
@@ -66,6 +206,8 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
     }));
     setIsIconModalOpen(false);
   };
+
+  const hasErrors = !!validationErrors.targetExam || !!validationErrors.targetCourse;
 
   return (
     <>
@@ -140,8 +282,10 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
             </div>
 
             {/* Target Exam */}
-            <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-400">
-              <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+            <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-400 relative">
+              <label className={`block text-xs font-medium mb-2 uppercase tracking-wide transition-colors duration-200 ${
+                validationErrors.targetExam ? 'text-red-500 font-bold' : 'text-gray-600'
+              }`}>
                 Prova Alvo
               </label>
               <input
@@ -150,13 +294,44 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
                 placeholder="Ex: FUVEST, ENEM, UNICAMP"
                 value={formData.targetExam}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white transition-all duration-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-400"
+                onBlur={() => setTimeout(() => setShowExamAutocomplete(false), 200)}
+                onFocus={() => {
+                  if (formData.targetExam.length > 0) setShowExamAutocomplete(true);
+                }}
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white transition-all duration-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-400 ${
+                  validationErrors.targetExam ? 'border-red-500 ring-1 ring-red-500/20' : 'border-gray-300'
+                }`}
+                autoComplete="off"
               />
+              
+              {validationErrors.targetExam && (
+                <p className="text-red-500 text-[10px] mt-1 font-semibold animate-in fade-in slide-in-from-top-1">
+                  {validationErrors.targetExam}
+                </p>
+              )}
+              
+              {/* Autocomplete Suggestions */}
+              {showExamAutocomplete && filteredExams.length > 0 && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                  {filteredExams.map((exam, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => selectExam(exam)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-b border-gray-50 last:border-0 transition-colors duration-150 cursor-pointer"
+                    >
+                      {exam}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Target Course */}
-            <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-400">
-              <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
+            <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-400 relative">
+              <label className={`block text-xs font-medium mb-2 uppercase tracking-wide transition-colors duration-200 ${
+                validationErrors.targetCourse ? 'text-red-500 font-bold' : 'text-gray-600'
+              }`}>
                 Curso Alvo
               </label>
               <input
@@ -165,8 +340,37 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
                 placeholder="Ex: Medicina, Engenharia, Direito"
                 value={formData.targetCourse}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white transition-all duration-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-400"
+                onBlur={() => setTimeout(() => setShowCourseAutocomplete(false), 200)}
+                onFocus={() => {
+                  if (formData.targetCourse.length > 0) setShowCourseAutocomplete(true);
+                }}
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white transition-all duration-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-400 ${
+                  validationErrors.targetCourse ? 'border-red-500 ring-1 ring-red-500/20' : 'border-gray-300'
+                }`}
+                autoComplete="off"
               />
+
+              {validationErrors.targetCourse && (
+                <p className="text-red-500 text-[10px] mt-1 font-semibold animate-in fade-in slide-in-from-top-1">
+                  {validationErrors.targetCourse}
+                </p>
+              )}
+
+              {/* Autocomplete Suggestions */}
+              {showCourseAutocomplete && filteredCourses.length > 0 && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                  {filteredCourses.map((course, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => selectCourse(course)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-b border-gray-50 last:border-0 transition-colors duration-150 cursor-pointer"
+                    >
+                      {course}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Profile Icon Selector */}
@@ -237,8 +441,13 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
             {/* Save button */}
             <div className="pt-6 flex gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <button 
-                onClick={onSave}
-                className="px-6 py-2.5 bg-gradient-to-b from-blue-500 to-blue-600 shadow-lg hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer active:scale-95"
+                onClick={handleSaveInternal}
+                disabled={hasErrors}
+                className={`px-6 py-2.5 shadow-lg text-white text-sm font-medium rounded-lg transition-all duration-200 active:scale-95 ${
+                  hasErrors 
+                    ? 'bg-gray-400 cursor-not-allowed opacity-70 shadow-none' 
+                    : 'bg-gradient-to-b from-blue-500 to-blue-600 hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 cursor-pointer'
+                }`}
               >
                 Salvar Alterações
               </button>

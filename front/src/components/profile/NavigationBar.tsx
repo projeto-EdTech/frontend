@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, BarChart2, Settings, AlertCircle, CalendarDays, Target } from "lucide-react";
+import { useSession } from 'next-auth/react';
 
 interface NavigationBarProps {
   activeTab: string;
@@ -7,9 +8,12 @@ interface NavigationBarProps {
 }
 
 const NavigationBar: React.FC<NavigationBarProps> = ({ activeTab, setActiveTab }) => {
+  const { data: session } = useSession();
+  const isPRO = session?.user?.tier === 'Simula PRO';
+
   return (
     <div className="mb-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-md p-1.5 inline-flex space-x-2">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-md p-1.5 flex w-full justify-between items-center">
         <button
           onClick={() => setActiveTab('profile')}
           className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
@@ -57,28 +61,32 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ activeTab, setActiveTab }
           <AlertCircle size={18} className="flex-shrink-0" />
           <span className="hidden lg:inline">Questões não resolvidas</span>
         </button>
-        <button
-          onClick={() => setActiveTab('planner')}
-          className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 items-center gap-2 hidden md:flex cursor-pointer ${
-            activeTab === 'planner'
-              ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <CalendarDays size={18} className="flex-shrink-0" />
-          <span className="hidden lg:inline">Planner de estudos</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('notasDeCorte')}
-          className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-            activeTab === 'notasDeCorte'
-              ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Target size={18} className="flex-shrink-0" />
-          <span className="hidden lg:inline">Notas de Corte</span>
-        </button>
+        {isPRO && (
+          <>
+            <button
+              onClick={() => setActiveTab('planner')}
+              className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 items-center gap-2 hidden md:flex cursor-pointer ${
+                activeTab === 'planner'
+                  ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <CalendarDays size={18} className="flex-shrink-0" />
+              <span className="hidden lg:inline">Planner de estudos</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('notasDeCorte')}
+              className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                activeTab === 'notasDeCorte'
+                  ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Target size={18} className="flex-shrink-0" />
+              <span className="hidden lg:inline">Notas de Corte</span>
+            </button>
+          </>
+        )}
         <button
           onClick={() => setActiveTab('configuracoes')}
           className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${

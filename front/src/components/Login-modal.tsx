@@ -9,9 +9,10 @@ interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
   redirectTo?: string
+  isRequired?: boolean
 }
 
-export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, redirectTo, isRequired = false }: LoginModalProps) {
   const [mounted, setMounted] = useState(false)
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
   const [agreed, setAgreed] = useState(false)
@@ -41,15 +42,20 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
   if (!mounted || !isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-300" onClick={isRequired ? undefined : onClose}>
       <div
         className="relative bg-white dark:backdrop-blur-md dark:bg-white w-full h-full sm:w-full sm:max-w-md sm:h-auto sm:max-h-[95vh] m-0 sm:mx-4 rounded-none sm:rounded-3xl border-0 sm:border border-gray-200 p-4 sm:p-6 xl:p-8 shadow-none sm:shadow-2xl shadow-gray-500/20 animate-in zoom-in-95 duration-300 transform scale-100 sm:scale-110 xl:scale-90 overflow-y-auto [&::-webkit-scrollbar]:hidden flex flex-col justify-center"
         onClick={(e) => e.stopPropagation()}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <button 
-          onClick={onClose} 
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-500 hover:text-red-500 hover:bg-red-100 rounded-full p-2 transition-all duration-300 z-50 cursor-pointer"
+          onClick={onClose}
+          disabled={isRequired}
+          className={`absolute top-3 right-3 sm:top-4 sm:right-4 rounded-full p-2 transition-all duration-300 z-50 ${
+            isRequired 
+              ? 'opacity-30 cursor-not-allowed' 
+              : 'text-gray-500 hover:text-red-500 hover:bg-red-100 cursor-pointer'
+          }`}
         >
           <X size={20} />
         </button>
@@ -61,7 +67,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
             <div className="relative w-50 h-50 sm:w-35 sm:h-35 xl:w-[120px] xl:h-[120px] animate-in zoom-in duration-500">
               <Image
                 src="/Mascote/banners/Camaleão_10.png"
-                alt="Mascote SimulaVest"
+                alt="Mascote Vestibuline"
                 fill
                 className="object-contain drop-shadow-2xl"
                 priority
@@ -72,7 +78,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
           {/* Badge: Margens e paddings reduzidos no mobile */}
           <div className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-2.5 sm:px-4 sm:py-2 xl:px-6 xl:py-2 rounded-full text-xs xl:text-sm font-semibold mb-2 sm:mb-4 xl:mb-1 shadow-lg shadow-purple-500/30 w-fit mx-auto">
             <span className="text-lg sm:text-lg xl:text-lg">🚀</span>
-            <span>Bem-vindo ao SimulaVest</span>
+            <span>Bem-vindo ao Vestibuline</span>
           </div>
           
           <h2 className="text-xl sm:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent mb-1 sm:mb-2 xl:mb-4">
@@ -83,13 +89,24 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
             Escolha sua forma preferida de entrar
           </p>
 
+          {isRequired && (
+            <div className="mb-4 p-3 sm:p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+              <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-amber-800 font-medium">
+                É necessário fazer login para acessar esta página
+              </p>
+            </div>
+          )}
+
           {/* Grid: Gap reduzido de 3 para 2 no mobile */}
           <div className="grid grid-cols-1 gap-3 sm:gap-3 xl:gap-4 w-full">
             {/* Microsoft - Padding reduzido para p-3 no mobile */}
             <button
               onClick={() => handleLogin("azure-ad")}
               disabled={!agreed || loadingProvider === "azure-ad"}
-              className="group relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
+              className="group relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] cursor-pointer"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-microsoft" viewBox="0 0 16 16">
@@ -102,7 +119,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
             <button
               onClick={() => handleLogin("google")}
               disabled={!agreed || loadingProvider === "google"}
-              className="group relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-red-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
+              className="group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-red-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" viewBox="0 0 16 16">
@@ -115,11 +132,11 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
             <button
               onClick={() => handleLogin("facebook")}
               disabled={!agreed || loadingProvider === "facebook"}
-              className="group relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
+              className="group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" viewBox="0 0 16 16">
-                <path fillRule="evenodd" d="M8.217 5.243C9.145 3.988 10.171 3 11.483 3 13.96 3 16 6.153 16.001 9.907c0 2.29-.986 3.725-2.757 3.725-1.543 0-2.395-.866-3.924-3.424l-.667-1.123-.118-.197a55 55 0 0 0-.53-.877l-1.178 2.08c-1.673 2.925-2.615 3.541-3.923 3.541C1.086 13.632 0 12.217 0 9.973 0 6.388 1.995 3 4.598 3q.477-.001.924.122c.31.086.611.22.913.407.577.359 1.154.915 1.782 1.714m1.516 2.224q-.378-.615-.727-1.133L9 6.326c.845-1.305 1.543-1.954 2.372-1.954 1.723 0 3.102 2.537 3.102 5.653 0 1.188-.39 1.877-1.195 1.877-.773 0-1.142-.51-2.61-2.87zM4.846 4.756c.725.1 1.385.634 2.34 2.001A212 212 0 0 0 5.551 9.3c-1.357 2.126-1.826 2.603-2.581 2.603-.777 0-1.24-.682-1.24-1.9 0-2.602 1.298-5.264 2.846-5.264q.137 0 .27.018"/>
+                <path fillRule="evenodd" d="M8.217 5.243C9.145 3.988 10.171 3 11.483 3 13.96 3 16 6.153 16 9.907c0 2.29-.986 3.725-2.757 3.725-1.543 0-2.395-.866-3.924-3.424l-.667-1.123-.118-.197a55 55 0 0 0-.53-.877l-1.178 2.08c-1.673 2.925-2.615 3.541-3.923 3.541C1.086 13.632 0 12.217 0 9.973 0 6.388 1.995 3 4.598 3q.477-.001.924.122c.31.086.611.22.913.407.577.359 1.154.915 1.782 1.714m1.516 2.224q-.378-.615-.727-1.133L9 6.326c.845-1.305 1.543-1.954 2.372-1.954 1.723 0 3.102 2.537 3.102 5.653 0 1.188-.39 1.877-1.195 1.877-.773 0-1.142-.682-2.61-2.87zM4.846 4.756c.725.1 1.385.634 2.34 2.001A212 212 0 0 0 5.551 9.3c-1.357 2.126-1.826 2.603-2.581 2.603-.777 0-1.24-.682-1.24-1.9 0-2.602 1.298-5.264 2.846-5.264q.137 0 .27.018"/>
               </svg>
               <span className="text-md sm:text-sm xl:text-base font-semibold relative z-10">{loadingProvider === "facebook" ? "Entrando..." : "Continuar com Meta"}</span>
             </button>
@@ -128,7 +145,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo }: LoginModalPr
             <button
               onClick={() => handleLogin("discord")}
               disabled={!agreed || loadingProvider === "discord"}
-              className="group relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
+              className="group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-discord" viewBox="0 0 16 16">

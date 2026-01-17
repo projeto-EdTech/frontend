@@ -77,7 +77,7 @@ export default function ShareModal({ title }: ShareModalProps) {
     { 
         name: 'Instagram', 
         icon: <InstagramIcon />, 
-        url: `https://www.instagram.com/simulavest`, 
+        url: `https://www.instagram.com`, 
     },
   ];
 
@@ -124,7 +124,7 @@ export default function ShareModal({ title }: ShareModalProps) {
         {/* Botão de fechar estilo macOS */}
         <button 
           onClick={closeModal} 
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200/80 hover:bg-gray-300 text-gray-700 transition-all duration-200 group backdrop-blur-sm"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200/80 hover:bg-gray-300 text-gray-700 transition-all duration-200 group backdrop-blur-sm cursor-pointer"
         >
           <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" strokeWidth={2} />
         </button>
@@ -136,7 +136,7 @@ export default function ShareModal({ title }: ShareModalProps) {
             <div className="relative w-20 h-20 mx-auto mb-4 flex items-center justify-center">
               <Image 
                 src="/Mascote/banners/Camaleão_1.png" 
-                alt="Mascote SimulaVest" 
+                alt="Mascote Vestibuline" 
                 width={80} 
                 height={80}
                 className="relative z-10 drop-shadow-lg"
@@ -188,7 +188,7 @@ export default function ShareModal({ title }: ShareModalProps) {
               />
               <button 
                 onClick={copyToClipboard} 
-                className={`px-4 py-2.5 text-xs font-semibold transition-all duration-200 ${
+                className={`px-4 py-2.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   copySuccess 
                     ? 'bg-green-500 hover:bg-green-600 text-white' 
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -212,7 +212,7 @@ export default function ShareModal({ title }: ShareModalProps) {
           <p className="mt-6 text-xs text-gray-500 flex items-center justify-center gap-2">
             <Image 
               src="/Mascote/banners/Camaleão_5.png" 
-              alt="Mascote SimulaVest" 
+              alt="Mascote Vestibuline" 
               width={32} 
               height={32}
               className="inline-block"

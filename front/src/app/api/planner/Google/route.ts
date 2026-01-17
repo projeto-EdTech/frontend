@@ -19,7 +19,7 @@ const googlePalette = [
   { id: '11', hex: '#d50000' }  // Tomato
 ];
 
-// Mapeamento Inverso: ID do Google -> HEX visual para o Front-end (SimulaVest)
+// Mapeamento Inverso: ID do Google -> HEX visual para o Front-end (Vestibuline)
 // Usado no GET para restaurar a cor correta no planner
 const googleIdToHexMap: { [key: string]: string } = {
   '1': '#7986cb',

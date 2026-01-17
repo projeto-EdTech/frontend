@@ -1,9 +1,11 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
 import { useEffect, useState } from "react";
 import { universities } from "@/lib/dataUniversity";
 import TopicPieChart from '@/components/Simula_PRO/graficos_stats/TopicPieChart';
@@ -24,10 +26,19 @@ type VestibularItem = {
 
 export default function EstatisticasPage() {
   const { subject } = useParams();
+  const { status } = useSession();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [metricas, setMetricas] = useState<Metrica[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [vestibularSelecionado, setVestibularSelecionado] = useState<string>("geral");
+  
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
   const [dropdownAberto, setDropdownAberto] = useState(false);
   const [showSubjectFilter, setShowSubjectFilter] = useState(false);
 
@@ -539,6 +550,14 @@ export default function EstatisticasPage() {
           background: rgba(0, 0, 0, 0.3);
         }
       `}</style>
+
+      {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectTo={`/estatisticas/${subject}`}
+        isRequired={status === 'unauthenticated'}
+      />
     </div>
   );
 }

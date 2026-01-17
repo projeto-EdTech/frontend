@@ -20,6 +20,13 @@ export default function GamePage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [game, setGame] = useState<MinigameData | null>(null);
 
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setIsLoginModalOpen(true);
+    }
+  }, [status]);
+
   // Verificar se o usuário tem plano pago
   const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
 
@@ -115,7 +122,8 @@ export default function GamePage() {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
-        redirectTo={`/Arena/${game.slug}`} 
+        redirectTo={`/Arena/${game?.slug}`}
+        isRequired={status === 'unauthenticated'}
       />
     </div>
   );
