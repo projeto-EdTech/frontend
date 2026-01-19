@@ -13,7 +13,7 @@ const config: NextConfig = {
       {
         protocol: 'https',
         hostname: 'raw.githubusercontent.com',
-        pathname: '/SimulaVest-organization/SimulaVest-Docs/**',
+        pathname: '/FALTA CRIAR/**',
       },
       {
         protocol: 'https',
@@ -23,6 +23,8 @@ const config: NextConfig = {
       },
       // Você pode adicionar outros domínios aqui no futuro se precisar
     ],
+  // Permit extra image quality values used in the codebase (fixes "using quality \"85\" which is not configured" warning)
+  qualities: [75, 85],
   },
   // ... outras configurações que você já possa ter no seu arquivo
 };

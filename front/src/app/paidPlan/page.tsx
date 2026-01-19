@@ -6,7 +6,7 @@ import LoginModal from "@/components/Login-modal";
 import CreditCardForm from "@/components/payment/CreditCardForm";
 import PixForm from "@/components/payment/PixForm";
 import BoletoForm from "@/components/payment/BoletoForm";
-import { Check, CreditCard, Smartphone, FileText, Shield, Sparkles, ArrowRight, Lock, Users, Clock, ArrowLeft, NotebookPen, Library, ChartNoAxesCombined, Bot, CalendarDays, ChartSpline, Rocket, Activity, Cpu, Lightbulb, GraduationCap, BarChart3, Headset } from "lucide-react";
+import { Check, CreditCard, Smartphone, FileText, Shield, Sparkles, ArrowRight, Lock, Users, Clock, ArrowLeft, Library, Rocket, Activity, GraduationCap, Headset } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { initMercadoPago } from '@mercadopago/sdk-react';
@@ -47,10 +47,7 @@ export default function ModernPaidPlan() {
         { texto: "Acesso ilimitado a simulados", icone: <Rocket className="w-5 h-5" />, color: '#5856D6' },
         { texto: "Biblioteca de provas", icone: <Library className="w-5 h-5" />, color: '#007AFF' },
         { texto: "Estatística em tempo real", icone: <Activity className="w-5 h-5" />, color: '#34C759' },
-        { texto: "Resolução com IA (PRO)", icone: <Cpu className="w-5 h-5" />, color: '#FF2D55' },
-        { texto: "Plano de estudos otimizado", icone: <Lightbulb className="w-5 h-5" />, color: '#FFCC00' },
         { texto: "Consulta de notas de corte", icone: <GraduationCap className="w-5 h-5" />, color: '#FF3B30' },
-        { texto: "Estatísticas avançadas", icone: <BarChart3 className="w-5 h-5" />, color: '#5E5CE6' },
         { texto: "Suporte prioritário 24/7", icone: <Headset className="w-5 h-5" />, color: '#FF9500' }
     ];
 

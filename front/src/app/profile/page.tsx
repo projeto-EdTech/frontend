@@ -7,15 +7,12 @@ import Header from "@/components/Header"
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
-import Gemini from "@/components/Simula_PRO/Questoes_Gemini";
-import Planner from '@/components/Simula_PRO/Planner/Planner';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { universities } from "@/lib/dataUniversity";
 import { mockRankingsByUniversity, type RawUserData } from "@/lib/DataRanking";
 import GeneralStats, { SkeletonCard, type ProfileStats } from "@/components/profile/GeneralStats";
 import StatsUser from "@/components/profile/StatsUser";
-import UserRanking, { UserRankingData } from "@/components/profile/UserRanking";
 import SimulationHistoric from "@/components/profile/SimulationHistoric";
 import NavigationBar from "@/components/profile/NavigationBar";
 import NotaCorteConsulta from "@/components/Simula_PRO/NotaCorteConsulta";
@@ -80,43 +77,6 @@ const initialProfileData: ProfileData = {
     reviewableQuestions: [],
 };
 
-// Função para determinar o rank baseado na pontuação
-const determineRank = (score: number): UserRankingData['rank'] => {
-  if (score >= 5000) return 'Diamante';
-  if (score >= 2500) return 'Ouro';
-  if (score >= 1000) return 'Prata';
-  return 'Bronze';
-};
-
-// Função para buscar dados do ranking do usuário logado
-const getCurrentUserRanking = (userName: string): UserRankingData | null => {
-  try {
-    // Busca no ranking geral mensal
-    const generalRanking = mockRankingsByUniversity['geral']?.mensal || [];
-    
-    // Encontra o usuário pela comparação do nome
-    const userIndex = generalRanking.findIndex((user: RawUserData) => 
-      user.usuario.toLowerCase() === userName.toLowerCase()
-    );
-    
-    if (userIndex === -1) return null;
-    
-    const userData = generalRanking[userIndex];
-    const rank = determineRank(userData.pontos);
-    
-    return {
-      position: userIndex + 1, // Posição é o índice + 1
-      name: userData.usuario,
-      score: userData.pontos,
-      rank: rank,
-      isCurrentUser: true
-    };
-  } catch (error) {
-    console.error('Erro ao buscar dados do ranking:', error);
-    return null;
-  }
-};
-
 export default function ProfilePage() {
   // 2. Chama o hook para obter os dados da sessão e o status de autenticação
   const { data: session, status } = useSession();
@@ -129,10 +89,6 @@ export default function ProfilePage() {
   const [groupedQuestions, setGroupedQuestions] = useState<Map<string, ReviewableQuestion[]>>(new Map());
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-  
-  // Estados para dados do ranking
-  const [rankingData, setRankingData] = useState<UserRankingData | null>(null);
-  const [isLoadingRanking, setIsLoadingRanking] = useState(true);
   const currentUniversityLogo = useMemo(() => {
     const currentGroup = groupedQuestions.get(selectedSubject);
     const currentQuestion = currentGroup ? currentGroup[currentQuestionIndex] : null;
@@ -151,7 +107,6 @@ export default function ProfilePage() {
     if (status === 'authenticated') {
     const fetchProfileData = async () => {
         setIsDataLoading(true);
-        setIsLoadingRanking(true);
         setError(null);
 
         try {
@@ -164,12 +119,6 @@ export default function ProfilePage() {
 
         const profileData = await profileResponse.json();
         setProfileData(profileData);
-
-        // Buscar dados do ranking usando os dados mockados do DataRanking.ts
-        if (session?.user?.name) {
-          const currentUserRanking = getCurrentUserRanking(session.user.name);
-          setRankingData(currentUserRanking);
-        }
 
         if (profileData.reviewableQuestions && profileData.reviewableQuestions.length > 0) {
           const groups = profileData.reviewableQuestions.reduce((acc: Map<string, ReviewableQuestion[]>, question: ReviewableQuestion) => {
@@ -197,7 +146,6 @@ export default function ProfilePage() {
           }
         } finally {
           setIsDataLoading(false);
-          setIsLoadingRanking(false);
         }
     };
 
@@ -454,12 +402,6 @@ export default function ProfilePage() {
                     error={error}
                     setActiveTab={setActiveTab}
                   />
-                  {/* Card de Ranking - Destaque Principal */}
-                  {!isDataLoading && !error && (
-                    <div className="mb-8">
-                      <UserRanking rankingData={rankingData} isLoading={isLoadingRanking} />
-                    </div>
-                  )}
                 </TabsContent>
 
                 {/* Simulados Tab Content */}
@@ -477,12 +419,6 @@ export default function ProfilePage() {
                   />
                 </TabsContent>
 
-                <TabsContent value="planner" className="mt-6">
-                  <DndProvider backend={HTML5Backend}>
-                    <Planner />
-                  </DndProvider>
-                </TabsContent>
-
                 {/* Configuracoes Tab Content */}
                 <TabsContent value="configuracoes" className="mt-6">
                   <UserConfig 
@@ -490,20 +426,6 @@ export default function ProfilePage() {
                     setFormData={setFormData}
                     onSave={handleSaveProfile}
                     onCancel={handleCancelProfile}
-                  />
-                </TabsContent>
-                <TabsContent value="questoesNaoResolvidas" className="mt-6">
-                  <Gemini
-                    groupedQuestions={groupedQuestions}
-                    selectedSubject={selectedSubject}
-                    setSelectedSubject={setSelectedSubject}
-                    currentQuestionIndex={currentQuestionIndex}
-                    setCurrentQuestionIndex={setCurrentQuestionIndex}
-                    explanation={explanation}
-                    setExplanation={setExplanation}
-                    isGenerating={isGenerating}
-                    handleSubmit={handleSubmit}
-                    universityLogoUrl={currentUniversityLogo}
                   />
                 </TabsContent>
                 <TabsContent value="notasDeCorte" className="mt-6">

@@ -167,19 +167,6 @@ export default function Header() {
   };
 
   const navigationItems = [
-    // Apenas inclua Simula IA se o usuário tiver plano pago
-    ...(hasPaidPlan
-      ? [
-          {
-            name: "Vest IA",
-            href: "/VestIA",
-            icon: BrainCircuit,
-            description: "Pagina de conversa com a VestiIA",
-            color: "from-blue-500 to-cyan-500",
-          },
-        ]
-      : []),
-
     // Itens públicos
     {
       name: "Início",
@@ -200,26 +187,12 @@ export default function Header() {
     ...(isAuthenticated
       ? [
           {
-            name: "Arena",
-            href: "/Arena",
-            icon: Gamepad2,
-            description: "Entre na arena de minigames",
-            color: "from-pink-500 to-red-500",
-          },
-          {
-            name: "Criar Simulado",
-            href: "/create",
-            icon: BarChart3,
-            description: "Monte seu simulado",
-            color: "from-green-500 to-emerald-500",
-          },
-          {
             name: "Biblioteca",
             href: "/library",
             icon: Library,
             description: "Acervo completo",
             color: "from-orange-500 to-red-500",
-          },
+          }
         ]
       : []),
   ];

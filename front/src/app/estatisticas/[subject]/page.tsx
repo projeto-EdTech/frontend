@@ -146,7 +146,7 @@ export default function EstatisticasPage() {
             <div className="relative">
               <button
                 onClick={() => setShowSubjectFilter(!showSubjectFilter)}
-                className="w-full bg-white backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-3.5 text-left shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                className="w-full bg-white backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-3.5 text-left shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ export default function EstatisticasPage() {
                     <button
                       key={s.name}
                       onClick={() => handleSubjectSelect(s.name)}
-                      className={`w-full px-5 py-3.5 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-all duration-150 border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl ${
+                      className={`w-full px-5 py-3.5 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-all duration-150 border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl cursor-pointer ${
                         s.name === subject ? "bg-blue-50 text-blue-700" : "text-gray-900"
                       }`}
                     >
@@ -200,7 +200,7 @@ export default function EstatisticasPage() {
             <div className="relative">
               <button
                 onClick={() => setDropdownAberto(!dropdownAberto)}
-                className="w-full bg-white backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-3.5 text-left shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                className="w-full bg-white backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-3.5 text-left shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className={`tracking-tight ${currentVestibular?.isPlaceholder ? 'text-gray-500' : 'text-gray-900 font-medium'}`}>
@@ -223,7 +223,7 @@ export default function EstatisticasPage() {
                     <button
                       key={vest.id}
                       onClick={() => handleVestibularSelect(vest.id)}
-                      className={`w-full px-5 py-3.5 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-all duration-150 border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl ${
+                      className={`w-full px-5 py-3.5 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-all duration-150 border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl cursor-pointer ${
                         vest.id === vestibularSelecionado ? "bg-blue-50 text-blue-700" : "text-gray-900"
                       }`}
                     >
@@ -247,7 +247,7 @@ export default function EstatisticasPage() {
             <button
               key={s.name}
               onClick={() => router.push(`/estatisticas/${s.name}`)}
-              className={`px-6 py-3 rounded-xl font-semibold tracking-tight transition-all duration-200 border backdrop-blur-sm hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              className={`px-6 py-3 rounded-xl font-semibold tracking-tight transition-all duration-200 border backdrop-blur-sm hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer ${
                 s.name === subject 
                   ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/30" 
                   : "bg-white text-gray-700 border-gray-200 hover:bg-white hover:border-gray-300"
@@ -276,7 +276,7 @@ export default function EstatisticasPage() {
             <div className="relative z-40">
               <button
                 onClick={() => setDropdownAberto(!dropdownAberto)}
-                className="w-full bg-white backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-4 text-left shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                className="w-full bg-white backdrop-blur-sm border border-gray-200 rounded-xl px-5 py-4 text-left shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className={`tracking-tight ${currentVestibular?.isPlaceholder ? 'text-gray-500' : 'text-gray-900 font-medium text-base'}`}>
@@ -299,7 +299,7 @@ export default function EstatisticasPage() {
                     <button
                       key={vest.id}
                       onClick={() => handleVestibularSelect(vest.id)}
-                      className={`w-full px-5 py-4 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-all duration-150 border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl ${
+                      className={`w-full px-5 py-4 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-all duration-150 border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl cursor-pointer ${
                         vest.id === vestibularSelecionado ? "bg-blue-50" : ""
                       }`}
                     >

@@ -4,18 +4,17 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Image from "next/image";
 import Link from "next/link";
-import {BrainCircuit, BookOpen, Zap, ChartNoAxesCombined, ClipboardList, LifeBuoy, Earth, FilePen, Rocket, Library, Activity, Cpu, Lightbulb, GraduationCap, BarChart3, Headset, Gift, Crown, Gem, ShieldCheck, CalendarX, Lock} from "lucide-react";
+import {BookOpen, Zap, ChartNoAxesCombined, LifeBuoy, Earth, FilePen, ShieldCheck, CalendarX, Lock, AlarmClock} from "lucide-react";
 import Footer from "@/components/Footer";
-import { PricingCard, PricingPlans } from "@/components/PricingCard";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PricingPlans } from "@/components/PricingCard";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react"; // Importar o useSession
+import { useSession } from "next-auth/react";
 import LoginModal from "@/components/Login-modal";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
-import { EstatisticasMockup, SimuladoMockup, BancoProvasMockup, CronogramaMockup, NotaDeCorteMockup, QuestoesIAMockup } from "@/components/mockups";
+import { SimuladoMockup, BancoProvasMockup, NotaDeCorteMockup } from "@/components/mockups";
 import SphereCarousel from "@/components/SphereCarousel";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -24,10 +23,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 const HERO_FEATURES = [
   { id: 0, name: "Simulado Personalizado" },
   { id: 1, name: "Biblioteca de Provas" },
-  { id: 2, name: "Cronograma de Estudos" },
-  { id: 3, name: "Consulta de Nota de Corte" },
-  { id: 4, name: "Questões com IA" },
-  { id: 5, name: "Estatísticas Avançadas" },
+  { id: 2, name: "Consulta de Nota de Corte" },
 ];
 
 const MAC_VARIANTS = {
@@ -101,10 +97,6 @@ export default function Home() {
   // Estado para a seção "Por dentro do Vestibuline" (sem rotação automática)
   const [activeFeaturePlatform, setActiveFeaturePlatform] = useState(0);
   const [isAnimatingPlatform, setIsAnimatingPlatform] = useState(false);
-
-  const [selectedPeriod, setSelectedPeriod] = useState<
-    "bimestral" | "trimestral" | "semestral" | "anual"
-  >("semestral");
   const [selectedAnswer, setSelectedAnswer] = useState<number>(3); // Estado para resposta selecionada no mockup (0-4 para A-E)
 
   // Verificar se o usuário tem plano pago
@@ -488,31 +480,6 @@ export default function Home() {
                           />
                         </svg>
                       </Link>
-
-                      {/* Botão secundário responsivo */}
-                      <button
-                        className="group relative force-themed-card border-2 themed-border hover:border-blue-400 themed-text hover:text-blue-600 font-semibold py-3 md:py-4 px-6 md:px-8 rounded-full transition-all duration-300 transform hover:scale-105 flex items-center gap-3 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-4 focus:ring-gray-300 cursor-pointer"
-                        aria-label="Ver demonstração da plataforma em 30 segundos"
-                        onClick={() => setShowDemoModal(true)}
-                      >
-                        <svg
-                          className="w-4 h-4 md:w-5 md:h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="text-sm md:text-base">
-                          Ver Demo (30s)
-                        </span>
-                      </button>
                     </div>
 
                     {/* Indicadores de confiança melhorados com acessibilidade */}
@@ -813,10 +780,7 @@ export default function Home() {
                           switch (feature.id) {
                             case 0: return <SimuladoMockup {...props} selectedAnswer={3} />;
                             case 1: return <BancoProvasMockup {...props} />;
-                            case 2: return <CronogramaMockup {...props} />;
-                            case 3: return <NotaDeCorteMockup {...props} />;
-                            case 4: return <QuestoesIAMockup {...props} />;
-                            case 5: return <EstatisticasMockup {...props} />;
+                            case 2: return <NotaDeCorteMockup {...props} />;
                             default: return null;
                           }
                         };
@@ -1215,7 +1179,6 @@ export default function Home() {
                       </motion.div>
 
                       {/* PRO CARD 2: Biblioteca de Provas */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
                         whileHover={{ y: -10, scale: 1.02 }}
@@ -1229,89 +1192,15 @@ export default function Home() {
                             <BookOpen className="w-8 h-8 text-blue-600" strokeWidth={2.5}/>
                           </div>
                           <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
-                            Biblioteca de Provas
+                            Consulta de nota de corte
                           </h3>
                           <p className="text-gray-600 font-medium leading-relaxed text-sm">
-                            Acervo completo de exames anteriores dos maiores
-                            vestibulares do país.
+                            Simule se você passaria ou não nos vestibulares, sem precisar "pagar para ver".
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* PRO CARD 3: Questões com IA */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
-                      <motion.div
-                        variants={MAC_VARIANTS.item}
-                        whileHover={{ y: -10, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        
-                        <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-violet-50 to-white rounded-2xl shadow-sm border border-violet-100/50 group-hover:scale-110 group-hover:shadow-violet-200/50 transition-all duration-700">
-                            <BrainCircuit className="w-8 h-8 text-violet-600" strokeWidth={2.5}/>
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
-                            Resoluções com IA
-                          </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
-                            Entenda cada questão com explicações detalhadas
-                            geradas por Inteligência Artificial.
-                          </p>
-                        </div>
-                      </motion.div>
-
-                      {/* PRO CARD 4: Plano Otimizado */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
-                      <motion.div
-                        variants={MAC_VARIANTS.item}
-                        whileHover={{ y: -10, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        
-                        <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-emerald-50 to-white rounded-2xl shadow-sm border border-emerald-100/50 group-hover:scale-110 group-hover:shadow-emerald-200/50 transition-all duration-700">
-                            <ClipboardList className="w-8 h-8 text-emerald-600" strokeWidth={2.5}/>
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
-                            Plano de Estudos
-                          </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
-                            Cronograma de estudos personalizado e otimizado para
-                            o seu tempo disponível.
-                          </p>
-                        </div>
-                      </motion.div>
-
-                      {/* PRO CARD 5: Estatísticas Avançadas */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
-                      <motion.div
-                        variants={MAC_VARIANTS.item}
-                        whileHover={{ y: -10, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        
-                        <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-orange-50 to-white rounded-2xl shadow-sm border border-orange-100/50 group-hover:scale-110 group-hover:shadow-orange-200/50 transition-all duration-700">
-                            <ChartNoAxesCombined className="w-8 h-8 text-orange-600" strokeWidth={2.5}/>
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
-                            Análise Avançada
-                          </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
-                            Relatórios detalhados e estatísticas de desempenho
-                            em tempo real.
-                          </p>
-                        </div>
-                      </motion.div>
-
-                      {/* PRO CARD 6: Suporte 24/7 */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
+                      {/* PRO CARD 3: Suporte 24/7 */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
                         whileHover={{ y: -10, scale: 1.02 }}
@@ -1336,32 +1225,7 @@ export default function Home() {
                     </>
                   ) : (
                     <>
-                      {/* Card 1: Questões IA */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
-                      <motion.div
-                        variants={MAC_VARIANTS.item}
-                        whileHover={{ y: -10, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        
-                        <div className="relative z-10 flex flex-col items-center text-center h-full">
-                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-violet-50 to-white rounded-2xl shadow-sm border border-violet-100/50 group-hover:scale-110 group-hover:shadow-violet-200/50 transition-all duration-700">
-                            <BrainCircuit className="w-8 h-8 text-violet-600" strokeWidth={2.5}/>
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
-                            Questões Resolvidas com IA
-                          </h3>
-                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
-                            Questões resolvidas e comentadas com IA para
-                            aprimorar seus estudos.
-                          </p>
-                        </div>
-                      </motion.div>
-
-                      {/* Card 2: ENEM e Vestibulares */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
+                      {/* Card 1: ENEM e Vestibulares */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
                         whileHover={{ y: -10, scale: 1.02 }}
@@ -1384,8 +1248,7 @@ export default function Home() {
                         </div>
                       </motion.div>
 
-                      {/* Card 3: Listas Personalizadas */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
+                      {/* Card 2: Listas Personalizadas */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
                         whileHover={{ y: -10, scale: 1.02 }}
@@ -1399,17 +1262,15 @@ export default function Home() {
                             <BookOpen className="w-8 h-8 text-emerald-600" strokeWidth={2.5}/>
                           </div>
                           <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
-                            Listas Personalizadas
+                            Consulte a sua nota de corte
                           </h3>
                           <p className="text-gray-600 font-medium leading-relaxed text-sm">
-                            Crie seu próprio simulado sob medida para seus
-                            estudos.
+                            Simule se você passaria ou não nos vestibulares, sem precisar "pagar para ver".
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* Card 4: Provas Anteriores */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
+                      {/* Card 3: Provas Anteriores */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
                         whileHover={{ y: -10, scale: 1.02 }}
@@ -1432,8 +1293,7 @@ export default function Home() {
                         </div>
                       </motion.div>
 
-                      {/* Card 5: Foco no Essencial */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
+                      {/* Card 4: Foco no Essencial */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
                         whileHover={{ y: -10, scale: 1.02 }}
@@ -1456,8 +1316,7 @@ export default function Home() {
                         </div>
                       </motion.div>
 
-                      {/* CARD 6: Acompanhe Resultados */}
-                      {/* PRO CARD 2-6 and Guest Cards logic updated with whileHover, whileTap and rounded-[40px] */}
+                      {/* CARD 5: Acompanhe Resultados */}
                       <motion.div
                         variants={MAC_VARIANTS.item}
                         whileHover={{ y: -10, scale: 1.02 }}
@@ -1468,7 +1327,7 @@ export default function Home() {
                         
                         <div className="relative z-10 flex flex-col items-center text-center h-full">
                           <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-sm border border-purple-100/50 group-hover:scale-110 group-hover:shadow-purple-200/50 transition-all duration-700">
-                            <LifeBuoy className="w-8 h-8 text-purple-600" strokeWidth={2.5}/>
+                            <AlarmClock className="w-8 h-8 text-purple-600" strokeWidth={2.5}/>
                           </div>
                           <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
                             Resultados em Tempo Real
@@ -1479,6 +1338,30 @@ export default function Home() {
                           </p>
                         </div>
                       </motion.div>
+
+                      {/* PRO CARD 6: Suporte 24/7 */}
+                      <motion.div
+                        variants={MAC_VARIANTS.item}
+                        whileHover={{ y: -10, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="group relative h-full bg-white backdrop-blur-3xl p-10 rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-200 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden cursor-default"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        
+                        <div className="relative z-10 flex flex-col items-center text-center h-full">
+                          <div className="mb-8 w-16 h-16 flex items-center justify-center bg-gradient-to-br from-pink-50 to-white rounded-2xl shadow-sm border border-pink-100/50 group-hover:scale-110 group-hover:shadow-pink-200/50 transition-all duration-700">
+                            <LifeBuoy className="w-8 h-8 text-pink-600" strokeWidth={2.5}/>
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-600 mb-4 tracking-tight">
+                            Suporte 24/7
+                          </h3>
+                          <p className="text-gray-600 font-medium leading-relaxed text-sm">
+                            Atendimento prioritário a qualquer momento para
+                            tirar suas dúvidas.
+                          </p>
+                        </div>
+                      </motion.div>
+
                     </>
                   )}
                 </motion.div>
@@ -1504,26 +1387,10 @@ export default function Home() {
                         {
                           title: "Simulados Ilimitados",
                           subtitle:
-                            "Acesso total a simulados de todas as bancas do país sem restrições.",
-                          icon: "📝",
-                          color: "from-blue-600 to-blue-700",
-                          borderColor: "border-blue-600",
-                        },
-                        {
-                          title: "Estatísticas Avançadas",
-                          subtitle:
-                            "Gráficos de desempenho detalhados por matéria, assunto e banca.",
-                          icon: "📊",
-                          color: "from-purple-600 to-purple-700",
-                          borderColor: "border-purple-600",
-                        },
-                        {
-                          title: "Cronograma de estudos",
-                          subtitle:
-                            "Crie seu próprio cronograma de estudos automatizado para otimizar seu tempo e performance.",
-                          icon: "📅",
-                          color: "from-indigo-600 to-indigo-700",
-                          borderColor: "border-indigo-600",
+                            "Faça e treina sem nenhuma trava para o vestibular, assim você pode se preparar melhor.",
+                          icon: "📖",
+                          color: "from-emerald-600 to-emerald-700",
+                          borderColor: "border-emerald-600",
                         },
                         {
                           title: "Consulta de Nota de Corte",
@@ -1534,22 +1401,30 @@ export default function Home() {
                           borderColor: "border-emerald-600",
                         },
                         {
-                          title: "Questões resolvidas com IA",
+                          title: "Biblioteca de provas",
                           subtitle:
-                            "Aprenda com resoluções passo a passo personalizadas por nossa IA avançada.",
-                          icon: "🤖",
+                            "Acesse provas completas de vestibulares anteriores e simule o exame real.",
+                          icon: "📚",
                           color: "from-blue-600 to-blue-700",
                           borderColor: "border-blue-600",
                         },
                       ]
                     : [
                         {
-                          title: "Simulado Personalizado",
+                          title: "Por dentro da simulação",
                           subtitle:
-                            "Crie simulações personalizadas com questões filtradas por matéria e assunto.",
-                          icon: "🎓",
-                          color: "from-purple-600 to-purple-700",
-                          borderColor: "border-purple-600",
+                            "Faça Simulados e treine para os principais vestibulares.",
+                          icon: "📖",
+                          color: "from-emerald-600 to-emerald-700",
+                          borderColor: "border-emerald-600",
+                        },
+                        {
+                          title: "Consulta de Nota de Corte",
+                          subtitle:
+                            "Realize a consulta da nota de corte dos principais vestibulares com a sua performance atual.",
+                          icon: "🎯",
+                          color: "from-emerald-600 to-emerald-700",
+                          borderColor: "border-emerald-600",
                         },
                         {
                           title: "Biblioteca de provas",
@@ -1559,86 +1434,7 @@ export default function Home() {
                           color: "from-blue-600 to-blue-700",
                           borderColor: "border-blue-600",
                         },
-                        {
-                          title: "Cronograma de estudos",
-                          subtitle:
-                            "Crie seu próprio cronograma de estudos automatizado para otimizar seu tempo e performance.",
-                          icon: "📅",
-                          color: "from-indigo-600 to-indigo-700",
-                          borderColor: "border-indigo-600",
-                        },
-                        {
-                          title: "Questões resolvidas com IA",
-                          subtitle:
-                            "Aprenda com resoluções passo a passo com IA.",
-                          icon: "🤖",
-                          color: "from-cyan-600 to-cyan-700",
-                          borderColor: "border-cyan-600",
-                        },
                       ];
-
-                  // Função auxiliar para obter dados baseado no período selecionado
-                  const getChartData = () => {
-                    const allMonths = [
-                      "JAN",
-                      "FEV",
-                      "MAR",
-                      "ABR",
-                      "MAI",
-                      "JUN",
-                      "JUL",
-                      "AGO",
-                      "SET",
-                      "OUT",
-                      "NOV",
-                      "DEZ",
-                    ];
-                    const allYValues = [
-                      110, 70, 60, 85, 45, 65, 35, 90, 50, 75, 55, 80,
-                    ]; // Valores Y para cada mês
-
-                    let numMonths = 0;
-
-                    switch (selectedPeriod) {
-                      case "bimestral":
-                        numMonths = 2; // JAN, FEV
-                        break;
-                      case "trimestral":
-                        numMonths = 3; // JAN, FEV, MAR
-                        break;
-                      case "semestral":
-                        numMonths = 6; // JAN a JUN
-                        break;
-                      case "anual":
-                        numMonths = 12; // JAN a DEZ
-                        break;
-                      default:
-                        numMonths = 6;
-                    }
-
-                    const months = allMonths.slice(0, numMonths);
-
-                    // Calcular posições X dinamicamente baseado no número de meses
-                    // Distribuir equitativamente entre 40 e 430 (para alinhar com rótulos)
-                    const startX = 40;
-                    const endX = 430;
-                    const totalWidth = endX - startX;
-
-                    const points = months.map((_, idx) => {
-                      let x: number;
-                      if (numMonths === 1) {
-                        x = (startX + endX) / 2; // Centro se houver apenas 1 mês
-                      } else {
-                        x = startX + (totalWidth / (numMonths - 1)) * idx;
-                      }
-                      const y = allYValues[idx];
-                      return { x, y };
-                    });
-
-                    return { months, points };
-                  };
-
-                  const chartData = getChartData();
 
                   // Function to render different mockups based on activeFeaturePlatform
                   const renderMockup = () => {
@@ -1647,17 +1443,11 @@ export default function Home() {
                         case 0: // Simulados Ilimitados - Layout de Simulação
                           return (<SimuladoMockup isDark={isDark} selectedAnswer={selectedAnswer} />);
 
-                        case 1: // Estatísticas Avançadas - Layout do MonthlyProgressChart
-                          return (<EstatisticasMockup isDark={isDark} />);
-
-                        case 2: // Cronograma de Estudos (Calendar View)
-                          return (<CronogramaMockup isDark={isDark} />);
-
-                        case 3: // Consulta de Nota de Corte
+                        case 1: // Consulta de Nota de Corte
                           return (<NotaDeCorteMockup isDark={isDark} />);
 
-                        case 4: // Questões resolvidas com IA (Authenticated)
-                          return (<QuestoesIAMockup isDark={isDark} />);
+                        case 2: // Biblioteca de provas
+                          return (<BancoProvasMockup isDark={isDark} />);
 
                         default:
                           return null;
@@ -1669,13 +1459,10 @@ export default function Home() {
                           return (<SimuladoMockup isDark={isDark} selectedAnswer={selectedAnswer} />);
 
                         case 1: // Biblioteca de provas - Biblioteca
+                          return (<NotaDeCorteMockup isDark={isDark} />);
+
+                        case 2: // Biblioteca de provas
                           return (<BancoProvasMockup isDark={isDark} />);
-
-                        case 2: // Cronograma de Estudos (Calendar View)
-                          return (<CronogramaMockup isDark={isDark} />);
-
-                        case 3: // Questões resolvidas com IA
-                          return (<QuestoesIAMockup isDark={isDark} />);
 
                         default:
                           return null;
@@ -1893,190 +1680,9 @@ export default function Home() {
           </div>
         )}
 
-        {/* --- SECÇÃO DE RANKING MELHORADA --- */}
-        <div
-          className="py-16 themed-section relative overflow-hidden"
-          id="ranking-cta"
-        >
-          {/* Background com partículas animadas */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div
-              className="absolute top-20 left-10 w-4 h-4 bg-yellow-400/60 rounded-full animate-float"
-              style={{ animationDelay: "0s" }}
-            ></div>
-            <div
-              className="absolute top-40 right-20 w-3 h-3 bg-blue-400/50 rounded-full animate-float"
-              style={{ animationDelay: "2s" }}
-            ></div>
-            <div
-              className="absolute bottom-32 left-32 w-2 h-2 bg-purple-400/40 rounded-full animate-float"
-              style={{ animationDelay: "4s" }}
-            ></div>
-            <div
-              className="absolute top-60 right-40 w-5 h-5 bg-green-400/50 rounded-full animate-float"
-              style={{ animationDelay: "1s" }}
-            ></div>
-          </div>
-
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="force-themed-card bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-8 animate-fade-in-up relative overflow-hidden">
-              {/* Efeito de brilho animado no fundo */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-shimmer-slow"></div>
-
-              {/* Lado Esquerdo: Textos e CTA */}
-              <div className="text-center lg:text-left flex-1 relative z-10">
-                <a href="/ranking">
-                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium mb-6 hover:bg-white/30 transition-colors duration-300 cursor-pointer">
-                    <span>🏆</span>
-                    <span>Competição Saudável</span>
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-1"></div>
-                  </div>
-                </a>
-
-                <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
-                  <span className="block">Veja sua Posição</span>
-                  <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent animate-gradient-x">
-                    no Ranking Nacional!
-                  </span>
-                </h2>
-
-                <p className="text-white text-lg md:text-xl max-w-2xl mb-8 leading-relaxed">
-                  Compare seu desempenho com estudantes de todo o país, suba no
-                  placar e
-                  <span className="font-bold text-yellow-300">
-                    {" "}
-                    motive-se a alcançar o topo
-                  </span>
-                  . Você está pronto para o desafio?
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
-                  <a
-                    href="/ranking"
-                    onClick={(e) => handleLandingPageClick(e, "/ranking")}
-                    className="group relative bg-white text-blue-600 font-bold py-4 px-8 rounded-full transition-all duration-500 transform hover:scale-110 hover:shadow-2xl flex items-center gap-3 overflow-hidden w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-4 focus:ring-yellow-300 hover:bg-gradient-to-r hover:from-yellow-300 hover:to-yellow-500 cursor-pointer"
-                    role="button"
-                    aria-label="Consultar o ranking agora"
-                  >
-                    {/* Efeito de onda no hover */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-700 origin-left rounded-full"></div>
-
-                    <span className="relative z-10 flex items-center gap-2">
-                      <span className="group-hover:animate-bounce">🚀</span>
-                      Consultar o Ranking
-                    </span>
-                    <svg
-                      className="relative z-10 w-5 h-5 group-hover:translate-x-2 transition-transform duration-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 8l4 4m0 0l-4 4m4-4H3"
-                      />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-
-              {/* Lado Direito: Ilustração Interativa Melhorada */}
-              <div className="relative w-64 h-64 lg:w-80 lg:h-80 flex-shrink-0">
-                {/* Mascote comemorando no ranking */}
-                <div className="absolute -top-8 -right-8 z-50 animate-float">
-                  <Image
-                    src="/Mascote/banners/Camaleão_22.png"
-                    alt="Mascote Vestibuline celebrando ranking"
-                    width={120}
-                    height={120}
-                    className="w-20 h-20 md:w-25 md:h-25 object-contain"
-                  />
-                </div>
-
-                {/* Container do pódio com z-index controlado */}
-                <div className="relative z-20 h-full">
-                  {/* Pódio animado */}
-                  <div className="absolute inset-0 flex items-end justify-center space-x-2 pb-12">
-                    {/* 2º lugar */}
-                    <div
-                      className="bg-gradient-to-t from-gray-400 to-gray-300 w-16 h-32 rounded-t-lg relative animate-slide-up z-30"
-                      style={{ animationDelay: "0.5s" }}
-                    >
-                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-2xl z-40">
-                        🥈
-                      </div>
-                      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white font-bold text-sm z-40">
-                        2º
-                      </div>
-                    </div>
-
-                    {/* 1º lugar (centro) */}
-                    <div
-                      className="bg-gradient-to-t from-yellow-500 to-yellow-400 w-20 h-40 rounded-t-lg relative animate-slide-up z-40"
-                      style={{ animationDelay: "0.2s" }}
-                    >
-                      <div className="absolute -top-9 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl z-50">
-                        🏆
-                      </div>
-                      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white font-bold z-50">
-                        1º
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-transparent to-yellow-200/50 rounded-t-lg animate-pulse z-30"></div>
-                    </div>
-
-                    {/* 3º lugar */}
-                    <div
-                      className="bg-gradient-to-t from-orange-600 to-orange-500 w-16 h-24 rounded-t-lg relative animate-slide-up z-30"
-                      style={{ animationDelay: "0.8s" }}
-                    >
-                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-2xl z-40">
-                        🥉
-                      </div>
-                      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white font-bold text-sm z-40">
-                        3º
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Call-to-action secundário */}
-            <div className="text-center mt-8">
-              <div className="inline-flex items-center gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  Atualização em tempo real
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  Competição nacional
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                  Rankings por Vestibular
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* PONTO DE PULO 4: Adicione o id="garantias" na div da seção de Prova Social e Métricas */}
         <div className="themed-section force-themed-bg py-16" id="garantias">
           <div className="container mx-auto px-6">
-            {/* Mascote de garantia - estático para não distrair */}
-            <div className="flex justify-center mb-8">
-              <Image
-                src="/Mascote/banners/Camaleão_6.png"
-                alt="Mascote Vestibuline - Garantias"
-                width={500}
-                height={500}
-                className="w-50 h-50 md:w-56 md:h-56 object-contain"
-              />
-            </div>
-
             {/* Comparação Antes e Depois */}
             <div className="themed-comparison bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-100 rounded-3xl p-6 md:p-8 lg:p-12 mb-16 shadow-xl border border-blue-100">
               <h3 className="themed-text text-xl md:text-2xl font-bold text-center mb-8 md:mb-12">
@@ -2222,17 +1828,6 @@ export default function Home() {
             <div className="container mx-auto px-6 relative z-10">
               {/* Header com urgência */}
               <div className="text-center mb-12 relative">
-                {/* Mascote dos planos */}
-                <div className="flex justify-center mb-6">
-                  <Image
-                    src="/Mascote/banners/Camaleão_14.png"
-                    alt="Mascote Vestibuline - Escolha seu plano"
-                    width={200}
-                    height={200}
-                    className="w-25 h-25 object-contain animate-wiggle"
-                  />
-                </div>
-
                 <h2 className="text-[40px] font-bold text-[#1d1d1f] mb-3 leading-tight tracking-tight">
                   Escolha Seu Plano
                 </h2>

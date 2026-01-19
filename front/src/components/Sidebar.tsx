@@ -222,32 +222,6 @@ export default function Sidebar() {
           `}></div>
         </div>
 
-      {/* Botão Criar - macOS Style com mais cor */}
-      <div className="mb-5">
-        <Link href="/create">
-          <button className={`
-            w-full h-11 md:h-12 rounded-xl flex items-center justify-center text-white font-semibold text-sm
-            transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.97] relative overflow-hidden group cursor-pointer
-            ${isDarkMode 
-              ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:via-blue-600 hover:to-indigo-600 shadow-lg shadow-blue-600/40' 
-              : 'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-400 hover:via-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/30'
-            }
-          `}>
-            {/* Efeito de brilho no hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            
-            <div className="flex items-center gap-2.5 relative z-10">
-              <div className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-lg backdrop-blur-sm transition-transform duration-300 group-hover:rotate-90">
-                <Plus className="w-5 h-5" />
-              </div>
-              <div className="text-left">
-                <div>Criar Simulado</div>
-              </div>
-            </div>
-          </button>
-        </Link>
-      </div>
-
       {/* Estatísticas - macOS Card Style colorido */}
       <div className={`
         mb-5 p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group relative overflow-hidden
@@ -511,7 +485,7 @@ export default function Sidebar() {
             </div>
             <h4 className={`
               text-sm font-bold mb-1
-              ${isDarkMode ? 'text-white' : 'text-gray-900'}
+              ${isDarkMode ? 'text-white' : 'text-gray-700'}
             `}>
               Acesso Premium ⭐
             </h4>
