@@ -1,15 +1,20 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { HelpCircle, X, Gamepad2, Heart } from "lucide-react";
-
+import { HelpCircle, X, Gamepad2, Heart, Shuffle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./NexoStyle.css";
 
 type Categoria = { titulo: string; palavras: string[]; cor: string };
 type ResultadoJogo = {
   vitoria: boolean;
   categorias: Categoria[];
+};
+
+// Tipo para o callback de shake
+type ShakeCallback = {
+  triggerShake?: (botoes: HTMLButtonElement[]) => void;
 };
 
 export default function Nexo() {
@@ -23,6 +28,15 @@ export default function Nexo() {
   const [gameId, setGameId] = useState(0);
   // Estado para o contador regressivo até a meia-noite
   const [tempoRestante, setTempoRestante] = useState<string>("");
+  // Estado para controlar quais botões devem fazer shake por índice
+  const [shakingIndices, setShakingIndices] = useState<Set<number>>(new Set());
+  // Estado para controlar quais botões devem fazer a animação de sucesso
+  const [successIndices, setSuccessIndices] = useState<Set<number>>(new Set());
+  // Estado para armazenar a categoria do acerto atual para animação
+  const [currentSuccessCategory, setCurrentSuccessCategory] = useState<Categoria | null>(null);
+  // Estado para controlar se os cards estão embaralhando
+  const [isShuffling, setIsShuffling] = useState(false);
+
   // Atualiza o contador regressivo até a meia-noite quando o modal de resultado aparece
   useEffect(() => {
     if (!resultado) return;
@@ -99,19 +113,78 @@ export default function Nexo() {
           const instance = new mod.ConnectionsGame();
           logicRef.current = instance;
 
-          // Define o tipo do callback corretamente
+          // Define o callback de shake corretamente
           (
             instance as {
               onGameOver?: (
                 vitoria: boolean,
                 todasCategorias: Categoria[]
               ) => void;
+              onShake?: (botoes: HTMLButtonElement[]) => void;
+              onSuccess?: (botoes: HTMLButtonElement[], categoria: Categoria) => void;
             }
           ).onGameOver = (vitoria: boolean, todasCategorias: Categoria[]) => {
             setResultado({
               vitoria,
               categorias: todasCategorias,
             });
+          };
+
+          // Registra o callback para embaralhar
+          (
+            instance as {
+              onShuffle?: (shuffling: boolean) => void;
+            }
+          ).onShuffle = (shuffling: boolean) => {
+            setIsShuffling(shuffling);
+          };
+
+          // Registra o callback para shake
+          (
+            instance as {
+              onShake?: (botoes: HTMLButtonElement[]) => void;
+              onSuccess?: (botoes: HTMLButtonElement[], categoria: Categoria) => void;
+            }
+          ).onShake = (botoes: HTMLButtonElement[]) => {
+            if (!gameRef.current) return;
+
+            const indices = new Set<number>();
+            botoes.forEach(btn => {
+              const dataIdx = btn.getAttribute("data-index");
+              if (dataIdx !== null) indices.add(parseInt(dataIdx));
+            });
+
+            setShakingIndices(indices);
+            
+            // Limpa o estado após a animação
+            setTimeout(() => {
+              if (mounted) setShakingIndices(new Set());
+            }, 500);
+          };
+
+          // Registra o callback para sucesso
+          (
+            instance as {
+              onSuccess?: (botoes: HTMLButtonElement[], categoria: Categoria) => void;
+            }
+          ).onSuccess = (botoes: HTMLButtonElement[], categoria: Categoria) => {
+            if (!gameRef.current) return;
+
+            const indices = new Set<number>();
+            botoes.forEach(btn => {
+              const dataIdx = btn.getAttribute("data-index");
+              if (dataIdx !== null) indices.add(parseInt(dataIdx));
+            });
+
+            setCurrentSuccessCategory(categoria);
+            setSuccessIndices(indices);
+            
+            setTimeout(() => {
+              if (mounted) {
+                setSuccessIndices(new Set());
+                setCurrentSuccessCategory(null);
+              }
+            }, 1000); // 1 segundo para a sequência completa
           };
         }
       }, 0);
@@ -134,205 +207,265 @@ export default function Nexo() {
   return (
     <div className="flex flex-col items-center justify-start bg-transparent pb-33 px-4 relative w-full font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Helvetica,Arial,sans-serif] antialiased">
       {/* --- MODAL DE AJUDA (Estilo LEXOO Dark) --- */}
-      {mostrarAjuda && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          {/* Overlay Escuro com Blur */}
-          <div
-            className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity"
-            onClick={() => setMostrarAjuda(false)}
-          />
+      <AnimatePresence>
+        {mostrarAjuda && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* Overlay Escuro com Blur */}
+            <motion.div
+              className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMostrarAjuda(false)}
+            />
 
-          {/* Card do Modal */}
-          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden animate-[popIn_0.3s_ease-out]">
-            {/* Cabeçalho */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <Gamepad2 className="text-purple-500" size={24} />
-                <h2 className="text-lg font-bold text-gray-800 tracking-wide">
-                  Como Jogar Nexo?
-                </h2>
-              </div>
-              <button
-                onClick={() => setMostrarAjuda(false)}
-                className="p-1 rounded-full text-gray-700 hover:!bg-red-100 transition-colors cursor-pointer"
-              >
-                <X size={20} className="text-gray-700 hover:!text-red-500" />
-              </button>
-            </div>
-
-            {/* Conteúdo com Scroll */}
-            <div className="p-6 space-y-6 text-slate-300 text-sm max-h-[80vh] overflow-y-auto">
-              {/* Seção Objetivo */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-pink-500 font-bold text-base">
-                  <span>🎯</span> <h3>Objetivo</h3>
+            {/* Card do Modal */}
+            <motion.div
+              className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+            >
+              {/* Cabeçalho */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <Gamepad2 className="text-purple-500" size={24} />
+                  <h2 className="text-lg font-bold text-gray-800 tracking-wide">
+                    Como Jogar Nexo?
+                  </h2>
                 </div>
-                <p className="leading-relaxed text-gray-700">
-                  Agrupe as 16 palavras em{" "}
-                  <strong className="text-gray-700">4 grupos de 4 itens</strong>{" "}
-                  que compartilham uma conexão oculta.
+                <button
+                  onClick={() => setMostrarAjuda(false)}
+                  className="p-1 rounded-full text-gray-700 hover:!bg-red-100 transition-colors cursor-pointer"
+                >
+                  <X size={20} className="text-gray-700 hover:!text-red-500" />
+                </button>
+              </div>
+
+              {/* Conteúdo com Scroll */}
+              <div className="p-6 space-y-6 text-slate-300 text-sm max-h-[80vh] overflow-y-auto">
+                {/* Seção Objetivo */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-pink-500 font-bold text-base">
+                    <span>🎯</span> <h3>Objetivo</h3>
+                  </div>
+                  <p className="leading-relaxed text-gray-700">
+                    Agrupe as 16 palavras em{" "}
+                    <strong className="text-gray-700">4 grupos de 4 itens</strong>{" "}
+                    que compartilham uma conexão oculta.
+                  </p>
+                </div>
+
+                {/* Seção Exemplos */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-yellow-400 font-bold text-base">
+                    <span>💡</span> <h3>Exemplos</h3>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-lg border border-gray-300">
+                    <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-gray-700">
+                      Categoria: Cores em Inglês
+                    </p>
+                    <div className="flex gap-2">
+                      <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
+                        BLUE
+                      </span>
+                      <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
+                        RED
+                      </span>
+                      <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
+                        GREEN
+                      </span>
+                      <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
+                        YELLOW
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-700">
+                      Estas 4 palavras formam um grupo.
+                    </p>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-lg border border-gray-300">
+                    <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-gray-700">
+                      Categoria: Planetas
+                    </p>
+                    <div className="flex gap-2">
+                      <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
+                        TERRA
+                      </span>
+                      <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
+                        MARTE
+                      </span>
+                      <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
+                        JÚPITER
+                      </span>
+                      <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
+                        VÊNUS
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seção Dicas */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-indigo-400 font-bold text-base">
+                    <span>✨</span> <h3>Dicas</h3>
+                  </div>
+                  <ul className="list-disc pl-5 space-y-2 marker:text-indigo-500">
+                    <li className="text-gray-700">
+                      Você pode selecionar até 4 palavras por vez para verificar.
+                    </li>
+                    <li className="text-gray-700">
+                      Se você errar 5 vezes, um botão de{" "}
+                      <strong className="text-blue-400">DICA</strong> aparecerá
+                      para ajudar.
+                    </li>
+                    <li className="text-gray-700">
+                      As categorias variam de muito fáceis a difíceis
+                      (conhecimentos gerais, trocadilhos, etc).
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- MODAL DE RESULTADO (GAME OVER / WIN) --- */}
+      <AnimatePresence>
+        {resultado && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Overlay Escuro */}
+            <motion.div
+              className="absolute inset-0 bg-black/30 backdrop-blur-xs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+
+            {/* Card do Modal */}
+            <motion.div
+              className="relative w-full max-w-sm bg-white border border-gray-200 rounded-3xl shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, scale: 0.75 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.75 }}
+              transition={{
+                duration: 0.4,
+                ease: [0.175, 0.885, 0.32, 1.275],
+              }}
+            >
+              {/* Cabeçalho Visual */}
+              <div
+                className={`px-6 py-6 text-center ${resultado.vitoria ? "!bg-green-50" : "!bg-red-50"}`}
+              >
+                <motion.div
+                  className="mx-auto w-12 h-12 mb-3 flex items-center justify-center rounded-full bg-transparent text-2xl"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, duration: 0.4, type: "spring", stiffness: 200 }}
+                >
+                  {resultado.vitoria ? "🏆" : "💀"}
+                </motion.div>
+                <h2
+                  className={`text-2xl font-black uppercase tracking-wide ${resultado.vitoria ? "!text-green-600" : "!text-red-600"}`}
+                >
+                  {resultado.vitoria ? "Genial!" : "Fim de Jogo"}
+                </h2>
+                <p className="text-gray-700 text-sm mt-1 font-medium">
+                  {resultado.vitoria
+                    ? "Você desvendou todas as conexões."
+                    : "Não foi dessa vez. Veja as respostas abaixo:"}
                 </p>
               </div>
 
-              {/* Seção Exemplos */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-yellow-400 font-bold text-base">
-                  <span>💡</span> <h3>Exemplos</h3>
-                </div>
-
-                <div className="bg-white p-3 rounded-lg border border-gray-300">
-                  <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-gray-700">
-                    Categoria: Cores em Inglês
-                  </p>
-                  <div className="flex gap-2">
-                    <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
-                      BLUE
+              {/* Lista das Respostas (Gabarito) */}
+              <div className="p-4 space-y-3 bg-white max-h-[50vh] overflow-y-auto">
+                {resultado.categorias.map((cat, i) => (
+                  <motion.div
+                    key={i}
+                    className="rounded-xl p-3 shadow-sm border border-gray-200 overflow-hidden relative"
+                    style={{ background: cat.cor }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1, duration: 0.3 }}
+                  >
+                    <div className="relative z-10 text-center">
+                      <h3 className="text-white font-extrabold text-[0.65rem] uppercase tracking-[0.15em] mb-1 drop-shadow-sm">
+                        {cat.titulo}
+                      </h3>
+                      <p className="text-white font-semibold text-xs leading-tight drop-shadow-sm">
+                        {cat.palavras.join(", ")}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              {/* FREE: só mensagem, PRO: só botão */}
+              {tier === "FREE" ? (
+                <motion.div
+                  className="flex flex-col items-center gap-1 my-3"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.3 }}
+                >
+                  <div
+                    className={`px-4 py-2 rounded-lg shadow-sm border border-blue-100 bg-gradient-to-r ${resultado.vitoria ? "from-blue-50 to-blue-100" : "from-red-50 to-red-100"} flex flex-col items-center w-full`}
+                  >
+                    <span className="text-[0.98rem] font-bold text-blue-700 tracking-wide drop-shadow-sm mb-0.5">
+                      {resultado.vitoria
+                        ? "Volte amanhã para um novo desafio!"
+                        : "Volte amanhã para tentar novamente!"}
                     </span>
-                    <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
-                      RED
-                    </span>
-                    <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
-                      GREEN
-                    </span>
-                    <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
-                      YELLOW
+                    <span className="text-xs text-blue-500 font-semibold flex items-center gap-1">
+                      Próximo desafio em:
+                      <span className="font-mono ml-1 text-blue-700 text-sm">
+                        {tempoRestante}
+                      </span>
                     </span>
                   </div>
-                  <p className="mt-2 text-xs text-gray-700">
-                    Estas 4 palavras formam um grupo.
-                  </p>
-                </div>
-
-                <div className="bg-white p-3 rounded-lg border border-gray-300">
-                  <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-gray-700">
-                    Categoria: Planetas
-                  </p>
-                  <div className="flex gap-2">
-                    <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
-                      TERRA
-                    </span>
-                    <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
-                      MARTE
-                    </span>
-                    <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
-                      JÚPITER
-                    </span>
-                    <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">
-                      VÊNUS
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Seção Dicas */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-indigo-400 font-bold text-base">
-                  <span>✨</span> <h3>Dicas</h3>
-                </div>
-                <ul className="list-disc pl-5 space-y-2 marker:text-indigo-500">
-                  <li className="text-gray-700">
-                    Você pode selecionar até 4 palavras por vez para verificar.
-                  </li>
-                  <li className="text-gray-700">
-                    Se você errar 5 vezes, um botão de{" "}
-                    <strong className="text-blue-400">DICA</strong> aparecerá
-                    para ajudar.
-                  </li>
-                  <li className="text-gray-700">
-                    As categorias variam de muito fáceis a difíceis
-                    (conhecimentos gerais, trocadilhos, etc).
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL DE RESULTADO (GAME OVER / WIN) --- */}
-      {resultado && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
-          {/* Overlay Escuro */}
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-xs animate-[fadeIn_0.5s_ease-out]" />
-
-          {/* Card do Modal */}
-          <div className="relative w-full max-w-sm bg-white border border-gray-200 rounded-3xl shadow-2xl overflow-hidden animate-[popIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)]">
-            {/* Cabeçalho Visual */}
-            <div
-              className={`px-6 py-6 text-center ${resultado.vitoria ? "!bg-green-50" : "!bg-red-50"}`}
-            >
-              <div className="mx-auto w-12 h-12 mb-3 flex items-center justify-center rounded-full bg-transparent text-2xl">
-                {resultado.vitoria ? "🏆" : "💀"}
-              </div>
-              <h2
-                className={`text-2xl font-black uppercase tracking-wide ${resultado.vitoria ? "!text-green-600" : "!text-red-600"}`}
-              >
-                {resultado.vitoria ? "Genial!" : "Fim de Jogo"}
-              </h2>
-              <p className="text-gray-700 text-sm mt-1 font-medium">
-                {resultado.vitoria
-                  ? "Você desvendou todas as conexões."
-                  : "Não foi dessa vez. Veja as respostas abaixo:"}
-              </p>
-            </div>
-
-            {/* Lista das Respostas (Gabarito) */}
-            <div className="p-4 space-y-3 bg-white max-h-[50vh] overflow-y-auto">
-              {resultado.categorias.map((cat, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl p-3 shadow-sm border border-gray-200 overflow-hidden relative"
-                  style={{ background: cat.cor }}
+                </motion.div>
+              ) : null}
+              {/* Rodapé com Ação */}
+              {tier === "Simula PRO" && (
+                <motion.div
+                  className="p-4 bg-gray-50 border-t border-gray-100"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.3 }}
                 >
-                  <div className="relative z-10 text-center">
-                    <h3 className="text-white font-extrabold text-[0.65rem] uppercase tracking-[0.15em] mb-1 drop-shadow-sm">
-                      {cat.titulo}
-                    </h3>
-                    <p className="text-white font-semibold text-xs leading-tight drop-shadow-sm">
-                      {cat.palavras.join(", ")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* FREE: só mensagem, PRO: só botão */}
-            {tier === "FREE" ? (
-              <div className="flex flex-col items-center gap-1 my-3">
-                <div
-                  className={`px-4 py-2 rounded-lg shadow-sm border border-blue-100 bg-gradient-to-r ${resultado.vitoria ? "from-blue-50 to-blue-100" : "from-red-50 to-red-100"} flex flex-col items-center w-full`}
-                >
-                  <span className="text-[0.98rem] font-bold text-blue-700 tracking-wide drop-shadow-sm mb-0.5">
-                    {resultado.vitoria
-                      ? "Volte amanhã para um novo desafio!"
-                      : "Volte amanhã para tentar novamente!"}
-                  </span>
-                  <span className="text-xs text-blue-500 font-semibold flex items-center gap-1">
-                    Próximo desafio em:
-                    <span className="font-mono ml-1 text-blue-700 text-sm">
-                      {tempoRestante}
-                    </span>
-                  </span>
-                </div>
-              </div>
-            ) : null}
-            {/* Rodapé com Ação */}
-            {tier === "Simula PRO" && (
-              <div className="p-4 bg-gray-50 border-t border-gray-100">
-                <button
-                  onClick={() => {
-                    localStorage.removeItem("nexo_save_v1");
-                    setResultado(null);
-                    setGameId((prev) => prev + 1);
-                  }}
-                  className="w-full py-3 rounded-xl font-bold text-white shadow-lg shadow-blue-500/30 active:scale-95 transition-all bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 cursor-pointer"
-                >
-                  Jogar Novamente
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("nexo_save_v1");
+                      setResultado(null);
+                      setGameId((prev) => prev + 1);
+                    }}
+                    className="w-full py-3 rounded-xl font-bold text-white shadow-lg shadow-blue-500/30 active:scale-95 transition-all bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 cursor-pointer"
+                  >
+                    Jogar Novamente
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- JANELA DO JOGO --- */}
       <div className="max-w-3xl overflow-hidden flex flex-col transition-all duration-300 z-10">
@@ -400,27 +533,93 @@ export default function Nexo() {
               ref={gameRef}
             >
               {Array.from({ length: 16 }).map((_, i) => (
-                <button
-                  key={i}
-                  className="nexo-card default group relative rounded-md shadow-md flex items-center justify-center p-6 cursor-pointer"
-                ></button>
+                <motion.button
+                  key={`btn-${i}`}
+                  data-index={i}
+                  className="nexo-card default group relative rounded-xl shadow-sm flex items-center justify-center p-6 cursor-pointer text-sm font-bold tracking-tight"
+                  layout={!isShuffling} // Desativa o layout automático do Framer durante o embaralhamento manual
+                  whileHover={{ 
+                    y: -5, 
+                    scale: 1.02, 
+                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.08)",
+                    borderColor: "#3b82f6" 
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 400, 
+                    damping: 25,
+                    layout: { duration: 0.3 } 
+                  }}
+                  animate={
+                    isShuffling
+                      ? {
+                          scale: [1, 0.8, 1.1, 1],
+                          rotate: [0, -10, 10, 0],
+                          filter: ["blur(0px)", "blur(2px)", "blur(0px)"],
+                          transition: { 
+                            duration: 0.5,
+                            ease: "easeInOut"
+                          }
+                        }
+                      : successIndices.has(i) 
+                        ? { 
+                          scale: [1, 1.15, 1], 
+                          backgroundColor: currentSuccessCategory?.cor || "#60a5fa",
+                          borderRadius: "16px",
+                          y: [0, -40, 0],
+                          opacity: [1, 1, 0],
+                          transition: {
+                            duration: 0.8,
+                            times: [0, 0.4, 1],
+                            ease: [0.34, 1.56, 0.64, 1]
+                          }
+                        }
+                      : shakingIndices.has(i) 
+                        ? { x: [0, -6, 6, -6, 6, 0], transition: { duration: 0.4 } } 
+                        : { x: 0, scale: 1, opacity: 1, y: 0 }
+                  }
+                />
               ))}
             </div>
             {/* Botões de Ação inseridos aqui */}
-            <div className="flex gap-4 justify-center w-full mt-2">
-              <button
+            <div className="flex gap-4 justify-center w-full mt-4">
+              <motion.button
                 onClick={handleDesmarcar}
-                className="px-6 py-2 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 border border-gray-200 text-gray-100 font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all active:scale-95 cursor-pointer"
+                className="px-8 py-3 rounded-xl bg-white/60 backdrop-blur-md border border-gray-200 text-gray-600 font-bold text-sm shadow-sm hover:text-red-500 transition-colors cursor-pointer"
+                whileHover={{ 
+                  y: -3, 
+                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.05)"
+                }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
                 Desmarcar tudo
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
                 onClick={handleEmbaralhar}
-                className="px-6 py-2 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 border border-gray-200 text-gray-100 font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all active:scale-95 cursor-pointer"
+                className="px-8 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold text-sm shadow-xl flex items-center gap-2 group cursor-pointer overflow-hidden relative"
+                whileHover={{ 
+                  y: -4, 
+                  backgroundColor: "#0f172a",
+                  boxShadow: "0 20px 25px -5px rgba(15, 23, 42, 0.25)"
+                }}
+                whileTap={{ scale: 0.94 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
-                Embaralhar
-              </button>
+                {/* Efeito de brilho que passa pelo botão no hover */}
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
+                  initial={false}
+                  whileHover={{ x: ["100%", "-100%"] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                />
+                
+                <Shuffle size={16} className="text-slate-400 group-hover:text-white transition-colors group-hover:rotate-180 duration-500" />
+                <span className="relative z-10">Embaralhar</span>
+              </motion.button>
             </div>
           </div>
         </div>

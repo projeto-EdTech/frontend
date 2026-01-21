@@ -7,9 +7,10 @@ import { useTheme } from "@/contexts/ThemeContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginModal from "@/components/Login-modal";
-import { Trophy, Medal, Award, Crown, BookOpen, Calendar, ChevronDown, ShieldCheck } from "lucide-react";
-import LoadingScreen from "@/components/LoadingScreen";
-import UserAvatar from "@/components/UserAvatar";
+import { Trophy, BookOpen, Calendar, ChevronDown, Crown, Medal, Award } from "lucide-react";
+import RankingTable from "@/components/ranking/RankingTable";
+import UserRankingCard from "@/components/ranking/UserRankingCard";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
 // --- TIPAGENS ---
@@ -226,7 +227,12 @@ async function fetchUniversityFilters() {
       
       <main className="flex-1 container mx-auto px-6 md:px-8 py-12 md:py-20 max-w-7xl">
         {/* Hero Section - macOS Style */}
-        <div className="text-center mb-16 md:mb-20 relative">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center mb-16 md:mb-20 relative"
+        >
             <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 border ${
               theme === 'dark' 
                 ? 'bg-gray-800/80 text-gray-300 border-white/10' 
@@ -240,319 +246,40 @@ async function fetchUniversityFilters() {
             }`}>
               Ranking de Competidores
             </h1>
-            <p className={`text-lg md:text-xl mb-6 max-w-3xl mx-auto leading-relaxed ${
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className={`text-lg md:text-xl mb-6 max-w-3xl mx-auto leading-relaxed ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>
               Veja sua posição entre os <span className={`font-semibold ${
                 theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
               }`}>melhores estudantes</span> do país
-            </p>
-        </div>
+            </motion.p>
+        </motion.div>
 
         {/* User Status Section - macOS Style */}
-        <div className="mb-16 max-w-4xl mx-auto">
-          {!isFetchingRanking && currentUser ? (
-            /* User in ranking card */
-            <div className={`relative overflow-hidden rounded-[28px] p-10 md:p-12 shadow-lg border ${
-              theme === 'dark'
-                ? 'bg-[#1d1d1f]/90 border-white/5'
-                : 'bg-white/90 border-black/5'
-            }`}>
-              
-              {/* Header */}
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      {getPositionBadge(currentUser.position)}
-                    </div>
-                    <div>
-                      <h2 className={`text-2xl md:text-3xl font-semibold tracking-tight ${
-                        theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'
-                      }`}>
-                        Sua Posição Atual
-                      </h2>
-                      <p className={`font-medium text-sm ${
-                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      }`}>
-                        {currentUser.position <= 10 ? '🔥 Top 10!' : currentUser.position <= 50 ? '⭐ Top 50!' : '💪 Continue assim!'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Badge */}
-                  <div className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-[12px] text-sm font-semibold shadow-md ${
-                    theme === 'dark'
-                      ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 text-blue-400 border border-blue-500/30'
-                      : 'bg-gradient-to-br from-blue-50 to-blue-100/80 text-blue-600 border border-blue-200/50'
-                  }`}>
-                    <Trophy className="w-4 h-4" />
-                    <span>Competidor Ativo</span>
-                  </div>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-                  <div className={`rounded-[24px] p-5 border shadow-md ${
-                    theme === 'dark'
-                      ? 'bg-white/5 border-white/10'
-                      : 'bg-gray-50/50 border-black/5'
-                  }`}>
-                    <div className="text-center">
-                      <p className={`text-sm font-semibold mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}>Posição</p>
-                      <p className={`text-2xl font-semibold ${
-                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      }`}>#{currentUser.position}</p>
-                    </div>
-                  </div>
-                  
-                  <div className={`rounded-[24px] p-5 border shadow-md ${
-                    theme === 'dark'
-                      ? 'bg-white/5 border-white/10'
-                      : 'bg-gray-50/50 border-black/5'
-                  }`}>
-                    <div className="text-center">
-                      <p className={`text-sm font-semibold mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}>Pontuação</p>
-                      <p className={`text-2xl font-semibold ${
-                        theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'
-                      }`}>{currentUser.score.toLocaleString()}</p>
-                    </div>
-                  </div>
-                  
-                  <div className={`rounded-[24px] p-5 border shadow-md ${
-                    theme === 'dark'
-                      ? 'bg-white/5 border-white/10'
-                      : 'bg-gray-50/50 border-black/5'
-                  }`}>
-                    <div className="text-center">
-                      <p className={`text-sm font-semibold mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}>Rank Atual</p>
-                      <div className="flex items-center justify-center gap-2">
-                        {getRankIcon(currentUser.rank)}
-                        <span className={`text-lg font-semibold ${
-                          theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'
-                        }`}>{currentUser.rank}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className={`rounded-[24px] p-6 border shadow-md ${
-                  theme === 'dark'
-                    ? 'bg-white/5 border-white/10'
-                    : 'bg-gray-50/50 border-black/5'
-                }`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-[12px] text-sm font-semibold border ${getRankBadgeColor(currentUser.rank)}`}>
-                        {getRankIcon(currentUser.rank)}
-                        {currentUser.rank}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}>Próximo Rank</p>
-                      <p className={`text-sm font-semibold ${
-                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      }`}>{getRankProgress(currentUser).nextRankName}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Progress Bar */}
-                  <div className="relative">
-                    <div className={`w-full rounded-full h-3 overflow-hidden ${
-                      theme === 'dark' ? 'bg-white/10' : 'bg-gray-200'
-                    }`}>
-                      <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${getRankProgress(currentUser).progress}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between items-center mt-2 text-xs">
-                      <span className={`font-medium ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                      }`}>{getRankProgress(currentUser).progress}% completo</span>
-                      <span className={`font-semibold ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                        {getRankProgress(currentUser).pointsToNext > 0 
-                          ? `${getRankProgress(currentUser).pointsToNext.toLocaleString()} pontos restantes`
-                          : `🎉 Rank máximo alcançado!`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-8">
-                  <button 
-                    onClick={() => router.push('/library')}
-                    className={`flex-1 py-3.5 px-6 rounded-[12px] font-semibold transition-all duration-300 shadow-md ${
-                      theme === 'dark'
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                        : 'bg-blue-600 hover:bg-blue-500 text-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <BookOpen className="w-5 h-5" />
-                      <span>Fazer Novo Simulado</span>
-                    </div>
-                  </button>
-                  <button 
-                    onClick={() => router.push('/profile')}
-                    className={`flex-1 font-semibold py-3.5 px-6 rounded-[12px] border transition-all duration-300 ${
-                      theme === 'dark'
-                        ? 'bg-white/5 hover:bg-white/10 text-gray-300 border-white/10'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-black/5'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <Trophy className="w-5 h-5" />
-                      <span>Ver Histórico</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : !isFetchingRanking && !currentUser ? (
-            /* User without ranking card */
-            <div className={`relative overflow-hidden rounded-[28px] p-10 md:p-12 text-center shadow-lg border ${
-              theme === 'dark'
-                ? 'bg-[#1d1d1f]/90 border-white/5'
-                : 'bg-white/90 border-black/5'
-            }`}>
-              {/* Mascote */}
-              <div className="absolute top-4 right-4 hidden md:block opacity-90">
-                <Image 
-                  src="/Mascote/banners/Camaleão_6.png" 
-                  alt="Mascote animado" 
-                  width={100} 
-                  height={100}
-                  className="drop-shadow-xl"
-                />
-              </div>
-              <div className="relative z-10">
-                {/* Icon */}
-                <div className="mb-6">
-                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-[12px] shadow-md ${
-                    theme === 'dark'
-                      ? 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30'
-                      : 'bg-gradient-to-br from-blue-50 to-indigo-50/80 border border-blue-200/50'
-                  }`}>
-                    <ShieldCheck className={`w-10 h-10 ${
-                      theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                    }`} />
-                  </div>
-                </div>
-                
-                <h2 className={`text-2xl md:text-3xl font-semibold tracking-tight mb-4 ${
-                  theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'
-                }`}>
-                  Comece Sua Jornada no Ranking
-                </h2>
-                
-                <p className={`mb-8 max-w-md mx-auto leading-relaxed ${
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  Complete seu primeiro simulado e entre para a <span className={`font-semibold ${
-                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                  }`}>competição nacional</span>. 
-                  Milhares de estudantes já estão participando!
-                </p>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-8 max-w-md mx-auto">
-                  <div className="text-center">
-                    <p className={`text-2xl font-semibold ${
-                      theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                    }`}>1,247</p>
-                    <p className={`text-xs font-medium ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                    }`}>Competidores</p>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-2xl font-semibold ${
-                      theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'
-                    }`}>15,892</p>
-                    <p className={`text-xs font-medium ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                    }`}>Simulados</p>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-2xl font-semibold ${
-                      theme === 'dark' ? 'text-green-400' : 'text-green-600'
-                    }`}>94%</p>
-                    <p className={`text-xs font-medium ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                    }`}>Satisfação</p>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-3">
-                  <button 
-                    onClick={() => router.push('/library')}
-                    className={`w-full py-4 px-8 rounded-[12px] font-semibold transition-all duration-300 shadow-md ${
-                      theme === 'dark'
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                        : 'bg-blue-600 hover:bg-blue-500 text-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center gap-3">
-                      <BookOpen className="w-5 h-5" />
-                      <span>Fazer Meu Primeiro Simulado</span>
-                    </div>
-                  </button>
-                  
-                  <button className={`w-full font-semibold py-3 px-6 rounded-[12px] border transition-all duration-300 ${
-                    theme === 'dark'
-                      ? 'bg-white/5 hover:bg-white/10 text-gray-300 border-white/10'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-black/5'
-                  }`}>
-                    <div className="flex items-center justify-center gap-2">
-                      <Trophy className="w-4 h-4" />
-                      <span>Ver Como Funciona o Ranking</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Loading state */
-            <div className={`rounded-[28px] p-10 shadow-lg border animate-pulse ${
-              theme === 'dark'
-                ? 'bg-[#1d1d1f]/90 border-white/5'
-                : 'bg-white/90 border-black/5'
-            }`}>
-              <div className="flex items-center gap-6">
-                <div className={`w-16 h-16 rounded-full ${
-                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
-                }`}></div>
-                <div className="flex-1 space-y-3">
-                  <div className={`h-6 rounded-lg w-1/3 ${
-                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
-                  }`}></div>
-                  <div className={`h-4 rounded w-2/3 ${
-                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
-                  }`}></div>
-                  <div className={`h-3 rounded-full w-full ${
-                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
-                  }`}></div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-16 max-w-4xl mx-auto"
+        >
+          <UserRankingCard 
+            currentUser={currentUser}
+            isLoading={isFetchingRanking}
+          />
+        </motion.div>
 
         {/* --- SEÇÃO DE FILTROS --- */}
-        <div className="mb-12 max-w-5xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mb-12 max-w-5xl mx-auto"
+        >
           {/* Header */}
           <div className="text-center mb-8">
             <h2 className={`text-3xl font-semibold tracking-tight mb-2 ${
@@ -593,7 +320,7 @@ async function fetchUniversityFilters() {
                 <button
                   onClick={() => { if(!filtersLoading) { setUniversityDropdownOpen(!universityDropdownOpen); setPeriodDropdownOpen(false); }}}
                   disabled={filtersLoading}
-                  className={`w-full border rounded-[12px] px-4 py-4 text-left shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 disabled:cursor-wait ${
+                  className={`w-full border rounded-[12px] px-4 py-4 text-left shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 disabled:cursor-wait cursor-pointer ${
                     theme === 'dark'
                       ? 'bg-white/5 hover:bg-white/10 border-white/10 disabled:bg-white/5'
                       : 'bg-gray-50 hover:bg-gray-100 border-black/5 disabled:bg-gray-50'
@@ -625,47 +352,49 @@ async function fetchUniversityFilters() {
                   </div>
                 </button>
 
-                {universityDropdownOpen && (
-                  <div className={`absolute z-30 w-full mt-2 border rounded-[12px] shadow-xl max-h-64 overflow-y-auto ${
-                    theme === 'dark'
-                      ? 'bg-[#1d1d1f] border-white/10'
-                      : 'bg-white border-black/5'
-                  }`}>
-                    <div className="p-2">
-                      {universityOptions.map((uni) => (
-                        <button
-                          key={uni.id}
-                          onClick={() => handleUniversitySelect(uni.id)}
-                          className={`w-full px-4 py-3 text-left rounded-[12px] transition-all duration-200 ${
-                            activeUniversityFilter === uni.id 
-                              ? (theme === 'dark'
-                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                : 'bg-blue-50 text-blue-700 border border-blue-200/50')
-                              : (theme === 'dark'
-                                ? 'text-white hover:bg-white/5'
-                                : 'text-[#1d1d1f] hover:bg-gray-50')
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              {uni.id === 'geral' && (
-                                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[8px] flex items-center justify-center">
-                                  <Trophy className="w-3 h-3 text-white" />
+                <AnimatePresence>
+                  {universityDropdownOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className={`absolute z-30 w-full mt-2 border rounded-[12px] shadow-xl max-h-64 overflow-y-auto ${
+                        theme === 'dark'
+                          ? 'bg-[#1d1d1f] border-white/10'
+                          : 'bg-white border-black/5'
+                      }`}
+                    >
+                      <div className="p-2">
+                        {universityOptions.map((uni) => (
+                          <motion.button
+                            key={uni.id}
+                            whileHover={{ x: 4 }}
+                            onClick={() => handleUniversitySelect(uni.id)}
+                            className={`w-full px-4 py-3 text-left rounded-[12px] transition-all duration-200 ${
+                              activeUniversityFilter === uni.id 
+                                ? (theme === 'dark'
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                  : 'bg-blue-50 text-blue-700 border border-blue-200/50')
+                                : (theme === 'dark'
+                                  ? 'text-white hover:bg-white/5'
+                                  : 'text-[#1d1d1f] hover:bg-gray-50')
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-sm">{uni.name}</span>
+                              {activeUniversityFilter === uni.id && (
+                                <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs">✓</span>
                                 </div>
                               )}
-                              <span className="font-semibold text-sm">{uni.name}</span>
                             </div>
-                            {activeUniversityFilter === uni.id && (
-                              <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs">✓</span>
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
               
               {/* Dropdown de Período */}
@@ -690,7 +419,7 @@ async function fetchUniversityFilters() {
 
                 <button
                   onClick={() => { setPeriodDropdownOpen(!periodDropdownOpen); setUniversityDropdownOpen(false); }}
-                  className={`w-full border rounded-[12px] px-4 py-4 text-left shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 ${
+                  className={`w-full border rounded-[12px] px-4 py-4 text-left shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 cursor-pointer ${
                     theme === 'dark'
                       ? 'bg-white/5 hover:bg-white/10 border-white/10'
                       : 'bg-gray-50 hover:bg-gray-100 border-black/5'
@@ -716,45 +445,54 @@ async function fetchUniversityFilters() {
                   </div>
                 </button>
 
-                {periodDropdownOpen && (
-                  <div className={`absolute z-30 w-full mt-2 border rounded-[12px] shadow-xl max-h-64 overflow-y-auto ${
-                    theme === 'dark'
-                      ? 'bg-[#1d1d1f] border-white/10'
-                      : 'bg-white border-black/5'
-                  }`}>
-                    <div className="p-2">
-                      {PERIOD_OPTIONS.map((period) => (
-                        <button
-                          key={period.id}
-                          onClick={() => handlePeriodSelect(period.id as PeriodFilter)}
-                          className={`w-full px-4 py-3 text-left rounded-[12px] transition-all duration-200 ${
-                            period.id === activePeriodFilter 
-                              ? (theme === 'dark'
-                                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200/50')
-                              : (theme === 'dark'
-                                ? 'text-white hover:bg-white/5'
-                                : 'text-[#1d1d1f] hover:bg-gray-50')
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[8px] flex items-center justify-center">
-                                <Calendar className="w-3 h-3 text-white" />
+                <AnimatePresence>
+                  {periodDropdownOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className={`absolute z-30 w-full mt-2 border rounded-[12px] shadow-xl max-h-64 overflow-y-auto ${
+                        theme === 'dark'
+                          ? 'bg-[#1d1d1f] border-white/10'
+                          : 'bg-white border-black/5'
+                      }`}
+                    >
+                      <div className="p-2">
+                        {PERIOD_OPTIONS.map((period) => (
+                          <motion.button
+                            key={period.id}
+                            whileHover={{ x: 4 }}
+                            onClick={() => handlePeriodSelect(period.id as PeriodFilter)}
+                            className={`w-full px-4 py-3 text-left rounded-[12px] transition-all duration-200 ${
+                              period.id === activePeriodFilter 
+                                ? (theme === 'dark'
+                                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                                  : 'bg-indigo-50 text-indigo-700 border border-indigo-200/50')
+                                : (theme === 'dark'
+                                  ? 'text-white hover:bg-white/5'
+                                  : 'text-[#1d1d1f] hover:bg-gray-50')
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[8px] flex items-center justify-center">
+                                  <Calendar className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="font-semibold text-sm">{period.name}</span>
                               </div>
-                              <span className="font-semibold text-sm">{period.name}</span>
+                              {period.id === activePeriodFilter && (
+                                <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs">✓</span>
+                                </div>
+                              )}
                             </div>
-                            {period.id === activePeriodFilter && (
-                              <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs">✓</span>
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -790,271 +528,29 @@ async function fetchUniversityFilters() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
         
         {/* Tabela de Ranking */}
-        {isFetchingRanking ? (
-          <div className={`rounded-[28px] shadow-lg border p-12 ${
-            theme === 'dark'
-              ? 'bg-[#1d1d1f]/90 border-white/5'
-              : 'bg-white/90 border-black/5'
-          }`}>
-            <LoadingScreen message={`Carregando ranking para ${currentUniversity?.name}...`} />
-          </div>
-        ) : rankingData.length > 0 ? (
-          <div className={`rounded-[28px] shadow-lg border overflow-hidden relative ${
-            theme === 'dark'
-              ? 'bg-[#1d1d1f]/90 border-white/5'
-              : 'bg-white/90 border-black/5'
-          }`}>
-            {/* Mascote observando */}
-            <div className="absolute top-0 right-40 hidden xl:block z-10 opacity-90">
-              <Image 
-                src="/Mascote/banners/Camaleão_21.png" 
-                alt="Mascote observando" 
-                width={85} 
-                height={85}
-                className="drop-shadow-xl"
-              />
-            </div>
-            
-            {/* Header da tabela */}
-            <div className={`px-8 py-6 border-b ${
-              theme === 'dark'
-                ? 'bg-[#1d1d1f] border-white/5'
-                : 'bg-white border-black/5'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className={`text-2xl font-semibold tracking-tight ${
-                    theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'
-                  }`}>Ranking de Competidores</h3>
-                  <p className={`text-sm mt-1 ${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>{rankingData.length} competidores • {currentUniversity?.name}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className={`text-xs font-medium ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                    }`}>Atualizado</p>
-                    <p className={`text-sm font-semibold ${
-                      theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'
-                    }`}>Agora mesmo</p>
-                  </div>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className={`border-b ${
-                  theme === 'dark'
-                    ? 'bg-white/5 border-white/5'
-                    : 'bg-gray-50 border-black/5'
-                }`}>
-                  <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                    }`}>Posição</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                    }`}>Competidor</th>
-                    <th className={`px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                    }`}>Nível</th>
-                    <th className={`px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider ${
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                    }`}>Pontos</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${
-                  theme === 'dark' ? 'divide-white/5' : 'divide-black/5'
-                }`}>
-                  {rankingData.map((user) => (
-                    <tr 
-                      key={`${activeUniversityFilter}-${activePeriodFilter}-${user.position}`} 
-                      className={`transition-all duration-300 ${
-                        user.isCurrentUser 
-                          ? (theme === 'dark'
-                            ? 'bg-blue-500/10 border-l-4 border-l-blue-500'
-                            : 'bg-blue-50 border-l-4 border-l-blue-500')
-                          : (theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-gray-50')
-                      }`}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          {user.position <= 3 ? (
-                            <div className="transform hover:scale-110 transition-transform duration-200">
-                              {getPositionBadge(user.position)}
-                            </div>
-                          ) : (
-                            <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                              theme === 'dark' ? 'bg-white/5' : 'bg-gray-100'
-                            }`}>
-                              <span className={`font-semibold text-sm ${
-                                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                              }`}>#{user.position}</span>
-                            </div>
-                          )}
-                          {/* Trending indicator para top performers */}
-                          {user.position <= 10 && (
-                            <div className="ml-2">
-                              <div className="w-1 h-6 bg-gradient-to-t from-green-400 to-green-600 rounded-full"></div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <UserAvatar name={user.name} className="w-12 h-12 text-lg shadow-sm" />
-                            {user.isCurrentUser && (
-                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs">✓</span>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <div className={`font-semibold flex items-center gap-2 ${
-                              theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'
-                            }`}>
-                              {user.name}
-                              {user.isCurrentUser && (
-                                <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
-                                  VOCÊ
-                                </span>
-                              )}
-                            </div>
-                            {user.position <= 10 && (
-                              <p className={`text-xs font-medium ${
-                                theme === 'dark' ? 'text-green-400' : 'text-green-600'
-                              }`}>🔥 Top Performer</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 text-center hidden sm:table-cell">
-                        <div className="inline-flex items-center gap-2">
-                          {getRankIcon(user.rank)}
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getRankBadgeColor(user.rank)}`}>
-                            {user.rank}
-                          </span>
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <span className={`text-xl font-semibold ${
-                            theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                          }`}>
-                            {user.score.toLocaleString()}
-                          </span>
-                          <span className={`text-xs font-medium ${
-                            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                          }`}>pts</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Footer da tabela */}
-            <div className={`px-8 py-5 border-t ${
-              theme === 'dark'
-                ? 'bg-white/5 border-white/5'
-                : 'bg-gray-50 border-black/5'
-            }`}>
-              <div className={`flex items-center justify-between text-sm ${
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                <span>Mostrando {rankingData.length} competidores</span>
-                <div className="flex items-center gap-2">
-                  <span>Ranking atualizado em tempo real</span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Estado vazio */
-          <div className={`text-center rounded-[28px] p-12 shadow-lg border relative overflow-hidden ${
-            theme === 'dark'
-              ? 'bg-[#1d1d1f]/90 border-white/5'
-              : 'bg-white/90 border-black/5'
-          }`}>
-            {/* Mascote de incentivo */}
-            <div className="absolute -top-6 -left-6 hidden lg:block opacity-80">
-              <Image 
-                src="/Mascote/banners/Camaleão_12.png" 
-                alt="Mascote pensativo" 
-                width={140} 
-                height={140}
-                className="drop-shadow-2xl transform rotate-12"
-              />
-            </div>
-            
-            <div className="max-w-md mx-auto relative z-10">
-              <div className={`w-24 h-24 rounded-[12px] flex items-center justify-center mx-auto mb-6 ${
-                theme === 'dark' ? 'bg-white/5' : 'bg-gray-100'
-              }`}>
-                <Trophy className={`w-12 h-12 ${
-                  theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-                }`} />
-              </div>
-              
-              <h3 className={`text-3xl font-semibold tracking-tight mb-4 ${
-                theme === 'dark' ? 'text-white' : 'text-[#1d1d1f]'
-              }`}>Ranking em Construção</h3>
-              
-              <p className={`mb-8 leading-relaxed ${
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                Ainda não há competidores para <span className={`font-semibold ${
-                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                }`}>{currentUniversity?.name}</span> no período <span className={`font-semibold ${
-                  theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'
-                }`}>{currentPeriod?.name}</span>. 
-                Seja o primeiro a participar desta competição!
-              </p>
-
-              <div className="space-y-3">
-                <button 
-                  onClick={() => router.push('/library')}
-                  className={`w-full py-4 px-8 rounded-[12px] font-semibold transition-all duration-300 shadow-md ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <BookOpen className="w-5 h-5" />
-                    <span>Iniciar Primeiro Simulado</span>
-                  </div>
-                </button>
-                
-                <button 
-                  onClick={() => { setActiveUniversityFilter('geral'); setActivePeriodFilter('mensal'); }}
-                  className={`w-full font-semibold py-3 px-6 rounded-[12px] border transition-all duration-300 ${
-                    theme === 'dark'
-                      ? 'bg-white/5 hover:bg-white/10 text-gray-300 border-white/10'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-black/5'
-                  }`}
-                >
-                  Ver Ranking Geral
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          <RankingTable
+            rankingData={rankingData}
+            isLoading={isFetchingRanking}
+            currentUniversity={currentUniversity}
+            currentPeriod={currentPeriod}
+            activeUniversityFilter={activeUniversityFilter}
+            activePeriodFilter={activePeriodFilter}
+            onResetFilters={() => { setActiveUniversityFilter('geral'); setActivePeriodFilter('mensal'); }}
+          />
+        </AnimatePresence>
         
         {/* CTA Section */}
-        <div className="mt-16 relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-[28px] shadow-lg">
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-16 relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-[28px] shadow-lg"
+        >
           {/* Elementos decorativos */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-white/5 to-transparent rounded-full -translate-y-48 translate-x-48"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-indigo-500/10 to-transparent rounded-full translate-y-32 -translate-x-32"></div>
@@ -1106,29 +602,33 @@ async function fetchUniversityFilters() {
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => router.push('/library')}
-                  className="bg-white hover:bg-gray-100 text-blue-700 font-semibold py-4 px-8 rounded-[12px] transition-all duration-300 shadow-md"
+                  className="bg-white hover:bg-gray-100 text-blue-700 font-semibold py-4 px-8 rounded-[12px] transition-all duration-300 shadow-md cursor-pointer"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <BookOpen className="w-5 h-5" />
                     <span>Fazer Novo Simulado</span>
                   </div>
-                </button>
+                </motion.button>
                 
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => router.push('/profile')}
-                  className="bg-white/10 hover:bg-white/20 text-white font-semibold py-4 px-8 rounded-[12px] border border-white/20 transition-all duration-300 backdrop-blur-sm"
+                  className="bg-white/10 hover:bg-white/20 text-white font-semibold py-4 px-8 rounded-[12px] border border-white/20 transition-all duration-300 backdrop-blur-sm cursor-pointer"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <Trophy className="w-5 h-5" />
                     <span>Meus Resultados</span>
                   </div>
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </main>
       <Footer />
 

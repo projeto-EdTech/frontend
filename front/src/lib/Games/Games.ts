@@ -16,6 +16,10 @@ const NexoGame = dynamic(
   () => import('../../components/games/Nexo/Nexo')
 );
 
+const EnigmaGame = dynamic(
+  () => import('../../components/games/Enigma/enigma')
+);
+
 // --- Tipagens ---
 export interface GameComponentProps {
   onComplete?: (score: { correct: number; total: number }) => void;
@@ -29,6 +33,7 @@ export const gameComponents: Record<string, ComponentType<any>> = {
   'flash-cards': FlashCardGame,
   'lexoo': LexooGame,
   'nexo': NexoGame,
+  'enigma': EnigmaGame,
 };
 
 // Função auxiliar para obter o componente pelo slug
@@ -36,9 +41,6 @@ export const gameComponents: Record<string, ComponentType<any>> = {
 export const getGameComponent = (slug: string): ComponentType<any> | null => {
   return gameComponents[slug] || null;
 };
-
-// --- Dados Estáticos (Banco de Questões) ---
-
 
 // --- Helpers de Dados ---
 
@@ -48,6 +50,10 @@ export const getGameData = (slug: string) => {
       return { cards: flashCardsData };
     case 'lexoo':
       // Lexoo não precisa de dados estáticos, retorna vazio
+      return {};
+    case 'nexo':
+      return {};
+    case 'enigma':
       return {};
     default:
       return {};

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Search, MessageSquare, Trash2, Edit2, Check, X } from "lucide-react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 interface ChatHistory {
   id: string;
@@ -18,6 +19,47 @@ interface ChatSidebarProps {
   onSelectChat?: (chatId: string) => void;
 }
 
+// Mover variantes para fora do componente com tipagem explícita
+const sidebarVariants: Variants = {
+  open: { 
+    x: 0, 
+    opacity: 1,
+    transition: { 
+      duration: 0.4, 
+      ease: [0.25, 0.46, 0.45, 0.94],
+      staggerChildren: 0.05,
+      delayChildren: 0.1
+    } 
+  },
+  closed: { 
+    x: "-100%", 
+    opacity: 0,
+    transition: { 
+      duration: 0.4, 
+      ease: [0.25, 0.46, 0.45, 0.94] 
+    } 
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.95,
+    transition: { duration: 0.2 } 
+  }
+};
+
+const overlayVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.3 } }
+};
+
 export default function ChatSidebar({ 
   isOpen, 
   onToggle, 
@@ -29,9 +71,17 @@ export default function ChatSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  // Carregar histórico do localStorage
+  // Garantir que o componente foi montado antes de usar localStorage
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Carregar histórico do localStorage (apenas após montagem)
+  useEffect(() => {
+    if (!mounted) return;
+
     const loadHistory = () => {
       try {
         const saved = localStorage.getItem("chatHistory");
@@ -50,7 +100,7 @@ export default function ChatSidebar({
     };
 
     loadHistory();
-  }, []);
+  }, [mounted]);
 
   // Salvar histórico no localStorage
   const saveHistory = (history: ChatHistory[]) => {
@@ -127,128 +177,168 @@ export default function ChatSidebar({
   const { today, yesterday, lastWeek, older } = groupedHistory();
 
   const renderChatItem = (chat: ChatHistory) => (
-    <div
+    <motion.div
       key={chat.id}
+      variants={itemVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      layout
       className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 ${
         currentChatId === chat.id
           ? "bg-white border border-blue-200/50 shadow-sm"
           : "hover:bg-gray-50/80 border border-transparent hover:shadow-sm"
       }`}
     >
-      {editingId === chat.id ? (
-        <>
-          <input
-            type="text"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            className="flex-1 bg-white border border-blue-400 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-400/30 shadow-sm transition-all duration-200"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveEdit(chat.id);
-              if (e.key === "Escape") cancelEdit();
-            }}
-          />
-          <button
-            onClick={() => saveEdit(chat.id)}
-            className="p-2 hover:bg-green-50 rounded-lg transition-all duration-200 hover:shadow-sm"
-            title="Salvar"
+      <AnimatePresence mode="wait">
+        {editingId === chat.id ? (
+          <motion.div 
+            key="editing"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="flex flex-1 items-center gap-2"
           >
-            <Check className="w-4 h-4 text-green-600" />
-          </button>
-          <button
-            onClick={cancelEdit}
-            className="p-2 hover:bg-red-50 rounded-lg transition-all duration-200 hover:shadow-sm"
-            title="Cancelar"
-          >
-            <X className="w-4 h-4 text-red-600" />
-          </button>
-        </>
-      ) : (
-        <>
-          <div className={`p-2 rounded-lg transition-all duration-300 ${
-            currentChatId === chat.id 
-              ? "bg-blue-100/80" 
-              : "bg-gray-100/80 group-hover:bg-gray-200/80"
-          }`}>
-            <MessageSquare className={`w-4 h-4 flex-shrink-0 transition-colors duration-300 ${
-              currentChatId === chat.id ? "text-blue-600" : "text-gray-500"
-            }`} />
-          </div>
-          <button
-            onClick={() => onSelectChat?.(chat.id)}
-            className={`flex-1 text-left text-sm truncate font-medium transition-colors duration-300 ${
-              currentChatId === chat.id ? "text-blue-700" : "text-gray-700"
-            }`}
-          >
-            {chat.title}
-          </button>
-          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all duration-300">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                startEdit(chat);
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="flex-1 bg-white border border-blue-400 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-400/30 shadow-sm transition-all duration-200"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveEdit(chat.id);
+                if (e.key === "Escape") cancelEdit();
               }}
-              className="p-2 hover:bg-blue-50 rounded-lg transition-all duration-200"
-              title="Editar"
+            />
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => saveEdit(chat.id)}
+              className="p-2 hover:bg-green-50 rounded-lg transition-all duration-200 hover:shadow-sm"
+              title="Salvar"
             >
-              <Edit2 className="w-3.5 h-3.5 text-gray-500 hover:text-blue-600 transition-colors" />
-            </button>
+              <Check className="w-4 h-4 text-green-600" />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={cancelEdit}
+              className="p-2 hover:bg-red-50 rounded-lg transition-all duration-200 hover:shadow-sm"
+              title="Cancelar"
+            >
+              <X className="w-4 h-4 text-red-600" />
+            </motion.button>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="idling"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-1 items-center gap-3"
+          >
+            <div className={`p-2 rounded-lg transition-all duration-300 ${
+              currentChatId === chat.id 
+                ? "bg-blue-100/80" 
+                : "bg-gray-100/80 group-hover:bg-gray-200/80"
+            }`}>
+              <MessageSquare className={`w-4 h-4 flex-shrink-0 transition-colors duration-300 ${
+                currentChatId === chat.id ? "text-blue-600" : "text-gray-500"
+              }`} />
+            </div>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(chat.id);
-              }}
-              className="p-2 hover:bg-red-50 rounded-lg transition-all duration-200"
-              title="Deletar"
+              onClick={() => onSelectChat?.(chat.id)}
+              className={`flex-1 text-left text-sm truncate font-medium transition-colors duration-300 ${
+                currentChatId === chat.id ? "text-blue-700" : "text-gray-700"
+              }`}
             >
-              <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-600 transition-colors" />
+              {chat.title}
             </button>
-          </div>
-        </>
-      )}
-    </div>
+            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all duration-300">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startEdit(chat);
+                }}
+                className="p-2 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                title="Editar"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-gray-500 hover:text-blue-600 transition-colors" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(chat.id);
+                }}
+                className="p-2 hover:bg-red-50 rounded-lg transition-all duration-200"
+                title="Deletar"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-600 transition-colors" />
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 
   const renderGroup = (title: string, chats: ChatHistory[]) => {
     if (chats.length === 0) return null;
     return (
-      <div className="mb-7">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-7"
+      >
         <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-3 mb-3">
           {title}
         </h3>
         <div className="space-y-1.5">
-          {chats.map(renderChatItem)}
+          <AnimatePresence mode="popLayout">
+            {chats.map(renderChatItem)}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   return (
     <>
       {/* Overlay para mobile */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden transition-all duration-300"
-          onClick={onToggle}
-        />
-      )}
+      <AnimatePresence>
+        {isOpen && mounted && (
+          <motion.div
+            variants={overlayVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20 lg:hidden"
+            onClick={onToggle}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Sidebar */}
-      <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen transition-all duration-300 ease-in-out z-50 lg:z-auto ${
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } ${isOpen ? "w-72" : "lg:w-72 w-0"} bg-white border-r border-gray-200 backdrop-blur-xl shadow-xl lg:shadow-none`}
+      <motion.aside
+        initial={isOpen ? "open" : "closed"}
+        animate={isOpen ? "open" : "closed"}
+        variants={sidebarVariants}
+        className="hidden lg:flex lg:static fixed inset-0 top-0 left-0 z-50 flex-col h-screen bg-white border-r border-gray-200 backdrop-blur-xl shadow-xl lg:shadow-none overflow-hidden w-72"
       >
-        <div className="h-full flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col w-full">
           {/* Botão Nova Conversa */}
           <div className="p-4 bg-white border-b border-gray-200 backdrop-blur-xl">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onNewChat}
-              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:shadow-blue-500/30 text-white rounded-xl transition-all duration-300 shadow-lg hover:scale-[1.02] active:scale-[0.98] font-semibold text-[15px] group cursor-pointer"
+              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:shadow-blue-500/30 text-white rounded-xl transition-all duration-300 shadow-lg font-semibold text-[15px] group cursor-pointer"
             >
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
               Nova Conversa
-            </button>
+            </motion.button>
           </div>
 
           {/* Campo de Busca */}
@@ -267,29 +357,36 @@ export default function ChatSidebar({
 
           {/* Lista de Conversas */}
           <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-            {filteredHistory.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center px-4 py-12">
-                <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mb-5 shadow-sm">
-                  <MessageSquare className="w-9 h-9 text-gray-400" />
-                </div>
-                <p className="text-[15px] text-gray-700 font-semibold mb-2">
-                  {searchQuery ? "Nenhuma conversa encontrada" : "Nenhuma conversa ainda"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {searchQuery ? "Tente outro termo" : "Comece uma nova conversa"}
-                </p>
-              </div>
-            ) : (
-              <>
-                {renderGroup("Hoje", today)}
-                {renderGroup("Ontem", yesterday)}
-                {renderGroup("Últimos 7 dias", lastWeek)}
-                {renderGroup("Mais antigas", older)}
-              </>
-            )}
+            <AnimatePresence mode="wait">
+              {filteredHistory.length === 0 ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="flex flex-col items-center justify-center h-full text-center px-4 py-12"
+                >
+                  <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mb-5 shadow-sm">
+                    <MessageSquare className="w-9 h-9 text-gray-400" />
+                  </div>
+                  <p className="text-[15px] text-gray-700 font-semibold mb-2">
+                    {searchQuery ? "Nenhuma conversa encontrada" : "Nenhuma conversa ainda"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {searchQuery ? "Tente outro termo" : "Comece uma nova conversa"}
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div layout>
+                  {renderGroup("Hoje", today)}
+                  {renderGroup("Ontem", yesterday)}
+                  {renderGroup("Últimos 7 dias", lastWeek)}
+                  {renderGroup("Mais antigas", older)}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </aside>
+      </motion.aside>
     </>
   );
 }

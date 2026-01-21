@@ -6,9 +6,40 @@ const config: Config = {
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    // Breakpoints customizados para melhor suporte a dispositivos
+    screens: {
+      'xs': '375px',    // iPhone SE, dispositivos pequenos
+      'sm': '640px',    // Mobile landscape, tablets pequenos
+      'md': '768px',    // Tablets portrait
+      'lg': '1024px',   // Tablets landscape, laptops pequenos
+      'xl': '1280px',   // Desktops
+      '2xl': '1536px',  // Desktops grandes
+    },
     extend: {
+      // Safe area para dispositivos com notch (iPhone X+)
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
+      padding: {
+        'safe': 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+      },
+      // Min height com viewport height dinâmico
+      minHeight: {
+        'screen-dvh': '100dvh',
+        'screen-svh': '100svh',
+        'screen-lvh': '100lvh',
+      },
+      height: {
+        'screen-dvh': '100dvh',
+        'screen-svh': '100svh',
+        'screen-lvh': '100lvh',
+      },
       fontFamily: {
         sans: ['var(--font-geist-sans)'],
         dyslexic: ['var(--font-opendyslexic)'],

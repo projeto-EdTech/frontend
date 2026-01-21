@@ -62,7 +62,7 @@
     "dompurify": "^3.2.6",
     "embla-carousel-react": "^8.6.0",
     "file-saver": "^2.0.5",
-    "framer-motion": "^12.26.2",
+    "framer-motion": "^12.27.5",
     "googleapis": "^162.0.0",
     "input-otp": "^1.4.1",
     "isomorphic-dompurify": "^2.28.0",

@@ -18,8 +18,37 @@ export default function SphereCarousel<T>({
   itemSpacing = 55, // Espaçamento padrão: 55px entre items
 }: SphereCarouselProps<T>) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentHeight, setCurrentHeight] = useState(itemHeight);
+  const [currentSpacing, setCurrentSpacing] = useState(itemSpacing);
 
   const itemCount = items.length;
+
+  // Lógica de responsividade
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+
+      if (width < 640) {
+        // Mobile: Reduz para 50%
+        setCurrentHeight(itemHeight * 0.5);
+        setCurrentSpacing(itemSpacing * 0.5);
+      } else if (width < 1024) {
+        // Tablet: Reduz para 75%
+        setCurrentHeight(itemHeight * 0.75);
+        setCurrentSpacing(itemSpacing * 0.75);
+      } else {
+        // Notebook/Desktop: Tamanho original
+        setCurrentHeight(itemHeight);
+        setCurrentSpacing(itemSpacing);
+      }
+    };
+
+    // Chamada inicial
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [itemHeight, itemSpacing]);
 
   // Calcula o ângulo por item (em graus)
   const theta = 360 / itemCount;
@@ -28,8 +57,8 @@ export default function SphereCarousel<T>({
   // Aumentamos o raio para criar um espaço visual entre os items
   const radius =
     itemCount > 1
-      ? (itemHeight * 0.5 + itemSpacing) / Math.tan(Math.PI / itemCount)
-      : itemHeight * 2;
+      ? (currentHeight * 0.5 + currentSpacing) / Math.tan(Math.PI / itemCount)
+      : currentHeight * 2;
 
   // Rotação atual baseada no índice
   const rotation = currentIndex * theta;
@@ -63,7 +92,7 @@ export default function SphereCarousel<T>({
           transformStyle: "preserve-3d",
           transform: `rotateX(${-rotation}deg)`,
           transition: "transform 1s cubic-bezier(0.4, 0, 0.2, 1)",
-          height: `${itemHeight}px`,
+          height: `${currentHeight}px`,
         }}
       >
         {items.map((item, index) => {
@@ -77,7 +106,7 @@ export default function SphereCarousel<T>({
                 transformStyle: "preserve-3d",
                 transform: `rotateX(${itemRotation}deg) translateZ(${radius}px)`,
                 backfaceVisibility: "hidden",
-                height: `${itemHeight}px`,
+                height: `${currentHeight}px`,
               }}
             >
               {renderItem(item, index)}

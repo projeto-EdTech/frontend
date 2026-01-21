@@ -4,12 +4,11 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Image from "next/image";
 import Link from "next/link";
-import {BrainCircuit, BookOpen, Zap, ChartNoAxesCombined, ClipboardList, LifeBuoy, Earth, FilePen, Rocket, Library, Activity, Cpu, Lightbulb, GraduationCap, BarChart3, Headset, Gift, Crown, Gem, ShieldCheck, CalendarX, Lock} from "lucide-react";
+import {BrainCircuit, BookOpen, Zap, ChartNoAxesCombined, ClipboardList, LifeBuoy, Earth, FilePen, ShieldCheck, CalendarX, Lock} from "lucide-react";
 import Footer from "@/components/Footer";
-import { PricingCard, PricingPlans } from "@/components/PricingCard";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PricingPlans } from "@/components/PricingCard";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react"; // Importar o useSession
+import { useSession } from "next-auth/react";
 import LoginModal from "@/components/Login-modal";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -22,12 +21,12 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 
 // Dados das features para o carrossel 3D da Hero Section
 const HERO_FEATURES = [
-  { id: 0, name: "Simulado Personalizado" },
-  { id: 1, name: "Biblioteca de Provas" },
-  { id: 2, name: "Cronograma de Estudos" },
-  { id: 3, name: "Consulta de Nota de Corte" },
-  { id: 4, name: "Questões com IA" },
-  { id: 5, name: "Estatísticas Avançadas" },
+  { id: 0, name: "Simulado Personalizado", description: 'Um simulado adaptativo que se ajusta ao seu nível de conhecimento.' },
+  { id: 1, name: "Biblioteca de Provas", description: 'Acesso a uma vasta biblioteca de provas anteriores.' },
+  { id: 2, name: "Cronograma de Estudos", description: 'Um cronograma de estudos personalizado para você.' },
+  { id: 3, name: "Consulta de Nota de Corte", description: 'Consulte a nota de corte das universidades.' },
+  { id: 4, name: "Questões com IA", description: 'Questões geradas por IA para praticar.' },
+  { id: 5, name: "Estatísticas Avançadas", description: 'Estatísticas detalhadas sobre seu desempenho.' },
 ];
 
 const MAC_VARIANTS = {
@@ -753,20 +752,42 @@ export default function Home() {
         {!hasPaidPlan && (
           <div className="flex flex-col w-full font-sans">
             {/* --- ITEM 1: HERO SECTION --- */}
-            <section className="relative w-full min-h-[90vh] flex items-center bg-white overflow-hidden font-sans">
-              {/* Background Effects */}
-              <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-blue-200/30 rounded-full blur-[120px] pointer-events-none" />
-              <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-200/30 rounded-full blur-[100px] pointer-events-none" />
+            <section className="
+              relative w-full 
+              min-h-[70vh] sm:min-h-[80vh] lg:min-h-[90vh] 
+              flex items-center bg-white overflow-hidden font-sans
+            ">
+              {/* Background Effects - Responsivos */}
+              <div className="
+                absolute top-[-20%] right-[-10%] 
+                w-[400px] h-[400px] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px]
+                bg-blue-200/30 rounded-full blur-[80px] md:blur-[100px] lg:blur-[120px] 
+                pointer-events-none
+              " />
+              <div className="
+                absolute bottom-[-10%] left-[-10%] 
+                w-[300px] h-[300px] md:w-[450px] md:h-[450px] lg:w-[600px] lg:h-[600px]
+                bg-cyan-200/30 rounded-full blur-[60px] md:blur-[80px] lg:blur-[100px] 
+                pointer-events-none
+              " />
 
-              <div className="container mx-auto px-4 md:px-6 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="
+                container mx-auto px-4 md:px-6 
+                relative z-10 
+                grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 
+                items-center
+              ">
                 {/* Left Column: Text & CTA */}
-                <div className="text-left space-y-8 animate-fade-in-up">
-                  <h1 className="text-5xl sm:text-6xl md:text-7xl font-sans font-black leading-[1.1] text-gray-900">
+                <div className="text-left space-y-6 md:space-y-8 animate-fade-in-up">
+                  <h1 className="
+                    text-4xl sm:text-5xl md:text-6xl lg:text-7xl 
+                    font-sans font-black leading-[1.1] text-gray-900
+                  ">
                     {isAuthenticated ? (
                       <>
                         Bem-vindo de volta, <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
-                          {session?.user?.name?.split(" ")[0] || "Estudante"}!
+                          {session?.user?.name?.split(" ")[0]}!
                         </span>
                       </>
                     ) : (
@@ -780,34 +801,46 @@ export default function Home() {
                       </>
                     )}
                   </h1>
-                  <p className="text-lg md:text-xl text-gray-600 max-w-lg leading-relaxed font-light font-sans">
+                  
+                  <p className="
+                    text-base sm:text-lg md:text-xl 
+                    text-gray-600 max-w-lg leading-relaxed 
+                    font-light font-sans
+                  ">
                     {isAuthenticated
                       ? "Continue sua jornada de estudos. Acesse simulados, acompanhe seu progresso em tempo real e conquiste sua aprovação."
                       : "A plataforma completa com IA que personaliza seu estudo. Resolva simulados, acompanhe seu progresso e conquiste sua aprovação."}
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-4 pt-2 relative">
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 relative">
                     <a
                       href="/profile"
                       onClick={(e) => handleLandingPageClick(e, "/profile", false)}
-                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 !text-white font-bold rounded-full hover:from-blue-700 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.5)] text-center font-sans cursor-pointer z-10"
+                      className="
+                        px-6 py-3 sm:px-8 sm:py-4 
+                        bg-gradient-to-r from-blue-600 to-cyan-500 
+                        !text-white font-bold rounded-full 
+                        hover:from-blue-700 hover:to-cyan-600 
+                        transition-all transform hover:scale-105 
+                        shadow-[0_0_20px_rgba(37,99,235,0.5)] 
+                        text-center font-sans cursor-pointer z-10
+                        text-sm sm:text-base
+                      "
                     >
                       {isAuthenticated ? "Ir para Dashboard" : "Entrar"}
                     </a>
                   </div>
                 </div>
 
-                {/* Right Column: Carrossel Dinâmico de Features */}
-                <div className="relative w-full mt-12 lg:mt-0 lg:col-span-1">
-                  <div
-                    className="relative w-full overflow-visible"
-                    style={{ minHeight: "600px" }}
-                  >
+                {/* Right Column: Desktop - Carrossel 3D */}
+                <div className="hidden lg:block relative w-full lg:col-span-1">
+                  <div className="relative w-full overflow-visible min-h-[600px]">
                     <SphereCarousel
                       items={HERO_FEATURES}
                       itemHeight={550}
                       autoRotateInterval={5000}
                       itemSpacing={150}
-                      renderItem={(feature: any) => {
+                      renderItem={(feature) => {
                         const props = { isDark };
                         const renderContent = () => {
                           switch (feature.id) {
@@ -822,27 +855,18 @@ export default function Home() {
                         };
 
                         return (
-                          <div
-                            className={`w-full min-w-[750px] max-w-[500px] rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-colors duration-300 ${
-                              isDark ? "bg-gray-800" : "bg-white"
-                            } border ${isDark ? "border-gray-700" : "border-gray-200"}`}
-                          >
-                            {/* Cabeçalho do Navegador - Gira junto */}
+                          <div className={`w-full min-w-[750px] max-w-[500px] rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-colors duration-300 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border`}>
                             <div className="h-10 bg-gradient-to-r from-gray-700 to-gray-800 flex items-center px-4 gap-3 flex-shrink-0">
                               <div className="flex gap-2.5">
-                                <button className="w-3 h-3 rounded-full bg-red-500 cursor-pointer"></button>
-                                <button className="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer"></button>
-                                <button className="w-3 h-3 rounded-full bg-green-500 cursor-pointer"></button>
+                                <button className="w-3 h-3 rounded-full bg-red-500"></button>
+                                <button className="w-3 h-3 rounded-full bg-yellow-500"></button>
+                                <button className="w-3 h-3 rounded-full bg-green-500"></button>
                               </div>
                               <div className="flex-1 text-center font-sans text-[10px] text-gray-400 tracking-widest uppercase">
                                 vestibuline.com
                               </div>
                             </div>
-
-                            {/* Conteúdo do Mockup */}
-                            <div className={`flex-1 p-6 relative ${
-                              isDark ? "bg-gray-900" : "bg-slate-50"
-                            }`}>
+                            <div className={`flex-1 p-6 relative ${isDark ? "bg-gray-900" : "bg-slate-50"}`}>
                               {renderContent()}
                             </div>
                           </div>
@@ -850,6 +874,63 @@ export default function Home() {
                       }}
                     />
                   </div>
+                </div>
+
+                {/* Right Column: Mobile/Tablet - Cards Simplificados */}
+                <div className="lg:hidden w-full space-y-4">
+                  {HERO_FEATURES.slice(0, 3).map((feature) => (
+                    <div
+                      key={feature.id}
+                      className={`
+                        rounded-2xl shadow-lg p-5 
+                        border transition-all duration-300
+                        hover:shadow-xl hover:scale-[1.02]
+                        ${isDark 
+                          ? "bg-gray-800 border-gray-700" 
+                          : "bg-white border-gray-200"
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="
+                          w-10 h-10 rounded-lg 
+                          bg-gradient-to-r from-blue-600 to-cyan-500 
+                          flex items-center justify-center 
+                          text-white font-bold text-lg
+                          shadow-lg
+                        ">
+                          {feature.id + 1}
+                        </div>
+                        <h3 className={`
+                          text-lg font-bold
+                          ${isDark ? "text-white" : "text-gray-900"}
+                        `}>
+                          {feature.name}
+                        </h3>
+                      </div>
+                      <p className={`
+                        text-sm leading-relaxed
+                        ${isDark ? "text-gray-300" : "text-gray-600"}
+                      `}>
+                        {feature.description}
+                      </p>
+                    </div>
+                  ))}
+                  
+                  {/* CTA adicional para ver todas as features */}
+                  <button
+                    onClick={() => {/* scroll to features section */}}
+                    className="
+                      w-full py-3 px-6 
+                      bg-gradient-to-r from-blue-600/10 to-cyan-500/10 
+                      border-2 border-blue-600/30 
+                      rounded-xl font-semibold 
+                      text-blue-600 hover:bg-blue-600 hover:text-white 
+                      transition-all duration-300
+                    "
+                  >
+                    Ver todas as funcionalidades →
+                  </button>
                 </div>
               </div>
             </section>
