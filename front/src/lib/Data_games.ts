@@ -3,7 +3,7 @@ export interface MinigameData {
   title: string;
   slug: string; // URL-friendly name
   description: string;
-  iconName: 'zap' | 'spellcheck' | 'Grid3x3';
+  iconName: 'zap' | 'spellcheck' | 'Grid3x3' | 'CircleHelp';
   difficulty: string;
   color: string;
   bgGlow: string;
@@ -52,6 +52,19 @@ export const minigamesData: MinigameData[] = [
     borderColor: "border-purple-500",
     status: "available",
     featured: false,
-  }
+  },
+  {
+    id: 4,
+    title: "Enigma",
+    slug: "enigma",
+    description: "Descubra qual é o conteúdo oculto de vestibular.",
+    iconName: "CircleHelp",
+    difficulty: "Difícil",
+    color: "from-purple-700 to-blue-700",
+    bgGlow: "bg-purple-700/20",
+    borderColor: "border-purple-600",
+    status: "available",
+    featured: false,
+  },
   // Outros jogos podem ser adicionados aqui
 ];

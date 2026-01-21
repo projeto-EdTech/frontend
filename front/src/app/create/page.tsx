@@ -16,6 +16,70 @@ import Footer from "@/components/Footer";
 import { universities,  allQuestions } from "@/lib/dataUniversity";
 import { useRouter } from 'next/navigation';
 import LoadingScreen from "@/components/LoadingScreen";
+import { motion, AnimatePresence, type Transition } from "framer-motion";
+
+// Apple-like animation configuration
+const appleEasing: [number, number, number, number] = [0.25, 0.1, 0.25, 1]; // Apple's signature cubic-bezier curve
+
+const appleTransition: Transition = {
+  duration: 0.6,
+  ease: appleEasing
+};
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: appleTransition
+  }
+};
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { duration: 0.5, ease: appleEasing }
+  }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { duration: 0.5, ease: appleEasing }
+  }
+};
+
+const slideInFromLeft = {
+  hidden: { opacity: 0, x: -30 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: { duration: 0.5, ease: appleEasing }
+  }
+};
+
+const slideInFromBottom = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: appleEasing }
+  }
+};
 
 // Função para gerar os dados das disciplinas, agora com ordenação personalizada
 const generateSubjectsData = (universitySlug: string | null) => {
@@ -244,45 +308,86 @@ export default function CreatePage() {
           <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
             <div className="flex-1 w-full">
               {/* Header mais simples - Mobile optimized */}
-              <div className="mb-6 lg:mb-8 text-center sm:text-left">
+              <motion.div 
+                className="mb-6 lg:mb-8 text-center sm:text-left"
+                initial="hidden"
+                animate="visible"
+                variants={fadeInUp}
+              >
                 <div className="flex items-center justify-center sm:justify-start gap-4 mb-2">
-                  <h1 className="text-[28px] sm:text-[32px] font-semibold text-gray-700 tracking-tight">Gerador de Simulados</h1>
+                  <motion.h1 
+                    className="text-[28px] sm:text-[32px] font-semibold text-gray-700 tracking-tight"
+                    variants={fadeInUp}
+                  >
+                    Gerador de Simulados
+                  </motion.h1>
                 </div>
-                <p className="text-[#6e6e73] text-[14px] sm:text-[15px] px-2 sm:px-0 leading-relaxed">Monte simulados personalizados ou escolha provas reais de vestibulares.</p>
-              </div>
+                <motion.p 
+                  className="text-[#6e6e73] text-[14px] sm:text-[15px] px-2 sm:px-0 leading-relaxed"
+                  variants={fadeInUp}
+                >
+                  Monte simulados personalizados ou escolha provas reais de vestibulares.
+                </motion.p>
+              </motion.div>
 
               <Tabs defaultValue="real" className="mb-6 lg:mb-8">
-                <TabsList className="grid w-full grid-cols-2 bg-white backdrop-blur-xl p-1.5 rounded-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-200 h-auto transition-all duration-300">
-                  <TabsTrigger 
-                    value="real" 
-                    className="flex items-center gap-1 sm:gap-2 rounded-[10px] py-2.5 sm:py-3 px-2 sm:px-4 font-semibold text-[13px] sm:text-[14px] transition-all duration-300 ease-in-out
-                              data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-[0_2px_8px_rgba(0,122,255,0.25)] data-[state=active]:scale-[1.02]
-                              text-gray-700 hover:!text-white hover:bg-blue-500 relative overflow-hidden cursor-pointer"
-                  >
-                    <span className="text-sm sm:text-lg transition-transform duration-300">🎯</span>
-                    <span className="relative z-10 transition-all duration-300">Simulado Mix</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="estudo" 
-                    className="flex items-center gap-1 sm:gap-2 rounded-[10px] py-2.5 sm:py-3 px-2 sm:px-4 font-semibold text-[13px] sm:text-[14px] transition-all duration-300 ease-in-out
-                              data-[state=active]:bg-[#6366f1] data-[state=active]:text-white data-[state=active]:shadow-[0_2px_8px_rgba(88,86,214,0.25)] data-[state=active]:scale-[1.02]
-                              text-gray-700 hover:bg-[#6366f1] hover:!text-white relative overflow-hidden cursor-pointer"
-                  >
-                    <span className="text-sm sm:text-lg transition-transform duration-300">📚</span>
-                    <span className="relative z-10 transition-all duration-300">Simulado Personalizado</span>
-                  </TabsTrigger>
-                </TabsList>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={scaleIn}
+                >
+                  <TabsList className="grid w-full grid-cols-2 bg-white backdrop-blur-xl p-1.5 rounded-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-200 h-auto transition-all duration-300">
+                    <TabsTrigger 
+                      value="real" 
+                      className="flex items-center gap-1 sm:gap-2 rounded-[10px] py-2.5 sm:py-3 px-2 sm:px-4 font-semibold text-[13px] sm:text-[14px] transition-all duration-300 ease-in-out
+                                data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-[0_2px_8px_rgba(0,122,255,0.25)] data-[state=active]:scale-[1.02]
+                                text-gray-700 hover:!text-white hover:bg-blue-500 relative overflow-hidden cursor-pointer"
+                    >
+                      <span className="text-sm sm:text-lg transition-transform duration-300">🎯</span>
+                      <span className="relative z-10 transition-all duration-300">Simulado Mix</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="estudo" 
+                      className="flex items-center gap-1 sm:gap-2 rounded-[10px] py-2.5 sm:py-3 px-2 sm:px-4 font-semibold text-[13px] sm:text-[14px] transition-all duration-300 ease-in-out
+                                data-[state=active]:bg-[#6366f1] data-[state=active]:text-white data-[state=active]:shadow-[0_2px_8px_rgba(88,86,214,0.25)] data-[state=active]:scale-[1.02]
+                                text-gray-700 hover:bg-[#6366f1] hover:!text-white relative overflow-hidden cursor-pointer"
+                    >
+                      <span className="text-sm sm:text-lg transition-transform duration-300">📚</span>
+                      <span className="relative z-10 transition-all duration-300">Simulado Personalizado</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </motion.div>
 
                 {/* Simulado Real */}
-                <TabsContent value="real" className="mt-4 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="relative">
+                <TabsContent value="real" className="mt-4 sm:mt-6">
+                  <motion.div 
+                    className="relative"
+                    initial="hidden"
+                    animate="visible"
+                    variants={scaleIn}
+                  >
                     <Card className="relative overflow-hidden border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.04)] bg-white backdrop-blur-2xl backdrop-saturate-150 rounded-[16px] p-3 sm:p-6 transition-all duration-300">
                       {/* Decorative background - Hidden on mobile */}
-                      <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#007AFF]/5 to-transparent rounded-full -mr-16 -mt-16 transition-all duration-500"></div>
-                      <div className="hidden sm:block absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#007AFF]/5 to-transparent rounded-full -ml-12 -mb-12 transition-all duration-500"></div>
+                      <motion.div 
+                        className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#007AFF]/5 to-transparent rounded-full -mr-16 -mt-16"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.8, ease: appleEasing, delay: 0.2 }}
+                      />
+                      <motion.div 
+                        className="hidden sm:block absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#007AFF]/5 to-transparent rounded-full -ml-12 -mb-12"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.8, ease: appleEasing, delay: 0.3 }}
+                      />
                       
                       {/* Mascote decorativo no canto superior direito */}
-                      <div className="hidden lg:block absolute top-1 right-1 z-20">
+                      <motion.div 
+                        className="hidden lg:block absolute top-1 right-1 z-20"
+                        initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        transition={{ duration: 0.6, ease: appleEasing, delay: 0.4 }}
+                      >
                         <Image 
                           src="/Mascote/banners/Camaleão_10.png" 
                           alt="Mascote Vestibuline" 
@@ -290,11 +395,17 @@ export default function CreatePage() {
                           height={120}
                           className="w-24 h-24 object-contain opacity-90 hover:opacity-100 transition-opacity"
                         />
-                      </div>
+                      </motion.div>
                       
                       <CardContent className="relative z-10 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-7">
                         {/* University Selection */}
-                        <div className="space-y-2.5 animate-in fade-in slide-in-from-left-4 duration-500 delay-100">
+                        <motion.div 
+                          className="space-y-2.5"
+                          variants={slideInFromLeft}
+                          initial="hidden"
+                          animate="visible"
+                          transition={{ delay: 0.1 }}
+                        >
                           <label className="flex items-center gap-2 text-[15px] sm:text-[16px] font-semibold text-gray-700">
                             <span className="text-[#007AFF]">🏛️</span>
                             Universidade/Instituição
@@ -315,10 +426,16 @@ export default function CreatePage() {
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
+                        </motion.div>
 
                         {/* Number of Questions */}
-                        <div className="space-y-2.5 animate-in fade-in slide-in-from-left-4 duration-500 delay-200">
+                        <motion.div 
+                          className="space-y-2.5"
+                          variants={slideInFromLeft}
+                          initial="hidden"
+                          animate="visible"
+                          transition={{ delay: 0.2 }}
+                        >
                           <label className="flex items-center gap-2 text-[15px] sm:text-[16px] font-semibold text-gray-700">
                             <span className="text-[#5856D6]">🔢</span>
                             Número de Questões
@@ -339,63 +456,105 @@ export default function CreatePage() {
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
+                        </motion.div>
 
                         {/* Info cards - Mobile optimized */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
-                          <div className="bg-[#007AFF] rounded-[12px] p-3 sm:p-4 border border-[#007AFF] relative overflow-hidden">
+                        <motion.div 
+                          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6"
+                          variants={staggerContainer}
+                          initial="hidden"
+                          animate="visible"
+                        >
+                          <motion.div 
+                            className="bg-[#007AFF] rounded-[12px] p-3 sm:p-4 border border-[#007AFF] relative overflow-hidden"
+                            variants={slideInFromBottom}
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            transition={{ duration: 0.2 }}
+                          >
                             <div className="flex items-center gap-2 text-white relative z-10">
                               <span>⚡</span>
                               <span className="font-semibold text-[13px] sm:text-[14px]">Experiência Real</span>
                             </div>
                             <p className="text-white text-[12px] sm:text-[13px] mt-1 relative z-10 opacity-90">Mesmo formato da prova original</p>
-                          </div>
-                          <div className="bg-[#34C759] rounded-[12px] p-3 sm:p-4 border border-[#34C759] relative overflow-hidden">
+                          </motion.div>
+                          <motion.div 
+                            className="bg-[#34C759] rounded-[12px] p-3 sm:p-4 border border-[#34C759] relative overflow-hidden"
+                            variants={slideInFromBottom}
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            transition={{ duration: 0.2 }}
+                          >
                             <div className="flex items-center gap-2 text-white relative z-10">
                               <span>🎖️</span>
                               <span className="font-semibold text-[13px] sm:text-[14px]">Preparação Premium</span>
                             </div>
                             <p className="text-white text-[12px] sm:text-[13px] mt-1 relative z-10 opacity-90">Questões validadas e atualizadas</p>
-                          </div>
-                        </div>
+                          </motion.div>
+                        </motion.div>
                       </CardContent>
                       
                       <CardFooter className="relative z-10 p-4 sm:p-6 lg:p-8 pt-0">
-                        <Button
-                          onClick={handleStartSimuladoMix}
-                          className={`w-full h-11 sm:h-12 text-[14px] sm:text-[15px] font-semibold rounded-[12px] transition-all duration-200 transform active:scale-[0.98] cursor-pointer shadow-none hover:shadow-xl hover:shadow-blue-500/30 ${
-                            isValidReal 
-                              ? 'bg-[#007AFF] hover:bg-[#0051D5] text-white shadow-[0_4px_14px_rgba(0,122,255,0.4)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.5)]' 
-                              : 'bg-[#e5e5ea] text-[#86868b]'
-                          }`}
-                          disabled={!isValidReal || isCreating}
+                        <motion.div 
+                          className="w-full"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, ease: appleEasing, delay: 0.4 }}
                         >
-                          {isCreating ? (
-                            'Preparando seu simulado...'
-                          ) : isValidReal ? (
-                            <span className="flex items-center gap-2 sm:gap-3">
-                              <span>🚀</span>
-                              <span className="text-[13px] sm:text-[14px] lg:text-[15px]">Iniciar Simulado Mix</span>
-                            </span>
-                          ) : (
-                            'Preencha todos os campos'
-                          )}
-                        </Button>
+                          <Button
+                            onClick={handleStartSimuladoMix}
+                            className={`w-full h-11 sm:h-12 text-[14px] sm:text-[15px] font-semibold rounded-[12px] transition-all duration-200 transform active:scale-[0.98] cursor-pointer shadow-none hover:shadow-xl hover:shadow-blue-500/30 ${
+                              isValidReal 
+                                ? 'bg-[#007AFF] hover:bg-[#0051D5] text-white shadow-[0_4px_14px_rgba(0,122,255,0.4)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.5)]' 
+                                : 'bg-[#e5e5ea] text-[#86868b]'
+                            }`}
+                            disabled={!isValidReal || isCreating}
+                          >
+                            {isCreating ? (
+                              'Preparando seu simulado...'
+                            ) : isValidReal ? (
+                              <span className="flex items-center gap-2 sm:gap-3">
+                                <span>🚀</span>
+                                <span className="text-[13px] sm:text-[14px] lg:text-[15px]">Iniciar Simulado Mix</span>
+                              </span>
+                            ) : (
+                              'Preencha todos os campos'
+                            )}
+                          </Button>
+                        </motion.div>
                       </CardFooter>
                     </Card>
-                  </div>
+                  </motion.div>
                 </TabsContent>
 
                 {/* Simulado Estudo */}
-                <TabsContent value="estudo" className="mt-4 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="relative">
+                <TabsContent value="estudo" className="mt-4 sm:mt-6">
+                  <motion.div 
+                    className="relative"
+                    initial="hidden"
+                    animate="visible"
+                    variants={scaleIn}
+                  >
                     <Card className="relative overflow-hidden border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.04)] bg-white backdrop-blur-2xl backdrop-saturate-150 rounded-[16px] p-3 sm:p-6 transition-all duration-300">
                       {/* Decorative background - Hidden on mobile */}
-                      <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#5856D6]/5 to-transparent rounded-full -mr-16 -mt-16 transition-all duration-500"></div>
-                      <div className="hidden sm:block absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#5856D6]/5 to-transparent rounded-full -ml-12 -mb-12 transition-all duration-500"></div>
+                      <motion.div 
+                        className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#5856D6]/5 to-transparent rounded-full -mr-16 -mt-16"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.8, ease: appleEasing, delay: 0.2 }}
+                      />
+                      <motion.div 
+                        className="hidden sm:block absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#5856D6]/5 to-transparent rounded-full -ml-12 -mb-12"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.8, ease: appleEasing, delay: 0.3 }}
+                      />
                       
                       {/* Mascote decorativo no canto superior direito */}
-                      <div className="hidden lg:block absolute top-1 right-1 z-20">
+                      <motion.div 
+                        className="hidden lg:block absolute top-1 right-1 z-20"
+                        initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        transition={{ duration: 0.6, ease: appleEasing, delay: 0.4 }}
+                      >
                         <Image 
                           src="/Mascote/banners/Camaleão_10.png" 
                           alt="Mascote Vestibuline" 
@@ -403,11 +562,17 @@ export default function CreatePage() {
                           height={120}
                           className="w-24 h-24 object-contain opacity-90 hover:opacity-100 transition-opacity"
                         />
-                      </div>
+                      </motion.div>
                       
                       <CardContent className="relative z-10 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-7">
                         {/* University Selection */}
-                        <div className="space-y-2.5 animate-in fade-in slide-in-from-left-4 duration-500 delay-100">
+                        <motion.div 
+                          className="space-y-2.5"
+                          variants={slideInFromLeft}
+                          initial="hidden"
+                          animate="visible"
+                          transition={{ delay: 0.1 }}
+                        >
                           <label className="flex items-center gap-2 text-[15px] sm:text-[16px] font-semibold text-gray-700">
                             <span className="text-[#5856D6]">🏛️</span>
                             Universidade/Instituição
@@ -428,122 +593,180 @@ export default function CreatePage() {
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
+                        </motion.div>
 
                         {/* Subjects Selection - Mobile optimized */}
-                        <div className="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-left-4 duration-500 delay-200">
+                        <motion.div 
+                          className="space-y-3 sm:space-y-4"
+                          variants={slideInFromLeft}
+                          initial="hidden"
+                          animate="visible"
+                          transition={{ delay: 0.2 }}
+                        >
                           <label className="flex items-center gap-2 text-[15px] sm:text-[16px] font-semibold text-gray-700">
                             <span className="text-[#5856D6]">🎯</span>
                             Disciplinas e Assuntos Específicos
                           </label>
-                          {!selectedUniversity ? (
-                            // CASO 1: Nenhuma universidade selecionada
-                            <div className="bg-[#f5f5f7] rounded-[12px] p-6 sm:p-8 border border-dashed border-gray-200 text-center cursor-not-allowed">
-                              <div className="flex flex-col items-center gap-4">
-                                <Image 
-                                  src="/Mascote/banners/Camaleão_5.png" 
-                                  alt="Mascote Vestibuline" 
-                                  width={100} 
-                                  height={100}
-                                  className="w-20 h-20 sm:w-24 sm:h-24 object-contain opacity-50"
-                                />
-                                <p className="!text-[#6e6e73] font-medium text-[13px] sm:text-[14px]">
-                                  Primeiro, selecione uma universidade para habilitar a escolha das matérias.
-                                </p>
-                              </div>
-                            </div>
-                          ) : subjectsData.length > 0 ? (
-                            // CASO 2: Universidade selecionada E HÁ matérias
-                            <div className="bg-white rounded-[12px] p-4 sm:p-6 border border-gray-200">
-                              <Accordion type="multiple" className="w-full space-y-2">
-                                {subjectsData.map((subject) => {
-                                  const topicKeys = subject.topics.map(t => `${subject.name}-${t}`);
-                                  const isAllSelected = topicKeys.length > 0 && topicKeys.every(key => selectedSubjects.includes(key));
-                                  
-                                  return (
-                                    <AccordionItem 
-                                      value={subject.name} 
-                                      key={subject.name}
-                                      className="border border-gray-200 rounded-[10px] px-3 sm:px-4 bg-white hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200"
-                                    >
-                                      <AccordionTrigger className="font-semibold text-[14px] sm:text-[15px] hover:text-[#5856D6] transition-colors py-3 sm:py-4 cursor-pointer">
-                                        <span className="flex items-center gap-2">
-                                          <span>📖</span>
-                                          {subject.name}
-                                        </span>
-                                      </AccordionTrigger>
-                                      <AccordionContent className="pt-3 sm:pt-4 pb-4">
-                                        <div className="flex justify-end mb-3">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleSelectAll(subject.name, subject.topics)}
-                                            className="text-[#5856D6] hover:text-[#4640B8] hover:bg-[#5856D6]/10 text-[12px] font-semibold h-8 px-2 cursor-pointer"
-                                          >
-                                            {isAllSelected ? (
-                                              <span className="flex items-center gap-1.5">
-                                                <CheckSquare className="w-4 h-4" />
-                                                Desmarcar todos
-                                              </span>
-                                            ) : (
-                                              <span className="flex items-center gap-1.5">
-                                                <Square className="w-4 h-4" />
-                                                Selecionar todos
-                                              </span>
-                                            )}
-                                          </Button>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                                          {subject.topics.map((topic) => {
-                                            const key = `${subject.name}-${topic}`;
-                                            const isSelected = selectedSubjects.includes(key);
-                                            return (
-                                              <label 
-                                                key={key} 
-                                                className={`flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-[8px] border cursor-pointer transition-all duration-200 ${
-                                                  isSelected 
-                                                    ? 'border-[#5856D6] bg-white text-[#5856D6]' 
-                                                    : 'border-gray-200 bg-white hover:border-[#5856D6]/50 hover:bg-[#f5f5f7]'
-                                                }`}
+                          <AnimatePresence mode="wait">
+                            {!selectedUniversity ? (
+                              // CASO 1: Nenhuma universidade selecionada
+                              <motion.div 
+                                key="no-university"
+                                className="bg-[#f5f5f7] rounded-[12px] p-6 sm:p-8 border border-dashed border-gray-200 text-center cursor-not-allowed"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.4, ease: appleEasing }}
+                              >
+                                <div className="flex flex-col items-center gap-4">
+                                  <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 0.5 }}
+                                    transition={{ duration: 0.5, ease: appleEasing, delay: 0.1 }}
+                                  >
+                                    <Image 
+                                      src="/Mascote/banners/Camaleão_5.png" 
+                                      alt="Mascote Vestibuline" 
+                                      width={100} 
+                                      height={100}
+                                      className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
+                                    />
+                                  </motion.div>
+                                  <p className="!text-[#6e6e73] font-medium text-[13px] sm:text-[14px]">
+                                    Primeiro, selecione uma universidade para habilitar a escolha das matérias.
+                                  </p>
+                                </div>
+                              </motion.div>
+                            ) : subjectsData.length > 0 ? (
+                              // CASO 2: Universidade selecionada E HÁ matérias
+                              <motion.div 
+                                key="has-subjects"
+                                className="bg-white rounded-[12px] p-4 sm:p-6 border border-gray-200"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.4, ease: appleEasing }}
+                              >
+                                <Accordion type="multiple" className="w-full space-y-2">
+                                  {subjectsData.map((subject, index) => {
+                                    const topicKeys = subject.topics.map(t => `${subject.name}-${t}`);
+                                    const isAllSelected = topicKeys.length > 0 && topicKeys.every(key => selectedSubjects.includes(key));
+                                    
+                                    return (
+                                      <motion.div
+                                        key={subject.name}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.4, ease: appleEasing, delay: index * 0.05 }}
+                                      >
+                                        <AccordionItem 
+                                          value={subject.name}
+                                          className="border border-gray-200 rounded-[10px] px-3 sm:px-4 bg-white hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200"
+                                        >
+                                          <AccordionTrigger className="font-semibold text-[14px] sm:text-[15px] hover:text-[#5856D6] transition-colors py-3 sm:py-4 cursor-pointer">
+                                            <span className="flex items-center gap-2">
+                                              <span>📖</span>
+                                              {subject.name}
+                                            </span>
+                                          </AccordionTrigger>
+                                          <AccordionContent className="pt-3 sm:pt-4 pb-4">
+                                            <div className="flex justify-end mb-3">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleSelectAll(subject.name, subject.topics)}
+                                                className="text-[#5856D6] hover:text-[#4640B8] hover:bg-[#5856D6]/10 text-[12px] font-semibold h-8 px-2 cursor-pointer"
                                               >
-                                                <Checkbox
-                                                  id={key}
-                                                  checked={isSelected}
-                                                  onCheckedChange={(checked) => handleTopicChange(subject.name, topic, !!checked)}
-                                                  className="data-[state=checked]:bg-[#5856D6] data-[state=checked]:border-[#5856D6] mt-0.5 flex-shrink-0"
-                                                />
-                                                <span className="text-[12px] sm:text-[13px] font-medium leading-tight">{topic}</span>
-                                              </label>
-                                            );
-                                          })}
-                                        </div>
-                                      </AccordionContent>
-                                    </AccordionItem>
-                                  );
-                                })}
-                              </Accordion>
-                            </div>
-                          ) : (
-                            // CASO 3: Universidade selecionada MAS NÃO HÁ matérias
-                            <div className="bg-white rounded-[12px] p-6 sm:p-8 border border-dashed border-[#FFD60A]/50 text-center">
-                              <div className="flex flex-col items-center gap-4">
-                                <Image 
-                                  src="/Mascote/banners/Camaleão_7.png" 
-                                  alt="Mascote Vestibuline" 
-                                  width={100} 
-                                  height={100}
-                                  className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
-                                />
-                                <p className="text-[#8B7000] font-semibold text-[13px] sm:text-[14px]">
-                                  Ops, ainda não temos matérias analisadas para esta prova :(
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                                                {isAllSelected ? (
+                                                  <span className="flex items-center gap-1.5">
+                                                    <CheckSquare className="w-4 h-4" />
+                                                    Desmarcar todos
+                                                  </span>
+                                                ) : (
+                                                  <span className="flex items-center gap-1.5">
+                                                    <Square className="w-4 h-4" />
+                                                    Selecionar todos
+                                                  </span>
+                                                )}
+                                              </Button>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                                              {subject.topics.map((topic, topicIndex) => {
+                                                const key = `${subject.name}-${topic}`;
+                                                const isSelected = selectedSubjects.includes(key);
+                                                return (
+                                                  <motion.label 
+                                                    key={key}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ duration: 0.3, ease: appleEasing, delay: topicIndex * 0.02 }}
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                    className={`flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-[8px] border cursor-pointer transition-all duration-200 ${
+                                                      isSelected 
+                                                        ? 'border-[#5856D6] bg-white text-[#5856D6]' 
+                                                        : 'border-gray-200 bg-white hover:border-[#5856D6]/50 hover:bg-[#f5f5f7]'
+                                                    }`}
+                                                  >
+                                                    <Checkbox
+                                                      id={key}
+                                                      checked={isSelected}
+                                                      onCheckedChange={(checked) => handleTopicChange(subject.name, topic, !!checked)}
+                                                      className="data-[state=checked]:bg-[#5856D6] data-[state=checked]:border-[#5856D6] mt-0.5 flex-shrink-0"
+                                                    />
+                                                    <span className="text-[12px] sm:text-[13px] font-medium leading-tight">{topic}</span>
+                                                  </motion.label>
+                                                );
+                                              })}
+                                            </div>
+                                          </AccordionContent>
+                                        </AccordionItem>
+                                      </motion.div>
+                                    );
+                                  })}
+                                </Accordion>
+                              </motion.div>
+                            ) : (
+                              // CASO 3: Universidade selecionada MAS NÃO HÁ matérias
+                              <motion.div 
+                                key="no-subjects"
+                                className="bg-white rounded-[12px] p-6 sm:p-8 border border-dashed border-[#FFD60A]/50 text-center"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.4, ease: appleEasing }}
+                              >
+                                <div className="flex flex-col items-center gap-4">
+                                  <motion.div
+                                    initial={{ scale: 0.8, rotate: -5 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ duration: 0.5, ease: appleEasing }}
+                                  >
+                                    <Image 
+                                      src="/Mascote/banners/Camaleão_7.png" 
+                                      alt="Mascote Vestibuline" 
+                                      width={100} 
+                                      height={100}
+                                      className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
+                                    />
+                                  </motion.div>
+                                  <p className="text-[#8B7000] font-semibold text-[13px] sm:text-[14px]">
+                                    Ops, ainda não temos matérias analisadas para esta prova :(
+                                  </p>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
 
                         {/* Number of Questions */}
-                        <div className="space-y-2.5 animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
+                        <motion.div 
+                          className="space-y-2.5"
+                          variants={slideInFromLeft}
+                          initial="hidden"
+                          animate="visible"
+                          transition={{ delay: 0.3 }}
+                        >
                           <label className="flex items-center gap-2 text-[15px] sm:text-[16px] font-semibold text-gray-700">
                             <span className="text-[#5856D6]">🔢</span>
                             Número de Questões
@@ -564,67 +787,101 @@ export default function CreatePage() {
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
+                        </motion.div>
 
                         {/* Selected subjects preview - Mobile optimized */}
-                        {selectedSubjects.length > 0 && (
-                          <div className="bg-[#34C759]/10 rounded-[12px] p-4 sm:p-6 border border-[#34C759]/20 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400">
-                            <div className="absolute -right-0 -top-0 opacity-90">
-                              <Image 
-                                src="/Mascote/banners/Camaleão_18.png" 
-                                alt="" 
-                                width={200} 
-                                height={200}
-                                className="w-25 h-25 object-contain"
-                              />
-                            </div>
-                            <h4 className="flex items-center gap-2 font-semibold text-gray-700 mb-3 text-[13px] sm:text-[14px] relative z-10">
-                              <span>✅</span>
-                              Assuntos Selecionados ({selectedSubjects.length})
-                            </h4>
-                            <div className="flex flex-wrap gap-2 relative z-10">
-                              {selectedSubjects.slice(0, 6).map((subject) => (
-                                <span 
-                                  key={subject} 
-                                  className="px-2 sm:px-3 py-1 bg-white rounded-full text-[11px] sm:text-[12px] font-medium text-gray-700 border border-gray-200"
-                                >
-                                  {subject.split('-')[1]}
-                                </span>
-                              ))}
-                              {selectedSubjects.length > 6 && (
-                                <span className="px-2 sm:px-3 py-1 bg-[#5856D6]/10 rounded-full text-[11px] sm:text-[12px] font-medium text-[#5856D6]">
-                                  +{selectedSubjects.length - 6} mais
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
+                        <AnimatePresence>
+                          {selectedSubjects.length > 0 && (
+                            <motion.div 
+                              className="bg-[#34C759]/10 rounded-[12px] p-4 sm:p-6 border border-[#34C759]/20 relative overflow-hidden"
+                              initial={{ opacity: 0, y: 20, height: 0 }}
+                              animate={{ opacity: 1, y: 0, height: "auto" }}
+                              exit={{ opacity: 0, y: -20, height: 0 }}
+                              transition={{ duration: 0.4, ease: appleEasing }}
+                            >
+                              <motion.div 
+                                className="absolute -right-0 -top-0 opacity-90"
+                                initial={{ scale: 0, rotate: 45 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ duration: 0.5, ease: appleEasing, delay: 0.2 }}
+                              >
+                                <Image 
+                                  src="/Mascote/banners/Camaleão_18.png" 
+                                  alt="" 
+                                  width={200} 
+                                  height={200}
+                                  className="w-25 h-25 object-contain"
+                                />
+                              </motion.div>
+                              <h4 className="flex items-center gap-2 font-semibold text-gray-700 mb-3 text-[13px] sm:text-[14px] relative z-10">
+                                <span>✅</span>
+                                Assuntos Selecionados ({selectedSubjects.length})
+                              </h4>
+                              <motion.div 
+                                className="flex flex-wrap gap-2 relative z-10"
+                                variants={staggerContainer}
+                                initial="hidden"
+                                animate="visible"
+                              >
+                                {selectedSubjects.slice(0, 6).map((subject, index) => (
+                                  <motion.span 
+                                    key={subject}
+                                    className="px-2 sm:px-3 py-1 bg-white rounded-full text-[11px] sm:text-[12px] font-medium text-gray-700 border border-gray-200"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.3, ease: appleEasing, delay: index * 0.05 }}
+                                    whileHover={{ scale: 1.05 }}
+                                  >
+                                    {subject.split('-')[1]}
+                                  </motion.span>
+                                ))}
+                                {selectedSubjects.length > 6 && (
+                                  <motion.span 
+                                    className="px-2 sm:px-3 py-1 bg-[#5856D6]/10 rounded-full text-[11px] sm:text-[12px] font-medium text-[#5856D6]"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.3, ease: appleEasing, delay: 0.3 }}
+                                  >
+                                    +{selectedSubjects.length - 6} mais
+                                  </motion.span>
+                                )}
+                              </motion.div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </CardContent>
                       
                       <CardFooter className="relative z-10 p-4 sm:p-6 lg:p-8 pt-0">
-                        <Button
-                          onClick={handleStartPersonalizedSimulado}
-                          className={`w-full h-11 sm:h-12 text-[14px] sm:text-[15px] font-semibold rounded-[12px] transition-all duration-200 transform active:scale-[0.98] ${
-                            isValid 
-                              ? 'bg-[#5856D6] hover:bg-[#4640B8] text-white shadow-[0_4px_14px_rgba(88,86,214,0.4)] hover:shadow-[0_6px_20px_rgba(88,86,214,0.5)]' 
-                              : 'bg-[#e5e5ea] text-[#86868b] cursor-not-allowed shadow-none'
-                          }`}
-                          disabled={!isValid || isCreating}
+                        <motion.div 
+                          className="w-full"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, ease: appleEasing, delay: 0.4 }}
                         >
-                          {isCreating ? (
-                            'Criando sua prova...'
-                          ) : isValid ? (
-                            <span className="flex items-center gap-2 sm:gap-3">
-                              <span>🎯</span>
-                              <span className="text-[13px] sm:text-[14px] lg:text-[15px]">Iniciar Simulado Personalizado</span>
-                            </span>
-                          ) : (
-                            'Complete a configuração'
-                          )}
-                        </Button>
+                          <Button
+                            onClick={handleStartPersonalizedSimulado}
+                            className={`w-full h-11 sm:h-12 text-[14px] sm:text-[15px] font-semibold rounded-[12px] transition-all duration-200 transform active:scale-[0.98] ${
+                              isValid 
+                                ? 'bg-[#5856D6] hover:bg-[#4640B8] text-white shadow-[0_4px_14px_rgba(88,86,214,0.4)] hover:shadow-[0_6px_20px_rgba(88,86,214,0.5)]' 
+                                : 'bg-[#e5e5ea] text-[#86868b] cursor-not-allowed shadow-none'
+                            }`}
+                            disabled={!isValid || isCreating}
+                          >
+                            {isCreating ? (
+                              'Criando sua prova...'
+                            ) : isValid ? (
+                              <span className="flex items-center gap-2 sm:gap-3">
+                                <span>🎯</span>
+                                <span className="text-[13px] sm:text-[14px] lg:text-[15px]">Iniciar Simulado Personalizado</span>
+                              </span>
+                            ) : (
+                              'Complete a configuração'
+                            )}
+                          </Button>
+                        </motion.div>
                       </CardFooter>
                     </Card>
-                  </div>
+                  </motion.div>
                 </TabsContent>
               </Tabs>
             </div>

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { User, Bot, Menu, FileText, FileImage, FileAudio, FileVideo, File } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ChatSidebar from "@/components/Simula_PRO/chatbot/ChatSidebar";
@@ -29,14 +30,28 @@ export default function IATutorPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-
-  // Verificar se o usuário tem plano pago
+  const [mounted, setMounted] = useState(false);
   const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
+
+  // Sincronizar montagem do componente
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fechar sidebar em mobile por padrão após montagem
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const isLargeScreen = window.innerWidth >= 1024; // lg breakpoint (1024px)
+    if (!isLargeScreen) {
+      setIsSidebarOpen(false);
+    }
+  }, [mounted]);
 
   // Efeito para verificar se o usuário está autenticado e se tem plano pago
   useEffect(() => {
@@ -226,17 +241,21 @@ export default function IATutorPage() {
 
   return (
     <div className={`flex flex-col h-full ${theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f7]'}`}>
-      <Header />
+      <div className="relative z-30">
+        <Header />
+      </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <ChatSidebar
-          isOpen={isSidebarOpen}
-          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          currentChatId={currentChatId}
-          onNewChat={handleNewChat}
-          onSelectChat={handleSelectChat}
-        />
-
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Sidebar - renderizado apenas após montagem para evitar problemas de hidratação */}
+        {mounted && (
+          <ChatSidebar
+            isOpen={isSidebarOpen}
+            onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+            currentChatId={currentChatId}
+            onNewChat={handleNewChat}
+            onSelectChat={handleSelectChat}
+          />
+        )}
         <main className="flex-1 flex flex-col overflow-hidden backdrop-blur-xl">
           {/* Botão menu mobile */}
           <div className={`lg:hidden p-4 border-b backdrop-blur-xl ${theme === 'dark' ? 'border-gray-800/50 bg-[#2a2a2a]/95' : 'border-gray-200/50 bg-white/80'}`}>
@@ -250,11 +269,21 @@ export default function IATutorPage() {
 
           {/* Área de mensagens */}
           <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
-            <div className="max-w-4xl mx-auto px-4 py-8 h-full">
+            <div className="max-w-4xl mx-auto px-4 py-4 h-full">
               {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center">
+                <motion.div 
+                  className="flex flex-col items-center justify-center h-full text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6 }}
+                >
                   {/* Ícone de boas-vindas */}
-                  <div className="relative mb-8">
+                  <motion.div 
+                    className="relative mb-3"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  >
                     <Image
                       src="/Mascote/banners/Camaleão_9.png"
                       alt="Ícone de boas-vindas"
@@ -264,20 +293,35 @@ export default function IATutorPage() {
                       priority
                       quality={95}
                     />
-                  </div>
+                  </motion.div>
 
-                  <h1 className={`text-5xl font-semibold mb-4 tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  <motion.h1 
+                    className={`text-4xl font-semibold mb-2 tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                  >
                     Como posso ajudar?
-                  </h1>
-                  <p className={`text-lg max-w-2xl mb-16 font-normal ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  </motion.h1>
+                  <motion.p 
+                    className={`text-base max-w-2xl mb-8 font-normal ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
                     Estou aqui para tirar suas dúvidas, explicar conceitos e
                     ajudar você a se preparar para o vestibular.
-                  </p>
+                  </motion.p>
 
                   {/* Sugestões em grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
+                  <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
                     {suggestions.map((suggestion, index) => (
-                      <button
+                      <motion.button
                         key={index}
                         onClick={() => {
                           setInputValue(suggestion.description);
@@ -335,17 +379,26 @@ export default function IATutorPage() {
                               });
                           }, 100);
                         }}
-                        className={`group p-6 rounded-2xl border transition-all duration-300 
-                                 text-left cursor-pointer hover:scale-[1.02] active:scale-[0.98]
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
+                        className={`group p-4 rounded-2xl border transition-all duration-300 
+                                 text-left cursor-pointer
                                  backdrop-blur-xl shadow-sm hover:shadow-xl hover:shadow-blue-500/30
                                  ${theme === 'dark' 
                                    ? 'bg-[#2a2a2a]/80 border-gray-800/50 hover:border-blue-500/50 hover:bg-[#2a2a2a]/90' 
                                    : 'bg-white/80 border-gray-200/50 hover:border-blue-400/50 hover:bg-white/95'}`}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className={`text-3xl group-hover:scale-110 transition-transform duration-300 p-3 rounded-xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'}`}>
+                        <div className="flex items-start gap-3">
+                          <motion.div 
+                            className={`text-2xl p-2 rounded-lg ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'}`}
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ duration: 0.2 }}
+                          >
                             {suggestion.icon}
-                          </div>
+                          </motion.div>
                           <div className="flex-1">
                             <h3 className={`font-semibold mb-1.5 text-base transition-colors
                                           ${theme === 'dark' 
@@ -361,139 +414,208 @@ export default function IATutorPage() {
                             </p>
                           </div>
                         </div>
-                      </button>
+                      </motion.button>
                     ))}
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
               )}
 
               {/* Mensagens */}
               <div className="space-y-8">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex gap-4 ${
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    } animate-fade-in`}
-                  >
-                    {message.role === "assistant" && (
-                      <div className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 ring-2 ring-white/10">
-                        <Bot className="w-5 h-5 text-white" />
-                      </div>
-                    )}
-
-                    <div
-                      className={`group max-w-[75%] rounded-3xl overflow-hidden transition-all duration-300 backdrop-blur-xl ${
-                        message.role === "user"
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30"
-                          : theme === 'dark'
-                          ? "bg-[#2a2a2a]/80 border border-gray-800/50 shadow-lg hover:shadow-xl"
-                          : "bg-white/80 border border-gray-200/50 shadow-md hover:shadow-lg"
+                <AnimatePresence mode="popLayout">
+                  {messages.map((message) => (
+                    <motion.div
+                      key={message.id}
+                      className={`flex gap-4 ${
+                        message.role === "user" ? "justify-end" : "justify-start"
                       }`}
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ 
+                        duration: 0.4, 
+                        ease: "easeOut"
+                      }}
+                      layout
                     >
-                      {/* Arquivos anexados - mostrar apenas nas mensagens do usuário */}
-                      {message.role === "user" && message.attachedFiles && message.attachedFiles.length > 0 && (
-                        <div className="px-6 pt-5 pb-4">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-1 h-5 bg-white/30 rounded-full"></div>
-                            <p className="text-xs font-semibold text-white/90 uppercase tracking-wide">
-                              Arquivos ({message.attachedFiles.length})
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-1 gap-2.5">
-                            {message.attachedFiles.map((file, index) => (
-                              <div
-                                key={index}
-                                className="group/file flex items-center gap-3 bg-white/10 hover:bg-white/15 rounded-2xl p-3.5 backdrop-blur-sm transition-all duration-300 border border-white/10"
-                              >
-                                <div className="flex-shrink-0 w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center group-hover/file:scale-110 transition-transform duration-300">
-                                  {getFileIcon(file.type, file.name)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-white truncate mb-1" title={file.name}>
-                                    {file.name}
-                                  </p>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-white/70 font-medium">
-                                      {formatFileSize(file.size)}
-                                    </span>
-                                    <span className="w-1 h-1 bg-white/40 rounded-full"></span>
-                                    <span className="text-xs text-white/70 font-medium">
-                                      {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mt-4 pt-4 border-t border-white/10"></div>
-                        </div>
+                      {message.role === "assistant" && (
+                        <motion.div 
+                          className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 ring-2 ring-white/10"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.3, delay: 0.1 }}
+                        >
+                          <Bot className="w-5 h-5 text-white" />
+                        </motion.div>
                       )}
 
-                      {/* Conteúdo da mensagem */}
-                      <div className={`px-6 ${message.role === "user" && message.attachedFiles && message.attachedFiles.length > 0 ? 'pb-5' : 'py-5'}`}>
-                        <div className={`whitespace-pre-wrap break-words leading-relaxed text-[15px] ${
-                          message.role === "user" ? "text-white" : theme === 'dark' ? "text-gray-100" : "text-gray-900"
-                        }`}>
-                          {message.content || (
-                            <span className="text-white/70 italic">Arquivo(s) anexado(s)</span>
-                          )}
-                        </div>
-                        
-                        {/* Footer com timestamp */}
-                        <div className="flex items-center gap-2 mt-3">
-                          <div
-                            className={`text-xs font-medium ${
-                              message.role === "user"
-                                ? "text-white/50"
-                                : theme === 'dark'
-                                ? "text-gray-500"
-                                : "text-gray-400"
-                            }`}
+                      <motion.div
+                        className={`group max-w-[75%] rounded-3xl overflow-hidden transition-all duration-300 backdrop-blur-xl ${
+                          message.role === "user"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30"
+                            : theme === 'dark'
+                            ? "bg-[#2a2a2a]/80 border border-gray-800/50 shadow-lg hover:shadow-xl"
+                            : "bg-white/80 border border-gray-200/50 shadow-md hover:shadow-lg"
+                        }`}
+                        whileHover={{ y: -2 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {/* Arquivos anexados - mostrar apenas nas mensagens do usuário */}
+                        {message.role === "user" && message.attachedFiles && message.attachedFiles.length > 0 && (
+                          <motion.div 
+                            className="px-6 pt-5 pb-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.1 }}
                           >
-                            {message.timestamp.toLocaleTimeString("pt-BR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="w-1 h-5 bg-white/30 rounded-full"></div>
+                              <p className="text-xs font-semibold text-white/90 uppercase tracking-wide">
+                                Arquivos ({message.attachedFiles.length})
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2.5">
+                              {message.attachedFiles.map((file, index) => (
+                                <motion.div
+                                  key={index}
+                                  className="group/file flex items-center gap-3 bg-white/10 hover:bg-white/15 rounded-2xl p-3.5 backdrop-blur-sm transition-all duration-300 border border-white/10"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.3, delay: 0.15 + index * 0.05 }}
+                                  whileHover={{ x: 4 }}
+                                >
+                                  <motion.div 
+                                    className="flex-shrink-0 w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center"
+                                    whileHover={{ scale: 1.1 }}
+                                    transition={{ duration: 0.2 }}
+                                  >
+                                    {getFileIcon(file.type, file.name)}
+                                  </motion.div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-white truncate mb-1" title={file.name}>
+                                      {file.name}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-white/70 font-medium">
+                                        {formatFileSize(file.size)}
+                                      </span>
+                                      <span className="w-1 h-1 bg-white/40 rounded-full"></span>
+                                      <span className="text-xs text-white/70 font-medium">
+                                        {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-white/10"></div>
+                          </motion.div>
+                        )}
 
-                    {message.role === "user" && (
-                      <div className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30 ring-2 ring-white/10">
-                        <User className="w-5 h-5 text-white" />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                        {/* Conteúdo da mensagem */}
+                        <div className={`px-6 ${message.role === "user" && message.attachedFiles && message.attachedFiles.length > 0 ? 'pb-5' : 'py-5'}`}>
+                          <motion.div 
+                            className={`whitespace-pre-wrap break-words leading-relaxed text-[15px] ${
+                              message.role === "user" ? "text-white" : theme === 'dark' ? "text-gray-100" : "text-gray-900"
+                            }`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.05 }}
+                          >
+                            {message.content || (
+                              <span className="text-white/70 italic">Arquivo(s) anexado(s)</span>
+                            )}
+                          </motion.div>
+                          
+                          {/* Footer com timestamp */}
+                          <motion.div 
+                            className="flex items-center gap-2 mt-3"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.1 }}
+                          >
+                            <div
+                              className={`text-xs font-medium ${
+                                message.role === "user"
+                                  ? "text-white/50"
+                                  : theme === 'dark'
+                                  ? "text-gray-500"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              {message.timestamp.toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                          </motion.div>
+                        </div>
+                      </motion.div>
+
+                      {message.role === "user" && (
+                        <motion.div 
+                          className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30 ring-2 ring-white/10"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.3, delay: 0.1 }}
+                        >
+                          <User className="w-5 h-5 text-white" />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
 
                 {/* Indicador de digitação */}
-                {isLoading && (
-                  <div className="flex gap-4 justify-start animate-fade-in">
-                    <div className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 ring-2 ring-white/10">
-                      <Bot className="w-5 h-5 text-white" />
-                    </div>
-                    <div className={`border rounded-3xl px-6 py-4 shadow-lg backdrop-blur-xl ${theme === 'dark' ? 'bg-[#2a2a2a]/80 border-gray-800/50' : 'bg-white/80 border-gray-200/50'}`}>
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1.5">
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full animate-bounce ${theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'}`}
-                            style={{ animationDelay: "0ms" }}
-                          />
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full animate-bounce ${theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'}`}
-                            style={{ animationDelay: "150ms" }}
-                          />
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full animate-bounce ${theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'}`}
-                            style={{ animationDelay: "300ms" }}
-                          />
+                <AnimatePresence>
+                  {isLoading && (
+                    <motion.div 
+                      className="flex gap-4 justify-start"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <motion.div 
+                        className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 ring-2 ring-white/10"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Bot className="w-5 h-5 text-white" />
+                      </motion.div>
+                      <motion.div 
+                        className={`border rounded-3xl px-6 py-4 shadow-lg backdrop-blur-xl ${theme === 'dark' ? 'bg-[#2a2a2a]/80 border-gray-800/50' : 'bg-white/80 border-gray-200/50'}`}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <motion.div className="flex gap-1.5">
+                            {[0, 1, 2].map((i) => (
+                              <motion.div
+                                key={i}
+                                className={`w-2.5 h-2.5 rounded-full ${theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'}`}
+                                animate={{ 
+                                  y: [0, -8, 0],
+                                  opacity: [0.5, 1, 0.5]
+                                }}
+                                transition={{
+                                  duration: 0.6,
+                                  delay: i * 0.1,
+                                  repeat: Infinity,
+                                  ease: "easeInOut"
+                                }}
+                              />
+                            ))}
+                          </motion.div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div ref={messagesEndRef} />

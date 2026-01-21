@@ -1,8 +1,8 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect, useMemo } from "react";
-import { useSession } from "next-auth/react"; // 1. Importa o hook para gerenciar a sessão
+import { useSession } from "next-auth/react";
+import { motion, AnimatePresence, Transition } from "framer-motion";
 import Header from "@/components/Header"
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
@@ -21,13 +21,22 @@ import NavigationBar from "@/components/profile/NavigationBar";
 import NotaCorteConsulta from "@/components/Simula_PRO/NotaCorteConsulta";
 import UserConfig from "@/components/profile/UserConfig";
 
+// --- VARIANTES PARA ANIMAÇÃO APPLE-LIKE ---
+const tabContentVariants = {
+  initial: { opacity: 0, y: 15, filter: "blur(10px)" },
+  animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+  exit: { opacity: 0, y: -15, filter: "blur(10px)" },
+};
+
+const springTransition: Transition = {
+  type: "spring",
+  stiffness: 260,
+  damping: 30,
+};
+
 // --- TIPAGENS PARA RANKING ---
 // Removido UserRanking type duplicado, usando UserRankingData importado
-
-// Componente Card Estatística (Sem alterações)
-// REMOVIDO: StatCardProps, StatTrend, ProfileStats, StatCard, StatusBadge, SkeletonCard
-// Essas interfaces e componentes foram movidos para GeneralStats.tsx
-
+// Componente Card Estatística
 interface RecentExam {
   name: string;
   date: string;
@@ -443,93 +452,148 @@ export default function ProfilePage() {
 
             <div className="mb-8">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsContent value="profile" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  {/* Estatísticas Gerais */}
-                  <GeneralStats 
-                    session={session}
-                    status={status}
-                    formData={formData}
-                    profileData={profileData}
-                    isDataLoading={isDataLoading}
-                    error={error}
-                    setActiveTab={setActiveTab}
-                  />
-                  {/* Card de Ranking - Destaque Principal */}
-                  {!isDataLoading && !error && (
-                    <div className="mb-8">
-                      <UserRanking rankingData={rankingData} isLoading={isLoadingRanking} />
-                    </div>
-                  )}
-                </TabsContent>
+                <AnimatePresence mode="wait">
+                  <TabsContent value="profile" key="profile" className="mt-6 space-y-8 outline-none border-none">
+                    <motion.div
+                      variants={tabContentVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={springTransition}
+                      className="space-y-8"
+                    >
+                      {/* Estatísticas Gerais */}
+                      <GeneralStats 
+                        session={session}
+                        status={status}
+                        formData={formData}
+                        profileData={profileData}
+                        isDataLoading={isDataLoading}
+                        error={error}
+                        setActiveTab={setActiveTab}
+                      />
+                      {/* Card de Ranking - Destaque Principal */}
+                      {!isDataLoading && !error && (
+                        <div className="mb-8">
+                          <UserRanking rankingData={rankingData} isLoading={isLoadingRanking} />
+                        </div>
+                      )}
+                    </motion.div>
+                  </TabsContent>
 
-                {/* Simulados Tab Content */}
-                <TabsContent value="simulados" className="mt-6">
-                  <SimulationHistoric recentExams={profileData.recentExams} />
-                </TabsContent>
+                  {/* Simulados Tab Content */}
+                  <TabsContent value="simulados" key="simulados" className="mt-6 outline-none border-none">
+                    <motion.div
+                      variants={tabContentVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={springTransition}
+                    >
+                      <SimulationHistoric recentExams={profileData.recentExams} />
+                    </motion.div>
+                  </TabsContent>
 
-                {/* Estatisticas Tab Content */}
-                <TabsContent value="estatisticas" className="mt-6">
-                  {/* Estatisticas Tab Content - AGORA USANDO O NOVO COMPONENTE */}
-                  <StatsUser 
-                    stats={profileData.stats}
-                    subjectPerformance={profileData.subjectPerformance}
-                    monthlyProgress={profileData.monthlyProgress}
-                  />
-                </TabsContent>
+                  {/* Estatisticas Tab Content */}
+                  <TabsContent value="estatisticas" key="estatisticas" className="mt-6 outline-none border-none">
+                    <motion.div
+                      variants={tabContentVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={springTransition}
+                    >
+                      {/* Estatisticas Tab Content - AGORA USANDO O NOVO COMPONENTE */}
+                      <StatsUser 
+                        stats={profileData.stats}
+                        subjectPerformance={profileData.subjectPerformance}
+                        monthlyProgress={profileData.monthlyProgress}
+                      />
+                    </motion.div>
+                  </TabsContent>
 
-                <TabsContent value="planner" className="mt-6">
-                  <DndProvider backend={HTML5Backend}>
-                    <Planner />
-                  </DndProvider>
-                </TabsContent>
+                  <TabsContent value="planner" key="planner" className="mt-6 outline-none border-none">
+                    <motion.div
+                      variants={tabContentVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={springTransition}
+                    >
+                      <DndProvider backend={HTML5Backend}>
+                        <Planner />
+                      </DndProvider>
+                    </motion.div>
+                  </TabsContent>
 
-                {/* Configuracoes Tab Content */}
-                <TabsContent value="configuracoes" className="mt-6">
-                  <UserConfig 
-                    formData={formData}
-                    setFormData={setFormData}
-                    onSave={handleSaveProfile}
-                    onCancel={handleCancelProfile}
-                  />
-                </TabsContent>
-                <TabsContent value="questoesNaoResolvidas" className="mt-6">
-                  <Gemini
-                    groupedQuestions={groupedQuestions}
-                    selectedSubject={selectedSubject}
-                    setSelectedSubject={setSelectedSubject}
-                    currentQuestionIndex={currentQuestionIndex}
-                    setCurrentQuestionIndex={setCurrentQuestionIndex}
-                    explanation={explanation}
-                    setExplanation={setExplanation}
-                    isGenerating={isGenerating}
-                    handleSubmit={handleSubmit}
-                    universityLogoUrl={currentUniversityLogo}
-                  />
-                </TabsContent>
-                <TabsContent value="notasDeCorte" className="mt-6">
-                  {isDataLoading ? (
-                    // Reutiliza o SkeletonCard enquanto os dados do perfil carregam
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <SkeletonCard />
-                      <SkeletonCard />
-                    </div>
-                  ) : error ? (
-                    // Exibe erro se os dados do perfil falharem
-                    <div className="p-8 text-center text-red-500 bg-red-50/50 rounded-2xl border border-red-200/20">
-                      <AlertCircle className="h-10 w-10 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold">Erro ao carregar dados</h3>
-                      <p className="text-sm">Não foi possível carregar seu desempenho. Tente atualizar a página.</p>
-                    </div>
-                  ) : (
-                    // Passa os dados necessários para o novo componente
-                    <NotaCorteConsulta
-                      // Usamos a porcentagem de acertos como 'nota geral'
-                      userScore={profileData.stats.percentagem} 
-                      // Pré-enche o curso alvo com o que está salvo nas configurações
-                      defaultTargetCourse={formData.targetCourse}
-                    />
-                  )}
-                </TabsContent>
+                  {/* Configuracoes Tab Content */}
+                  <TabsContent value="configuracoes" key="configuracoes" className="mt-6 outline-none border-none">
+                    <motion.div
+                      variants={tabContentVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={springTransition}
+                    >
+                      <UserConfig 
+                        formData={formData}
+                        setFormData={setFormData}
+                        onSave={handleSaveProfile}
+                        onCancel={handleCancelProfile}
+                      />
+                    </motion.div>
+                  </TabsContent>
+                  <TabsContent value="questoesNaoResolvidas" key="questoes" className="mt-6 outline-none border-none">
+                    <motion.div
+                      variants={tabContentVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={springTransition}
+                    >
+                      <Gemini
+                        groupedQuestions={groupedQuestions}
+                        selectedSubject={selectedSubject}
+                        setSelectedSubject={setSelectedSubject}
+                        currentQuestionIndex={currentQuestionIndex}
+                        setCurrentQuestionIndex={setCurrentQuestionIndex}
+                        explanation={explanation}
+                        setExplanation={setExplanation}
+                        isGenerating={isGenerating}
+                        handleSubmit={handleSubmit}
+                        universityLogoUrl={currentUniversityLogo}
+                      />
+                    </motion.div>
+                  </TabsContent>
+                  <TabsContent value="notasDeCorte" key="notas" className="mt-6 outline-none border-none">
+                    <motion.div
+                      variants={tabContentVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={springTransition}
+                    >
+                      {isDataLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <SkeletonCard />
+                          <SkeletonCard />
+                        </div>
+                      ) : error ? (
+                        <div className="p-8 text-center text-red-500 bg-red-50/50 rounded-2xl border border-red-200/20">
+                          <AlertCircle className="h-10 w-10 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold">Erro ao carregar dados</h3>
+                          <p className="text-sm">Não foi possível carregar seu desempenho. Tente atualizar a página.</p>
+                        </div>
+                      ) : (
+                        // Passa os dados necessários para o novo componente
+                        <NotaCorteConsulta
+                          userScore={profileData.stats.percentagem} 
+                          defaultTargetCourse={formData.targetCourse}
+                        />
+                      )}
+                    </motion.div>
+                  </TabsContent>
+                </AnimatePresence>
               </Tabs>
             </div>
           </div>
@@ -539,4 +603,4 @@ export default function ProfilePage() {
     <Footer />
   </div>
 );
-};
+}

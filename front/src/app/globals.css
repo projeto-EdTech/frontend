@@ -5,10 +5,115 @@
  * Aplicando a fonte do sistema Apple em todos os elementos
  */
 
-html {
-  scroll-behavior: smooth;
+/* ===== VARIÁVEIS CSS PARA VIEWPORT DINÂMICO ===== */
+:root {
+  --vh: 1vh;
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
+html {
+  scroll-behavior: smooth;
+  /* Previne zoom em inputs no iOS */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ===== SUPORTE A SAFE AREA (Notch) ===== */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .px-safe {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ===== OTIMIZAÇÕES PARA TOUCH ===== */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Previne seleção de texto em elementos interativos */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA LEXOO ===== */
+
+/* Layout específico para mobile landscape */
+.landscape-mobile {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape-mobile {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+  
+  .landscape-mobile .keyboard-container {
+    padding: 0.25rem;
+  }
+}
+
+/* Scrollbar invisível para teclado */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom scrollbar para áreas de conteúdo */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6);
+}
+
+/* Animação de flip para células */
+@keyframes flip {
+  0% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+.animate-flip {
+  animation: flip 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+/* ===== SCROLLBARS OCULTAS (originais) ===== */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }

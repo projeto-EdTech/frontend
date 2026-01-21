@@ -416,7 +416,7 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
           <div className="flex flex-col gap-3 justify-center px-4">
             <button 
               onClick={() => window.location.href = '/library'}
-              className={`w-full px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-all ${
+              className={`w-full px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-all cursor-pointer ${
                 theme === 'dark'
                   ? 'bg-blue-600 hover:bg-blue-700 text-white'
                   : 'bg-blue-500 hover:bg-blue-600 text-white'
@@ -426,7 +426,7 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
             </button>
             <button 
               onClick={() => window.history.back()}
-              className={`w-full px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-all ${
+              className={`w-full px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-all cursor-pointer ${
                 theme === 'dark'
                   ? 'bg-gray-800 hover:bg-gray-700 text-gray-200'
                   : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'

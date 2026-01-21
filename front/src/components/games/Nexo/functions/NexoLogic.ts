@@ -35,6 +35,9 @@ export class ConnectionsGame {
     private toastEl: HTMLElement | null = null;
 
     public onGameOver: ((vitoria: boolean, dados: { titulo: string; palavras: string[]; cor: string }[]) => void) | null = null;
+    public onShake: ((botoes: HTMLButtonElement[]) => void) | null = null;
+    public onSuccess: ((botoes: HTMLButtonElement[], categoria: Desafio) => void) | null = null;
+    public onShuffle: ((shuffling: boolean) => void) | null = null;
 
     constructor() {
         this.slots = document.querySelectorAll(".game button");
@@ -152,11 +155,8 @@ export class ConnectionsGame {
                     btn.onclick = null; 
                     btn.onclick = () => this.apertou(btn);
                 } else {
-                    // This button is empty/unused (already solved)
-                    // We remove it or hide it. Your original code uses btn.remove() on solve.
-                    // Since 'slots' is a live or static list depending on selection, 
-                    // safest is to hide or remove.
-                    btn.remove(); 
+                    // Mantendo consistência com display:none em vez de remove()
+                    btn.style.display = 'none'; 
                 }
             });
 
@@ -265,9 +265,14 @@ export class ConnectionsGame {
         if (this.bloqueado) return;
         this.desmarcarTudo();
 
-        const botoesDisponiveis = Array.from(document.querySelectorAll(".game button")) as HTMLButtonElement[];
+        // Filtra botões que estão visíveis e no DOM
+        const botoesDisponiveis = Array.from(this.slots).filter(btn => 
+            btn.style.display !== 'none' && document.body.contains(btn)
+        ) as HTMLButtonElement[];
+
         if (botoesDisponiveis.length === 0) return;
 
+        // Tenta encontrar um par de um grupo que ainda não foi totalmente resolvido
         const palavraBase = this.botoesEPalavras.get(botoesDisponiveis[0]);
         const gabaritoEncontrado = this.categoriasEmJogo.find(grupo => 
             grupo.palavras.includes(palavraBase!)
@@ -279,12 +284,14 @@ export class ConnectionsGame {
             gabaritoEncontrado.palavras.includes(this.botoesEPalavras.get(btn)!)
         );
 
+        // Marca um par (2 botões) para ajudar sem entregar o jogo todo
         const parDica = botoesDoGrupo.slice(0, 2);
         parDica.forEach(btn => {
-            btn.classList.remove("default");
+            btn.classList.remove("default", "errado");
             btn.classList.add("dica-visual");
         });
 
+        // Esconde o botão após o uso
         if (this.btnDica) {
             this.btnDica.classList.remove("fade-in-bttn");
             this.btnDica.classList.add("hidden");
@@ -308,6 +315,8 @@ export class ConnectionsGame {
     public embaralhar(): void {
         if (this.bloqueado) return;
         this.bloqueado = true;
+
+        if (this.onShuffle) this.onShuffle(true);
 
         const container = document.querySelector(".game");
         if (!container) return;
@@ -361,6 +370,8 @@ export class ConnectionsGame {
                     b.style.removeProperty('--ty');
                 });
                 this.bloqueado = false;
+                
+                if (this.onShuffle) this.onShuffle(false);
                 
                 // NEW: Save new order
                 this.salvarJogo();
@@ -451,7 +462,7 @@ export class ConnectionsGame {
         this.acertosContainer.appendChild(div);
     }
 
-    private processarAcerto(categoria: Desafio): void {
+    public processarAcerto(categoria: Desafio): void {
         // Update Internal State
         this.categoriasDescobertas.push(categoria);
 
@@ -462,19 +473,40 @@ export class ConnectionsGame {
             audio.play().catch(() => {});
         } catch {}
 
-        this.botoesSelecionados.forEach(botao => botao.remove());
-        this.botoesSelecionados = [];
-        this.bloqueado = false;
-
-        this.renderizarBarraAcerto(categoria);
-
-        // Save Progress
-        this.salvarJogo();
-
-        const botoesRestantes = document.querySelectorAll(".game button");
-        if (botoesRestantes.length === 0) {
-            this.finalizarJogo(true);
+        // Chama o callback de sucesso antes de esconder os botões
+        if (this.onSuccess) {
+            this.onSuccess([...this.botoesSelecionados], categoria);
         }
+
+        // Aguarda a animação do Framer Motion terminar (1s para o salto e fade)
+        setTimeout(() => {
+            this.botoesSelecionados.forEach(botao => {
+                botao.style.display = 'none';
+                botao.classList.remove("selected", "errado");
+            });
+            this.botoesSelecionados = [];
+            this.bloqueado = false;
+
+            this.renderizarBarraAcerto(categoria);
+
+            // Reativa a dica para o próximo grupo se o usuário ainda tiver muitos erros
+            if (this.erros >= 5 && this.btnDica && !this.isGameOver) {
+                this.btnDica.classList.remove("hidden");
+                this.btnDica.classList.add("fade-in-bttn");
+            }
+
+            // Save Progress
+            this.salvarJogo();
+
+            // Check final: Garante que estamos olhando apenas para o que sobrou no grid
+            const botoesVisiveis = Array.from(this.slots).filter(btn => 
+                btn.style.display !== 'none'
+            );
+            
+            if (botoesVisiveis.length === 0) {
+                this.finalizarJogo(true);
+            }
+        }, 1000);
     }
 
     private processarErro(): void {
@@ -502,6 +534,11 @@ export class ConnectionsGame {
                 this.btnDica.classList.remove("hidden");
                 this.btnDica.classList.add("fade-in-bttn");
             }
+        }
+
+        // Chama o callback de shake com os botões selecionados
+        if (this.onShake) {
+            this.onShake(this.botoesSelecionados);
         }
 
         this.botoesSelecionados.forEach(botao => {
