@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Subject, SubjectCardProps, SubjectGridProps, subjects, colorMappings, Entity, GuessFeedback, FeedbackStatus, attributeLabels, } from "./lib/enigma-data";
 import { getTargetEntityForDay, getEntitiesForSubject, compareGuess, } from "./functions/enigma-logic";
@@ -8,6 +9,15 @@ import { getTargetEntityForDay, getEntitiesForSubject, compareGuess, } from "./f
 // =============================================================================
 // TYPES
 // =============================================================================
+// Helper de Data
+function getTodayString(): string {
+  const now = new Date();
+  // Ajuste simples para garantir formato YYYY-MM-DD
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 type GameMode = "lobby" | "playing";
 
 interface SearchBarProps {
@@ -44,6 +54,11 @@ interface VictoryModalProps {
 interface GameSummaryProps {
   guesses: GuessFeedback[];
   targetEntity: Entity;
+}
+
+interface UpgradeModalProps {
+  onClose: () => void;
+  onUpgrade: () => void;
 }
 
 // =============================================================================
@@ -466,6 +481,58 @@ function VictoryModal({ entity, attempts, onClose, subjectName, isVictory }: Vic
   );
 }
 
+function UpgradeModal({ onClose, onUpgrade }: UpgradeModalProps) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ type: "spring", duration: 0.4 }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl text-center"
+          style={{
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+          }}
+        >
+          <div className="text-5xl mb-4">✨</div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Jogue ilimitadamente</h2>
+          <p className="text-gray-600 mb-4">
+            Você está no plano FREE. Faça upgrade e jogue quantos enigmas quiser por dia.
+          </p>
+          <ul className="text-sm text-gray-700 text-left mb-6 space-y-2">
+            <li>• Jogos ilimitados por dia</li>
+            <li>• Estatísticas e histórico completo</li>
+            <li>• Ranking e conquistas</li>
+          </ul>
+          <div className="flex gap-3">
+            <button
+              onClick={onUpgrade}
+              className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors duration-200 cursor-pointer"
+            >
+              Fazer upgrade
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
+            >
+              Agora não
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 // -----------------------------------------------------------------------------
 // LOBBY COMPONENTS
 // -----------------------------------------------------------------------------
@@ -608,7 +675,7 @@ function SubjectGrid({
             isPlayed={playedSubjects.includes(subject.id)}
             onSelect={onSelectSubject}
             isHighlighted={highlightedSubjectId === subject.id}
-            isDisabled={isSpinning}
+            isDisabled={isSpinning || playedSubjects.includes(subject.id)}
           />
         </motion.div>
       ))}
@@ -618,16 +685,16 @@ function SubjectGrid({
 
 export default function EnigmaLobby() {
   const MAX_LIVES = 8;
-  // Game Mode State
+  const FREE_DAILY_LIMIT = 1;
+  const { data: session } = useSession();
+  const plan: "FREE" | "Simula PRO" = (session?.user as any)?.tier === "Simula PRO" ? "Simula PRO" : "FREE";
   const [mode, setMode] = useState<GameMode>("lobby");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
-  const [playedSubjects] = useState<string[]>([]);
-
-  // Roulette/Spin State
+  const [playedSubjects, setPlayedSubjects] = useState<string[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [highlightedSubjectId, setHighlightedSubjectId] = useState<string | null>(null);
-
-  // Gameplay State
   const [query, setQuery] = useState("");
   const [guesses, setGuesses] = useState<GuessFeedback[]>([]);
   const [targetEntity, setTargetEntity] = useState<Entity | null>(null);
@@ -669,6 +736,15 @@ export default function EnigmaLobby() {
   );
 
   const handleSelectSubject = (subject: Subject) => {
+    // Se já jogado hoje, não permite iniciar novamente
+    if (playedSubjects.includes(subject.id)) {
+      return;
+    }
+    // Gate para plano FREE: bloqueia se atingir limite diário
+    if (plan === "FREE" && playedSubjects.length >= FREE_DAILY_LIMIT) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setSelectedSubject(subject);
     const target = getTargetEntityForDay(subject.id);
     setTargetEntity(target);
@@ -681,6 +757,10 @@ export default function EnigmaLobby() {
 
   const handleRandomSubject = () => {
     if (isSpinning) return;
+    if (plan === "FREE" && playedSubjects.length >= FREE_DAILY_LIMIT) {
+      setShowUpgradeModal(true);
+      return;
+    }
     
     setIsSpinning(true);
     
@@ -735,9 +815,17 @@ export default function EnigmaLobby() {
 
     if (feedback.isCorrect) {
       setSolved(true);
+      // Marca a matéria como jogada ao vencer
+      if (selectedSubject && !playedSubjects.includes(selectedSubject.id)) {
+        setPlayedSubjects([...playedSubjects, selectedSubject.id]);
+      }
       setTimeout(() => setShowVictoryModal(true), 500);
     } else if (newGuesses.length >= MAX_LIVES) {
       setIsGameOver(true);
+      // Marca a matéria como jogada ao perder
+      if (selectedSubject && !playedSubjects.includes(selectedSubject.id)) {
+        setPlayedSubjects([...playedSubjects, selectedSubject.id]);
+      }
       setTimeout(() => setShowVictoryModal(true), 500);
     }
   };
@@ -752,15 +840,105 @@ export default function EnigmaLobby() {
     setQuery("");
     setShowSummary(false);
     setIsGameOver(false);
+    // Após finalizar uma partida, se FREE e atingiu limite, mostra CTA
+    if (plan === "FREE" && playedSubjects.length >= FREE_DAILY_LIMIT) {
+      setShowUpgradeModal(true);
+    }
   };
 
   const colors = selectedSubject
     ? colorMappings[selectedSubject.bgColor] || colorMappings["bg-blue-50"]
     : colorMappings["bg-blue-50"];
 
+  // Carregamento inicial do estado salvo
+  useEffect(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("enigma_game_state") : null;
+      if (raw) {
+        const parsed = JSON.parse(raw) as {
+          date: string;
+          playedSubjects: string[];
+          currentSession: {
+            isActive: boolean;
+            subjectId: string;
+            guesses: GuessFeedback[];
+            status: "playing" | "won" | "lost";
+          } | null;
+        };
+
+        if (parsed.date === getTodayString()) {
+          // Restaura matérias jogadas
+          setPlayedSubjects(parsed.playedSubjects || []);
+
+          // Restaura sessão se ativa
+          if (parsed.currentSession && parsed.currentSession.isActive) {
+            const { subjectId, guesses: savedGuesses, status } = parsed.currentSession;
+            const subj = subjects.find(s => s.id === subjectId) || null;
+            if (subj) {
+              setSelectedSubject(subj);
+              const target = getTargetEntityForDay(subj.id);
+              setTargetEntity(target);
+              setGuesses(savedGuesses || []);
+
+              if (status === "playing") {
+                setMode("playing");
+                setSolved(false);
+                setIsGameOver(false);
+                setShowVictoryModal(false);
+              } else if (status === "won") {
+                setMode("playing");
+                setSolved(true);
+                setIsGameOver(false);
+                setShowVictoryModal(true);
+              } else if (status === "lost") {
+                setMode("playing");
+                setSolved(false);
+                setIsGameOver(true);
+                setShowVictoryModal(true);
+              }
+            }
+          }
+        } else {
+          // Dia diferente: limpa storage
+          localStorage.removeItem("enigma_game_state");
+        }
+      }
+    } catch (e) {
+      // Em caso de erro na leitura, ignore e continue com estado inicial
+    } finally {
+      setIsLoaded(true);
+    }
+  }, []);
+
+  // Salvamento automático quando estados mudarem
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      const save = {
+        date: getTodayString(),
+        playedSubjects,
+        currentSession: selectedSubject
+          ? {
+              isActive: true,
+              subjectId: selectedSubject.id,
+              guesses,
+              status: solved ? "won" : isGameOver ? "lost" : mode === "playing" ? "playing" : "playing",
+            }
+          : null,
+      };
+      localStorage.setItem("enigma_game_state", JSON.stringify(save));
+    } catch (e) {
+      // Falha silenciosa ao salvar
+    }
+  }, [playedSubjects, guesses, mode, selectedSubject, solved, isGameOver, isLoaded]);
+
   // =========================================================================
   // PLAYING MODE
   // =========================================================================
+  // Evita renderizar antes da hidratação do storage
+  if (!isLoaded) {
+    return null;
+  }
   if (mode === "playing" && selectedSubject) {
     return (
       <motion.main
@@ -893,6 +1071,16 @@ export default function EnigmaLobby() {
             isVictory={solved}
           />
         )}
+        {/* Upgrade CTA Modal */}
+        {showUpgradeModal && (
+          <UpgradeModal
+            onClose={() => setShowUpgradeModal(false)}
+            onUpgrade={() => {
+              // Navegar para página de planos; ajuste a rota conforme sua app
+              window.location.href = "/planos";
+            }}
+          />
+        )}
       </motion.main>
     );
   }
@@ -983,6 +1171,15 @@ export default function EnigmaLobby() {
           </p>
         </motion.footer>
       </motion.div>
+      {/* Upgrade CTA Modal no lobby também */}
+      {showUpgradeModal && (
+        <UpgradeModal
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={() => {
+            window.location.href = "/planos";
+          }}
+        />
+      )}
     </motion.main>
   );
 }
