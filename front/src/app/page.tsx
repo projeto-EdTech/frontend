@@ -487,31 +487,6 @@ export default function Home() {
                           />
                         </svg>
                       </Link>
-
-                      {/* Botão secundário responsivo */}
-                      <button
-                        className="group relative force-themed-card border-2 themed-border hover:border-blue-400 themed-text hover:text-blue-600 font-semibold py-3 md:py-4 px-6 md:px-8 rounded-full transition-all duration-300 transform hover:scale-105 flex items-center gap-3 w-full sm:w-auto text-center justify-center focus:outline-none focus:ring-4 focus:ring-gray-300 cursor-pointer"
-                        aria-label="Ver demonstração da plataforma em 30 segundos"
-                        onClick={() => setShowDemoModal(true)}
-                      >
-                        <svg
-                          className="w-4 h-4 md:w-5 md:h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="text-sm md:text-base">
-                          Ver Demo (30s)
-                        </span>
-                      </button>
                     </div>
 
                     {/* Indicadores de confiança melhorados com acessibilidade */}

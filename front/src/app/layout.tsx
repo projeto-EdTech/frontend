@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from 'next/font/local';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NextAuthProvider } from "./providers";
 import { ProfileIconProvider } from "@/contexts/ProfileIconContext";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
