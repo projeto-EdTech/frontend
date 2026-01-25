@@ -55,6 +55,12 @@ export default function Footer() {
                   News
                 </Link>
               </li>
+              <li>
+                <Link href="/#downloads" className="group inline-flex items-center themed-text-secondary hover:text-purple-600 dark:hover:text-purple-400 text-sm font-medium transition-all duration-300 hover:translate-x-1">
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 group-hover:bg-purple-500 transition-colors duration-300"></span>
+                  Download da plataforma
+                </Link>
+              </li>
             </ul>
           </div>
 

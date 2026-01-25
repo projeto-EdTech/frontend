@@ -18,6 +18,7 @@ import { EstatisticasMockup, SimuladoMockup, BancoProvasMockup, CronogramaMockup
 import SphereCarousel from "@/components/SphereCarousel";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import DownloadSection from "@/components/Download";
 
 // Dados das features para o carrossel 3D da Hero Section
 const HERO_FEATURES = [
@@ -2258,7 +2259,13 @@ export default function Home() {
             </div>
           </div>
         </div>
-        {/* PONTO DE PULO 5: Esta seção já possui o id="planos", está correto. */}
+
+        {/* PONTO DE PULO 5: Seção de Downloads - PC e Mobile */}
+        <div id="downloads">
+          <DownloadSection />
+        </div>
+
+        {/* PONTO DE PULO 6: Esta seção já possui o id="planos", está correto. */}
         {/* Exibir seção de planos apenas para usuários FREE ou não autenticados */}
         {!hasPaidPlan && (
           <div

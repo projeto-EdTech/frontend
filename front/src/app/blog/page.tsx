@@ -20,14 +20,16 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  ListMusic,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { SubscribeButton } from "@/components/blog/SubscribeButton";
+import { SubscribeButton } from "@/components/community/SubscribeButton";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
+import { PlaylistHub } from "@/components/community/PlaylistHub";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -74,6 +76,7 @@ const pulseEffect = {
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [playlistCount, setPlaylistCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const filterCategories = [
     "Todos",
@@ -123,6 +126,31 @@ export default function BlogPage() {
     getPostsFromApi().then((data) => {
       setPosts(data);
       setIsLoading(false);
+    });
+  }, []);
+
+  // Buscar contagem de playlists
+  useEffect(() => {
+    async function getPlaylistCount(): Promise<number> {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      try {
+        const res = await fetch(`${apiUrl}/api/playlist`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          throw new Error("Falha ao buscar playlists");
+        }
+        const data = await res.json();
+        // Se receber um array, retorna o comprimento; se receber um objeto com count, retorna count
+        return Array.isArray(data) ? data.length : data.count || 0;
+      } catch (error) {
+        console.error(error);
+        return 0;
+      }
+    }
+
+    getPlaylistCount().then((count) => {
+      setPlaylistCount(count);
     });
   }, []);
 
@@ -209,7 +237,7 @@ export default function BlogPage() {
               <motion.div
                 variants={fadeInUp}
                 whileHover={{ scale: 1.05 }}
-                className="inline-flex items-center gap-3 bg-white backdrop-blur-xl border border-gray-200/50 shadow-lg text-indigo-700 px-6 py-3 rounded-full text-sm font-semibold mb-8 group hover:shadow-xl transition-shadow duration-300"
+                className="inline-flex items-center gap-3 bg-white backdrop-blur-xl border border-gray-200 shadow-lg text-indigo-700 px-6 py-3 rounded-full text-sm font-semibold mb-8 group hover:shadow-xl transition-shadow duration-300"
               >
                 <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform shadow-md">
                   <Sparkles className="w-4 h-4 text-white" />
@@ -221,10 +249,10 @@ export default function BlogPage() {
               {/* Título com animação framer motion */}
               <motion.div variants={fadeInUp} className="relative mb-6">
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[0.9] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent block mb-5">
-                  Vestibuline News
+                  Central de Comunidade
                 </h1>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[0.9] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent block relative pb-3">
-                  Artigos e Matérias que Aprovam
+                  Artigos e Playlists que Aprovam
                 </h1>
               </motion.div>
 
@@ -239,7 +267,7 @@ export default function BlogPage() {
                   metodologias comprovadas
                 </span>{" "}
                 e<span className="font-semibold"> insights únicos</span> para
-                sua aprovação
+                sua aprovação e playlist de estudos feitas pela própria comunidade
               </motion.p>
 
               {/* Stats cards com stagger */}
@@ -249,6 +277,7 @@ export default function BlogPage() {
               >
                 {[
                   { icon: BookOpen, color: "from-blue-500 to-indigo-600", label: "Artigos Exclusivos", value: posts.length },
+                  { icon: ListMusic, color: "from-yellow-500 to-orange-600", label: "Playlists", value: playlistCount ?? "XXX" },
                   { icon: Users, color: "from-purple-500 to-pink-600", label: "Estudantes Ativos", value: "XXX" },
                   { icon: Award, color: "from-green-500 to-emerald-600", label: "Taxa de Aprovação", value: "XXX" }
                 ].map((stat, i) => (
@@ -302,6 +331,9 @@ export default function BlogPage() {
             </motion.div>
           </div>
         </div>
+
+        {/* Playlist Hub Section */}
+        <PlaylistHub searchQuery={searchQuery} />
 
         {/* Filtros Section */}
         <motion.div

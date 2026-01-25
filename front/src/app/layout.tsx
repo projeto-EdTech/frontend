@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NextAuthProvider } from "./providers";
 import { ProfileIconProvider } from "@/contexts/ProfileIconContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import SyncUserEffect from "@/components/SyncUserEffect";
 import NavigationSound from "@/components/NavigationSound";
