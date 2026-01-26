@@ -82,9 +82,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: "/",
-  },
+  pages: {},
   callbacks: {
     // Garantir um tipo consistente de retorno (JWT) em todos os caminhos
     async jwt({ token, account, user }): Promise<JWT> {

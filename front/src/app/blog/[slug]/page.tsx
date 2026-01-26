@@ -1,4 +1,4 @@
-import { PostCard } from "@/components/blog/PostCard";
+import { PostCard } from "@/components/community/PostCard";
 import Link from "next/link";
 import { Post } from "@/types";
 import { Metadata } from "next";
@@ -21,11 +21,11 @@ import {
   User,
   Heart,
 } from "lucide-react";
-import ShareModal from "@/components/blog/ShareModal";
-import SubscribeButton from "@/components/blog/SubscribeButton";
+import ShareModal from "@/components/community/ShareModal";
+import SubscribeButton from "@/components/community/SubscribeButton";
 import Image from "next/image";
 import { getAllPosts, getPostBySlug } from "@/lib/post";
-import NavigationLink from "@/components/blog/NavigationLink";
+import NavigationLink from "@/components/community/NavigationLink";
 
 // Busca diretamente do módulo do servidor (sem chamadas HTTP)
 async function getPostData(slug: string): Promise<Post | null> {

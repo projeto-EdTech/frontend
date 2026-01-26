@@ -1,6 +1,8 @@
 import confetti from 'canvas-confetti';
 import {
   FlashCard,
+  FlashCardSubject,
+  FlashCardTopic,
   GameScore,
   DIFFICULTY_POINTS,
   COMBO_THRESHOLDS,
@@ -8,6 +10,7 @@ import {
   COMBO_COLORS,
   SUBJECT_COLORS,
   DEFAULT_SUBJECT_COLOR,
+  flashCardsData,
 } from '../lib/flash-cardData';
 
 /**
@@ -36,46 +39,70 @@ export class FlashCardGameLogic {
   }
 
   /**
-   * Busca os cards da API
+   * Busca as matérias e prepara os dados iniciais
    */
   async fetchCards(): Promise<{ cards: FlashCard[]; subjects: string[] }> {
-    try {
-      const response = await fetch('/api/games/Flash-cards');
-      
-      if (!response.ok) {
-        throw new Error('Erro ao carregar os cards');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success && data.data.cards) {
-        return {
-          cards: data.data.cards,
-          subjects: data.data.subjects,
-        };
-      } else {
-        throw new Error('Formato de dados inválido');
-      }
-    } catch (err) {
-      console.error('Erro ao buscar cards:', err);
-      throw err;
-    }
+    const subjects = flashCardsData.map(s => s.subject);
+    const allCards: FlashCard[] = [];
+    
+    // Achata todos os cards injetando metadados de matéria e tópico
+    flashCardsData.forEach(subjectEntry => {
+      subjectEntry.topics.forEach(topic => {
+        const cardsWithMetadata = topic.cards.map(card => ({
+          ...card,
+          subject: subjectEntry.subject,
+          topic: topic.name
+        }));
+        allCards.push(...cardsWithMetadata);
+      });
+    });
+
+    const availableCards = allCards.filter(card => card.available ?? true);
+
+    return {
+      cards: availableCards,
+      subjects,
+    };
   }
 
   /**
-   * Inicia o jogo com a matéria selecionada
+   * Inicia o jogo com a matéria selecionada percorrendo a nova estrutura
    */
   startGame(cards: FlashCard[], selectedSubject: string, limit?: number): FlashCard[] {
-    let filteredCards = selectedSubject === 'Todas' 
-      ? cards 
-      : cards.filter(card => card.subject === selectedSubject);
+    let filteredCards: FlashCard[] = [];
+
+    if (selectedSubject === 'Todas') {
+      filteredCards = [...cards];
+    } else {
+      // Busca a matéria específica na estrutura original para garantir que pegamos os tópicos corretos
+      const subjectData = flashCardsData.find(s => s.subject === selectedSubject);
+      if (subjectData) {
+        subjectData.topics.forEach(topic => {
+          filteredCards.push(...topic.cards);
+        });
+      }
+    }
+
+    // Filtra apenas cards marcados como disponíveis
+    filteredCards = filteredCards.filter(card => card.available ?? true);
     
-    // Se houver limite definido, embaralha e pega a quantidade solicitada
+    // Embaralha
+    filteredCards = this.shuffleCards(filteredCards);
+
+    // Se houver limite definido, pega a quantidade solicitada
     if (limit && limit > 0 && limit < filteredCards.length) {
-      filteredCards = this.shuffleCards(filteredCards).slice(0, limit);
+      filteredCards = filteredCards.slice(0, limit);
     }
     
     return filteredCards;
+  }
+
+  /**
+   * Retorna os tópicos de uma matéria específica
+   */
+  getTopicsBySubject(subjectName: string): string[] {
+    const subject = flashCardsData.find(s => s.subject === subjectName);
+    return subject ? subject.topics.map(t => t.name) : [];
   }
 
   /**
@@ -181,17 +208,10 @@ export class FlashCardGameLogic {
     newPoints: number;
     shouldTriggerCombo: boolean;
   } {
-    if (reviewedCards.includes(currentCard.id)) {
-      return {
-        newScore: score,
-        newReviewedCards: reviewedCards,
-        newCorrectIds: correctIds,
-        newComboCount: comboCount,
-        newMultiplier: this.getMultiplier(comboCount),
-        newPoints: points,
-        shouldTriggerCombo: false,
-      };
-    }
+    // Permite que o mesmo card seja respondido múltiplas vezes.
+    // Mantemos apenas a primeira ocorrência de cada id em correctIds
+    // para o envio final à API, mas score/points/combo podem subir
+    // a cada nova tentativa.
 
     const newScore = { ...score, correct: score.correct + 1 };
     const newReviewedCards = [...reviewedCards, currentCard.id];
@@ -241,15 +261,9 @@ export class FlashCardGameLogic {
     newScore: GameScore;
     newReviewedCards: number[];
   } {
-    if (reviewedCards.includes(currentCard.id)) {
-      return {
-        newScore: score,
-        newReviewedCards: reviewedCards,
-      };
-    }
-
-    const newScore = { ...score, incorrect: score.incorrect + 1 };
-    const newReviewedCards = [...reviewedCards, currentCard.id];
+  // Também permite múltiplas respostas incorretas para o mesmo card.
+  const newScore = { ...score, incorrect: score.incorrect + 1 };
+  const newReviewedCards = [...reviewedCards, currentCard.id];
     
     // Reseta combo e multiplicador via callback
     this.onComboUpdate(0, 1, false);
@@ -301,7 +315,8 @@ export class FlashCardGameLogic {
   /**
    * Retorna a cor baseada na matéria
    */
-  getSubjectColor(subject: string): string {
+  getSubjectColor(subject?: string): string {
+    if (!subject) return DEFAULT_SUBJECT_COLOR;
     return SUBJECT_COLORS[subject] || DEFAULT_SUBJECT_COLOR;
   }
 

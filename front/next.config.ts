@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const config: NextConfig = {
   // Adicione ou mescle esta configuração de 'images' com as suas configurações existentes
   images: {
+    qualities: [75, 85],
     remotePatterns: [
       {
         protocol: 'https',

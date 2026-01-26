@@ -14,15 +14,13 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
   const isPro = session?.user?.tier === 'Simula PRO';
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const DAILY_LIMIT = 10;
-  
-  // Estados do jogo
   const [isLoading, setIsLoading] = useState(true);
   const [cards, setCards] = useState<FlashCard[]>([]);
-  const [availableSubjects, setAvailableSubjects] = useState<string[]>(['Todas']);
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<string>('Todas');
-  const [cardLimit, setCardLimit] = useState<string>(''); // Novo estado para o limite de cards
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [cardLimit, setCardLimit] = useState<string>('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [score, setScore] = useState<GameScore>({ correct: 0, incorrect: 0 });
@@ -36,8 +34,6 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
   const [dailyScore, setDailyScore] = useState<GameScore>({ correct: 0, incorrect: 0 });
   const [dailyPoints, setDailyPoints] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
-  
-  // Sistema de Pontos e Combo
   const [points, setPoints] = useState(0);
   const [comboCount, setComboCount] = useState(0);
   const [isComboActive, setIsComboActive] = useState(false);
@@ -67,7 +63,10 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
         setIsLoading(true);
         const data = await gameLogic.fetchCards();
         setCards(data.cards);
-        setAvailableSubjects(['Todas', ...data.subjects]);
+        setAvailableSubjects(data.subjects);
+        if (data.subjects.length > 0) {
+          setSelectedSubject(data.subjects[0]);
+        }
       } catch (err) {
         console.error('Erro ao buscar cards:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar os dados');
@@ -301,7 +300,9 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
     if (isDailyLimitReached && !isPro) return;
 
     setGameStarted(false);
-    setSelectedSubject('Todas');
+    if (availableSubjects.length > 0) {
+      setSelectedSubject(availableSubjects[0]);
+    }
     setCardLimit(''); // Reseta o limite ao reiniciar
     setCurrentIndex(0);
     setIsFlipped(false);
@@ -322,7 +323,7 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
   };
 
   // Cores baseadas na matéria
-  const getSubjectColor = (subject: string) => {
+  const getSubjectColor = (subject?: string) => {
     return gameLogic.getSubjectColor(subject);
   };
 
@@ -442,13 +443,12 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
 
   // Tela de Meta Diária Concluída - Mobile-First e Responsivo
   if (isComplete || (!gameStarted && isDailyLimitReached && !isPro)) {
-    // Se atingiu o limite diário E NÃO É PRO, mostra stats do dia.
     const showDailyStats = isDailyLimitReached && !isPro;
     const displayScore = showDailyStats ? dailyScore : score;
     const displayPoints = showDailyStats ? dailyPoints : points;
 
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 py-6 sm:py-8 select-none">
+      <div className="flex flex-col items-center justify-start pt-10 sm:pt-16 min-h-screen px-4 pb-12 select-none">
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -564,11 +564,11 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
     );
   }
 
-  // Tela de seleção de matéria - Mobile-First e Responsivo
+  // Tela de seleção de matéria
   if (!gameStarted) {
     if (isDailyLimitReached && !isPro) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-6 sm:py-8 select-none">
+        <div className="flex flex-col items-center justify-start pt-10 sm:pt-16 min-h-screen px-4 pb-12 select-none">
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -650,22 +650,12 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
     }
 
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 py-6 sm:py-8 select-none">
+      <div className="flex flex-col items-center justify-start pt-10 sm:pt-16 min-h-screen px-4 pb-12 select-none">
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className={`rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 max-w-3xl w-full backdrop-blur-xl ${
-            theme === 'dark' 
-              ? 'bg-gray-900 border border-gray-700/50' 
-              : 'bg-white/95 border border-gray-200/50'
-          }`}
-          style={{
-            boxShadow: theme === 'dark' 
-              ? '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)' 
-              : '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)'
-          }}
-        >
+          className={`rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 max-w-4xl w-full backdrop-blur-xl ${ theme === 'dark' ? 'bg-gray-900' : 'bg-white/95'}`}>
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8">
             <h2 className={`text-2xl sm:text-3xl md:text-4xl font-semibold mb-2 sm:mb-3 tracking-tight ${
@@ -693,7 +683,7 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
             <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 ${
               theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50/80'
             }`}>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-2.5 max-h-[320px] sm:max-h-[420px] overflow-y-auto scrollbar-thin">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2.5 max-h-[320px] sm:max-h-[420px] overflow-y-auto scrollbar-thin">
                 {availableSubjects.map((subject) => (
                   <button
                     key={subject}
@@ -936,6 +926,23 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
       {/* Header com informações - Mobile-First */}
       <div className="w-full max-w-4xl mb-4 sm:mb-6 relative z-10">
         <div className="flex flex-col gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+          {/* Nova Linha: Exibição da Matéria e Tópico */}
+          <div className="flex flex-col mb-1">
+            <span 
+              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded w-fit mb-1 border"
+              style={{ 
+                backgroundColor: `${gameLogic.getSubjectColor(currentCard.subject || '')}15`,
+                color: gameLogic.getSubjectColor(currentCard.subject || ''),
+                borderColor: `${gameLogic.getSubjectColor(currentCard.subject || '')}30`
+              }}
+            >
+              {currentCard.subject}
+            </span>
+            <span className={`text-sm sm:text-base font-bold leading-tight ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+              {currentCard.topic}
+            </span>
+          </div>
+
           {/* Linha 1: Contador de cards e dificuldade */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className={`font-medium text-xs sm:text-sm md:text-base ${
