@@ -1,54 +1,72 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-/**
- * Escuta o retorno do OAuth (?sync=1) e chama /api/sync-user sempre que houver um novo login.
- * Remove o parâmetro da URL após sincronizar para evitar chamadas repetidas em navegações internas.
- */
 export default function SyncUserEffect() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const syncingRef = useRef(false);
-  const doneForEmailRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const shouldSync = searchParams.get("sync") === "1";
-    if (status === "authenticated" && shouldSync && !syncingRef.current) {
-      const email = session?.user?.email || "";
-      // Evita sync duplicada para o mesmo email no mesmo ciclo de vida
-      if (doneForEmailRef.current === email) return;
-      syncingRef.current = true;
-      (async () => {
-        try {
-          await fetch("/api/sync-user", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: session?.user?.name,
-              email,
-            }),
-          });
-        } catch (e) {
-          console.error("Falha ao sincronizar usuário (effect)", e);
-        } finally {
-          doneForEmailRef.current = email;
-          syncingRef.current = false;
-          // Remove o parâmetro ?sync=1 da URL sem recarregar
-          try {
-            const url = new URL(window.location.href);
-            url.searchParams.delete("sync");
-            router.replace(url.pathname + (url.search ? url.search : "") + url.hash);
-          } catch {
-            /* ignore */
-          }
+    if (status === "authenticated") {
+        const email = session?.user?.email || "";
+        // Verifica se já temos os dados deste usuário no localStorage
+        const storedData = localStorage.getItem("user_data");
+        let alreadySynced = false;
+
+        if (storedData) {
+            try {
+                const parsed = JSON.parse(storedData);
+                if (parsed.email === email && parsed.id) {
+                    alreadySynced = true;
+                }
+            } catch (e) {
+                console.error("Erro ao ler user_data do localStorage", e);
+            }
         }
-      })();
+        
+        // Se já sincronizou e tem ID, não precisa chamar novamente, a menos que forçado
+        if (alreadySynced) return;
+        
+        if (syncingRef.current) return;
+        syncingRef.current = true;
+
+        (async () => {
+        try {
+            // A rota /api/sync-user agora pega os dados do token automaticamente
+            // não precisamos enviar body, mas mantemos compatibilidade se necessário
+            const res = await fetch("/api/sync-user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                // O backend retorna: { id, tipoUsuario, newsLetter, ... }
+                
+                const userDataToStore = {
+                    id: data.id,
+                    name: session?.user?.name || "",
+                    email: session?.user?.email || "",
+                    tier: data.tipoUsuario, // Mapeia tipoUsuario -> tier
+                    newsletter: data.newsLetter // Mapeia newsLetter -> newsletter
+                };
+
+                localStorage.setItem("user_data", JSON.stringify(userDataToStore));
+                console.log("[SyncUserEffect] Dados do usuário salvos no localStorage:", userDataToStore);
+            } else {
+                console.warn("[SyncUserEffect] Erro na resposta da API:", res.status);
+            }
+        } catch (e) {
+            console.error("Falha ao sincronizar usuário (effect)", e);
+        } finally {
+            syncingRef.current = false;
+        }
+        })();
     }
-  }, [status, searchParams, session, router]);
+  }, [status, session]);
 
   return null;
 }

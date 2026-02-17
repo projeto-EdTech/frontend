@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginModal from "@/components/Login-modal";
 import { useEffect, useState } from "react";
-import { universities } from "@/lib/dataUniversity";
+import { useUniversityStorage } from "@/contexts/UniversityStorage";
 import TopicPieChart from '@/components/Simula_PRO/graficos_stats/TopicPieChart';
 import TopicBarChart from '@/components/Simula_PRO/graficos_stats/TopicBarChart';
 import RankingMaterias from "@/components/RankingMaterias";
@@ -31,7 +31,7 @@ export default function EstatisticasPage() {
   const [metricas, setMetricas] = useState<Metrica[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [vestibularSelecionado, setVestibularSelecionado] = useState<string>("geral");
+  const [vestibularSelecionado, setVestibularSelecionado] = useState<string>("all");
   
   // Verificar autenticação ao carregar a página
   useEffect(() => {
@@ -57,7 +57,9 @@ export default function EstatisticasPage() {
     async function carregar() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/estatisticas/${subject}?vestibular=${vestibularSelecionado}`, {
+        const url = `/api/estatisticas/${subject}?vestibular=${vestibularSelecionado}`;
+        console.log("Frontend - Buscando estatísticas na URL:", url); // Verifique se o ID está aqui
+        const res = await fetch(url, {
           method: "GET",
           cache: "no-store",
           signal: controller.signal,
@@ -94,7 +96,6 @@ export default function EstatisticasPage() {
     { name: "quimica", label: "Química", icon: "🧪" },
     { name: "biologia", label: "Biologia", icon: "🧬" },
     { name: "portugues", label: "Português", icon: "📔" },
-    { name: "literatura", label: "Literatura", icon: "📖" },
     { name: "historia", label: "História", icon: "📚" },
     { name: "geografia", label: "Geografia", icon: "🌍" },
     { name: "filosofia", label: "Filosofia", icon: "🤔" },
@@ -102,14 +103,19 @@ export default function EstatisticasPage() {
     { name: "ingles", label: "Inglês", icon: "🇺🇸" },
   ];
 
-  // Mapear universidades do dataUniversity.ts para o formato do dropdown
+  // 1. Obter universidades do contexto global (UniversityStorage)
+  const { universities, loading: loadingUniversities } = useUniversityStorage();
+
+  // 2. Mapear universidades para o formato do dropdown
   const vestibulares: VestibularItem[] = [
-    { id: "geral", nome: "Estatísticas Gerais", icon: "🌐" },
-    ...universities.map(university => ({
-      id: university.slug,
-      nome: university.name,
-      icon: "",
-    }))
+    { id: "all", nome: "Estatísticas Gerais", icon: "🌐" },
+    ...(loadingUniversities
+      ? [{ id: "loading", nome: "Carregando instituições...", icon: "⏳", isPlaceholder: true }]
+      : universities.map((university) => ({
+          id: String(university.id),
+          nome: university.name || university.slug.toUpperCase(),
+          icon: "", 
+        }))),
   ];
 
   const router = useRouter();
@@ -395,7 +401,8 @@ export default function EstatisticasPage() {
                 <RankingMaterias 
                   data={metricas.filter(item => 
                     item.topico.toLowerCase() !== 'demais assuntos' && 
-                    !item.topico.toLowerCase().includes('demais assuntos (< que')
+                    !item.topico.toLowerCase().includes('demais assuntos (< que') &&
+                    item.topico.toLowerCase() !== 'outros'
                   )} 
                   colors={colors} 
                 />

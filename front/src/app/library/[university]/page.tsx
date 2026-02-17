@@ -7,7 +7,8 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import LoginModal from "@/components/Login-modal";
-import { universities, type University } from "@/lib/dataUniversity";
+import { type University } from "@/types/university";
+import { useUniversityStorage } from "@/contexts/UniversityStorage";
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
 
@@ -27,10 +28,17 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
   const [selectedDay, setSelectedDay] = useState<number | null>(dayParam ? Number(dayParam) : null);
   const [time, setTime] = useState<string>(timeParam || "");
   const slug = params.university;
-  const [universityInfo, setUniversityInfo] = useState<University | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [usedFallback, setUsedFallback] = useState(false);
+
+  // Use UniversityStorage data directly matching the user request
+  const { universities: contextUniversities, loading: contextLoading, error: contextError } = useUniversityStorage();
+
+  const universityInfo = useMemo(() => 
+    contextUniversities.find(u => u.slug === slug) || null
+  , [contextUniversities, slug]);
+
+  const isLoading = contextLoading;
+  const error = contextError || (!isLoading && !universityInfo ? "Universidade não encontrada" : null);
+
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   
   // Verificar autenticação ao carregar a página
@@ -40,33 +48,6 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
     }
   }, [status]);
   const [isNavigating, setIsNavigating] = useState(false);
-
-  // Fetch com fallback local
-  useEffect(() => {
-    if (!slug) return;
-    let cancelled = false;
-    const fetchUniversity = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/universities/${slug}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("Falha ao buscar API");
-        const data: University = await response.json();
-        if (!cancelled) setUniversityInfo(data);
-      } catch (err) {
-        const local = universities.find(u => u.slug === slug) || null;
-        if (!cancelled) {
-          setUniversityInfo(local);
-          setUsedFallback(true);
-          if (!local) setError(err instanceof Error ? err.message : "Universidade não encontrada");
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-    fetchUniversity();
-    return () => { cancelled = true; };
-  }, [slug]);
 
   // Ordenar anos desc para UX consistente
   const yearsSorted = useMemo(() => (
@@ -287,7 +268,7 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
                                 key={d}
                                 type="button"
                                 onClick={() => setSelectedDay(d)}
-                                className={`px-5 py-2.5 rounded-[10px] border text-[14px] font-medium transition-all duration-200 ${
+                                className={`px-5 py-2.5 rounded-[10px] border text-[14px] font-medium transition-all duration-200 cursor-pointer ${
                                   selectedDay === d 
                                     ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-[0_2px_8px_rgba(0,122,255,0.25)]' 
                                     : 'bg-white text-gray-700 border-[#d2d2d7] hover:bg-[#f5f5f7] hover:border-[#86868b]'
@@ -338,19 +319,7 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
                           )}
                         </div>
 
-                        {/* Fallback warning */}
-                        {usedFallback && (
-                          <div className="bg-[#FFF9E6] border border-[#FFD60A]/30 rounded-[10px] p-3.5">
-                            <div className="flex items-center space-x-2.5">
-                              <svg className="w-4 h-4 text-[#FF9500]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path>
-                              </svg>
-                              <span className="text-[13px] text-[#8B7000] font-medium">
-                                Dados carregados localmente (modo offline)
-                              </span>
-                            </div>
-                          </div>
-                        )}
+
 
                         {/* Botão de iniciar com mascote */}
                         <div className="relative pt-2">
@@ -405,7 +374,7 @@ function UniversityExamPageClient({ params }: { params: { university: string } }
                       
                       <div className="text-center">
                         <h1 className="text-[32px] md:text-[36px] font-semibold text-[#1d1d1f] mb-8 tracking-tight leading-tight">
-                          {universityInfo.name.toUpperCase()}
+                          {universityInfo.name?.toUpperCase() || universityInfo.slug?.toUpperCase() || 'UNIVERSIDADE'}
                         </h1>
 
                         {/* Logo com efeitos */}

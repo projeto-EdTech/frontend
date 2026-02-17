@@ -9,8 +9,7 @@ import { AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { universities } from "@/lib/dataUniversity";
-import { mockRankingsByUniversity, type RawUserData } from "@/lib/DataRanking";
+import { useUniversityStorage } from "@/contexts/UniversityStorage";
 import GeneralStats, { SkeletonCard, type ProfileStats } from "@/components/profile/GeneralStats";
 import StatsUser from "@/components/profile/StatsUser";
 import SimulationHistoric from "@/components/profile/SimulationHistoric";
@@ -80,6 +79,7 @@ const initialProfileData: ProfileData = {
 export default function ProfilePage() {
   // 2. Chama o hook para obter os dados da sessão e o status de autenticação
   const { data: session, status } = useSession();
+  const { universities } = useUniversityStorage();
   const [activeTab, setActiveTab] = useState("profile");
   const [explanation, setExplanation] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);

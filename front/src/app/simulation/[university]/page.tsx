@@ -8,7 +8,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css'; // Importe o CSS do KaTeX
-import { type Question, type University, allQuestions, universities } from "@/lib/dataUniversity";
+import { type Question, type University } from "@/types/university";
+
+import { useUniversityStorage } from "@/contexts/UniversityStorage";
 import QuestionCarousel from '@/components/QuestionCarousel';
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
@@ -54,6 +56,7 @@ export default function SimulationPage() {
   const searchParams = useSearchParams();
   const params = useParams();
   const examYear = searchParams.get("year");
+  const { universities, loading: contextLoading } = useUniversityStorage();
 
   const universitySlug = Array.isArray(params.university)
     ? params.university[0]
@@ -85,7 +88,8 @@ export default function SimulationPage() {
 
   // Track user answers dynamically based on number of questions
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
-  const [currentUniversity, setCurrentUniversity] = useState<University | null>(null);
+
+  // currentUniversity state removed, using currentUni derived from context
 
   // Get university details da API
   const [isLoading, setIsLoading] = useState(true);
@@ -129,29 +133,14 @@ export default function SimulationPage() {
       setError(null);
 
       try {
-        const [uniRes, qRes] = await Promise.allSettled([
-          fetch(`/api/universities/${universitySlug}`, { cache: "no-store" }),
-          fetch(
+        const qRes = await fetch(
             `/api/questions/${universitySlug}?count=${numberOfQuestions}&year=${examYear || ""}&day=${day}`,
             { cache: "no-store" }
-          ),
-        ]);
-
-        // Universidade
-        if (uniRes.status === "fulfilled" && uniRes.value.ok) {
-          const uData = await uniRes.value.json();
-          if (!cancelled) setCurrentUniversity(uData);
-        } else {
-          const localUni = universities.find((u) => u.slug === universitySlug);
-          if (localUni && !cancelled) {
-            setCurrentUniversity(localUni);
-          }
-          if (!localUni) throw new Error("Universidade não encontrada.");
-        }
+          );
 
         // Questões
-        if (qRes.status === "fulfilled" && qRes.value.ok) {
-          const qData: Question[] = await qRes.value.json();
+        if (qRes.ok) {
+          const qData: Question[] = await qRes.json();
           const dayNumber = Number(day);
           const filtered = qData.filter(
             (q) =>
@@ -163,55 +152,11 @@ export default function SimulationPage() {
             if (filtered.length > 0) {
               setQuestions(filtered.slice(0, numberOfQuestions));
             } else {
-              // Fallback local se API retornou vazio
-              let local = allQuestions.filter(
-                (q) =>
-                  q.university === universitySlug &&
-                  (!examYear || q.year === Number(examYear)) &&
-                  (q.dia ? String(q.dia) === day : true)
-              );
-
-              if (local.length === 0)
-                throw new Error("Sem questões disponíveis.");
-
-              local = [...local]
-                .sort((a, b) => a.id - b.id) // Ordena as questões pelo ID
-                .slice(0, numberOfQuestions);
-
-              setQuestions(local);
+              throw new Error("Sem questões disponíveis.");
             }
           }
         } else {
-          // Fallback local se fetch falhar
-          let local = allQuestions.filter(
-            (q) => q.university === universitySlug
-          );
-
-          if (examYear) {
-            local = local.filter((q) => q.year === Number(examYear));
-          }
-
-          if (day) {
-            const dayNumber = Number(day);
-            local = local.filter(
-              (q) => q.dia == null || q.dia === dayNumber
-            );
-          }
-
-          if (local.length === 0) {
-            local = allQuestions.filter(
-              (q) => q.university === universitySlug
-            );
-          }
-
-          if (local.length === 0)
-            throw new Error("Sem questões disponíveis.");
-
-          local = [...local]
-            .sort(() => Math.random() - 0.5)
-            .slice(0, numberOfQuestions);
-
-          if (!cancelled) setQuestions(local);
+          throw new Error("Erro ao carregar questões da API.");
         }
       } catch (err) {
         if (!cancelled)
@@ -245,15 +190,8 @@ export default function SimulationPage() {
                 startTimestampRef.current = Date.now() - (savedState.elapsedSeconds * 1000);
               }
 
-              // Precisamos garantir que os dados da universidade estejam carregados
-              const uniRes = await fetch(`/api/universities/${universitySlug}`, { cache: "no-store" });
-              if (uniRes.ok) {
-                const uData = await uniRes.json();
-                if (!cancelled) setCurrentUniversity(uData);
-              } else {
-                const localUni = universities.find((u) => u.slug === universitySlug);
-                if (localUni && !cancelled) setCurrentUniversity(localUni);
-              }
+                // (University data sync logic removed as we depend on context for university info now)
+
 
               setIsLoading(false);
               return; // Interrompe para não buscar do zero
@@ -274,8 +212,8 @@ export default function SimulationPage() {
               const stored = await res.json();
               console.log('SimulationPage: fetched stored sim length=', Array.isArray(stored) ? stored.length : 'not-array');
               setQuestions(stored);
-              const uniData = universities.find(u => u.slug === universitySlug);
-              if (uniData) setCurrentUniversity(uniData);
+              // (University data sync removed)
+
               setIsLoading(false);
               return;
             } else {
@@ -296,8 +234,8 @@ export default function SimulationPage() {
             const personalizedQuestions = JSON.parse(personalizedQuestionsJSON);
             console.log('SimulationPage: parsed personalized questions length=', Array.isArray(personalizedQuestions) ? personalizedQuestions.length : 'not-array');
             setQuestions(personalizedQuestions);
-            const uniData = universities.find(u => u.slug === universitySlug);
-            if (uniData) setCurrentUniversity(uniData);
+            // (University data sync removed)
+
             try { sessionStorage.removeItem('personalizedSimulationQuestions'); } catch { /* ignore */ }
             setIsLoading(false);
             return;
@@ -531,13 +469,13 @@ export default function SimulationPage() {
   );
 
   // Feedback do carregamento e erro
-  if (isLoading) {
+  if (isLoading || contextLoading) {
     return (
       <LoadingScreen message="Carregando Prova..." />
     );
   }
 
-  if (error || !currentUniversity) {
+  if (error || (!currentUni && !contextLoading)) {
     return <div className="min-h-screen flex justify-center items-center text-red-500">Erro: {error || "Dados da universidade não encontrados."}</div>;
   }
 
@@ -574,16 +512,16 @@ export default function SimulationPage() {
                   {/* Logo da universidade */}
                   <div className="relative flex-shrink-0">
                     <div className="absolute inset-0 bg-blue-400 rounded-xl sm:rounded-2xl blur-lg opacity-30 transform rotate-1"></div>
-                    <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center !bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100">
+                      <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center !bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100">
                       <Image 
                         src={
-                          currentUniversity.logo
-                            ? (currentUniversity.logo.startsWith('/')
-                                ? currentUniversity.logo
-                                : `/${currentUniversity.logo}`)
+                          currentUni && currentUni.logo
+                            ? (currentUni.logo.startsWith('/')
+                                ? currentUni.logo
+                                : `/${currentUni.logo}`)
                             : "/placeholder.svg"
                         }
-                        alt={currentUniversity.name} 
+                        alt={currentUni?.name || "Universidade"} 
                         width={50} 
                         height={50} 
                         className="sm:w-12 sm:h-12 w-8 h-8 object-contain rounded-lg sm:rounded-xl" 
@@ -594,7 +532,7 @@ export default function SimulationPage() {
                   {/* Nome e ano da universidade */}
                   <div className="flex-1 min-w-0">
                     <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
-                      {currentUniversity.name} {examYear}
+                      {currentUni?.name} {examYear}
                     </h1>
                   </div>
                 </div>

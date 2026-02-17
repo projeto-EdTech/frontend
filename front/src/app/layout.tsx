@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import localFont from 'next/font/local';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NextAuthProvider } from "./providers";
 import { ProfileIconProvider } from "@/contexts/ProfileIconContext";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import SyncUserEffect from "@/components/SyncUserEffect";
 import NavigationSound from "@/components/NavigationSound";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
+import { UniversityStorage } from "@/contexts/UniversityStorage";
 import SkipLink from "@/components/SkipLink";
 import 'katex/dist/katex.min.css'
 
@@ -54,9 +54,11 @@ export default function RootLayout({
             <ProfileIconProvider>
               <NavigationSound />
               <AccessibilityProvider>
-                <SkipLink />
-                <SyncUserEffect />
-                {children}
+                <UniversityStorage>
+                  <SkipLink />
+                  <SyncUserEffect />
+                  {children}
+                </UniversityStorage>
               </AccessibilityProvider>
             </ProfileIconProvider>
           </ThemeProviderWrapper>

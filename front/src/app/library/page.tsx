@@ -5,12 +5,13 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header"
 import LoginModal from "@/components/Login-modal";
 import { useState, useEffect } from "react";
-import { University } from "@/lib/dataUniversity"; // Importa o tipo de dados da universidade
+import { University } from "@/types/university";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useRouter } from "next/navigation"; // Importa o hook useRouter
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { useUniversityStorage } from "@/contexts/UniversityStorage";
 
 export default function LibraryPage() {
   const router = useRouter();
@@ -29,8 +30,7 @@ export default function LibraryPage() {
   const [searchText, setSearchText] = useState(""); // Estado para busca por texto
   const [selectedInstitution, setSelectedInstitution] = useState<string>("todas"); // Estado para filtro de instituição
   const [selectedState, setSelectedState] = useState<string>("todas"); // Estado para filtro por estado
-  const [universities, setUniversities] = useState<University[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { universities, loading: isLoading } = useUniversityStorage();
   const [isNavigating, setIsNavigating] = useState(false);
   
   // Estados para paginação
@@ -63,35 +63,28 @@ export default function LibraryPage() {
     { regiao: "Sul", estados: Array.from(sul) },
   ];
 
-    useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const response = await fetch('/api/universities');
-        const data = await response.json();
-        setUniversities(data); // Salva os dados no estado
-      } catch (error) {
-        console.error("Falha ao buscar dados:", error);
-      } finally {
-        setIsLoading(false); // Finaliza o carregamento (com sucesso ou erro)
-      }
-    };
 
-    fetchUniversities();
-  }, []);
 
   // Filtro combinado: texto + tipo de instituição + ano
   // Extend runtime type to include estado (foi adicionado em dataUniversity)
   const filteredUniversities = universities.filter((u: University) => {
-    const matchesSearch = u.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                         u.fullName.toLowerCase().includes(searchText.toLowerCase());
+    // Verificações de segurança para evitar crash se a API retornar dados incompletos
+    if (!u) return false;
+
+    // Adaptação para suportar tanto 'name' quanto 'sigla' (caso a API tenhas mudado)
+    const uAny = u as any;
+    const universityName = u.name || uAny.sigla || '';
+    
+    const matchesSearch = universityName.toLowerCase().includes(searchText.toLowerCase()) ||
+                         (u.fullName && u.fullName.toLowerCase().includes(searchText.toLowerCase()));
     
     const matchesType = selectedInstitution === "todas" || u.type === selectedInstitution;
     
-    // --- AQUI ESTÁ A CORREÇÃO ---
     // Verificamos se o array de anos da universidade INCLUI o ano selecionado pelo usuário.
-    const matchesYear = selectedYear === null || u.year.includes(selectedYear);
+    // Adicionada verificação se u.year é array válido
+    const matchesYear = selectedYear === null || (Array.isArray(u.year) && u.year.includes(selectedYear));
     
-    // Filtro por estado (campo 'estado' existente em dataUniversity.ts)
+    // Filtro por estado
     const matchesState = selectedState === "todas" || u.state === selectedState;
     
     return matchesSearch && matchesType && matchesYear && matchesState;

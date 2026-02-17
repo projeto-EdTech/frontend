@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import AccessibilityMenu from "./AccessibilityMenu";
@@ -6,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import UserAvatar from "./UserAvatar";
 import { useSession, signOut } from "next-auth/react";
+import { useUserTier } from "@/hooks/useUserTier";
 import {
   User,
   LogOut,
@@ -38,7 +38,8 @@ export default function Header() {
   const [isAccessibilityMenuOpen, setIsAccessibilityMenuOpen] = useState(false);
 
   // Verificar se o usuário tem plano pago
-  const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
+  const { tier } = useUserTier();
+  const hasPaidPlan = tier && tier !== "FREE";
 
   // Estado para armazenar configurações de perfil do sessionStorage
   const [profileSettings, setProfileSettings] = useState({

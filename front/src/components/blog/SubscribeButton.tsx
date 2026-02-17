@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react'; // Hook para pegar a sessão do usuário
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 export default function SubscribeButton() {
     const { data: session, status } = useSession();
@@ -9,10 +9,38 @@ export default function SubscribeButton() {
     const [message, setMessage] = useState('');
     const [isSubscribed, setIsSubscribed] = useState(false);
 
+    // Carrega o estado inicial do LocalStorage
+    useEffect(() => {
+        if (status === 'authenticated') {
+            const storedData = localStorage.getItem('user_data');
+            if (storedData) {
+                try {
+                    const parsedData = JSON.parse(storedData);
+                    // Garante que é booleano (pode vir como string do backend se não tratado, mas aqui assumimos bool)
+                    setIsSubscribed(!!parsedData.newsletter);
+                } catch (e) {
+                    console.error("Erro ao ler user_data do localStorage", e);
+                }
+            }
+        }
+    }, [status]);
+
+    const updateLocalStorage = (newStatus: boolean) => {
+        const storedData = localStorage.getItem('user_data');
+        if (storedData) {
+            try {
+                const parsedData = JSON.parse(storedData);
+                parsedData.newsletter = newStatus;
+                localStorage.setItem('user_data', JSON.stringify(parsedData));
+            } catch (e) {
+                console.error("Erro ao atualizar user_data no localStorage", e);
+            }
+        }
+    };
+
     const handleSubscribe = async () => {
-        // Agora verifica se tanto o e-mail quanto o nome estão na sessão
-        if (!session?.user?.email || !session?.user?.name) {
-            setMessage("Informações do usuário incompletas. Faça login novamente.");
+        if (!session?.user?.email) {
+            setMessage("Você precisa estar logado para se inscrever.");
             return;
         }
 
@@ -25,47 +53,65 @@ export default function SubscribeButton() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                // Envia tanto o e-mail quanto o nome da sessão
                 body: JSON.stringify({ 
-                    email: session.user.email,
-                    name: session.user.name,
-                    newsletter: true
+                    email: session.user.email, 
                 }), 
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                setMessage('Inscrição realizada com sucesso! 🎉');
-                setIsSubscribed(true); // Muda o estado para "Inscrito"
+                // Verifica a mensagem retornada pelo backend para definir o estado
+                const responseMessage = data.message || '';
+                
+                if (responseMessage.toLowerCase().includes('inscrito')) {
+                    setIsSubscribed(true);
+                    updateLocalStorage(true);
+                    setMessage('Inscrito com sucesso! 🎉');
+                } else if (responseMessage.toLowerCase().includes('cancelada')) {
+                    setIsSubscribed(false);
+                    updateLocalStorage(false);
+                    setMessage('Inscrição cancelada.');
+                } else {
+                    // Fallback se a mensagem não for clara, inverte o atual
+                    setIsSubscribed((prev) => {
+                        const newState = !prev;
+                        updateLocalStorage(newState);
+                        return newState;
+                    });
+                    setMessage(responseMessage);
+                }
             } else {
                 setMessage(`Falha: ${data.error || 'Ocorreu um erro.'}`);
             }
-        } catch (error: unknown) {
-            if (error instanceof SyntaxError) {
-                setMessage('Corpo da requisição mal formatado.');
-            } else {
-                setMessage('Falha ao conectar. Tente novamente mais tarde.');
-            }
+        } catch (error) {
+           console.error(error);
+           setMessage('Falha ao conectar. Tente novamente mais tarde.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Se o usuário não estiver autenticado, o botão não aparece
     if (status !== 'authenticated') {
         return null; 
     }
 
-    // Se o usuário já estiver inscrito, mostra o botão desabilitado
     if (isSubscribed) {
         return (
-            <button 
-              disabled 
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-2 px-4 rounded-full cursor-not-allowed"
-            >
-                Inscrito ✓
-            </button>
+            <div className="space-y-3">
+                <button 
+                    onClick={handleSubscribe}
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-2 px-4 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                    {isLoading ? 'Processando...' : (
+                        <>
+                            Inscrito <span>✓</span>
+                        </>
+                    )}
+                </button>
+                {message && <p className="text-xs text-center text-gray-600 dark:text-gray-400 pt-1">{message}</p>}
+            </div>
         );
     }
 
@@ -76,7 +122,7 @@ export default function SubscribeButton() {
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 cursor-pointer text-white font-bold py-2 px-4 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isLoading ? 'Inscrevendo...' : 'Inscrever-se'}
+                {isLoading ? 'Processando...' : 'Inscrever-se'}
             </button>
             {message && <p className="text-xs text-center text-gray-600 dark:text-gray-400 pt-1">{message}</p>}
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BookOpen, BarChart2, Settings, AlertCircle, CalendarDays, Target } from "lucide-react";
 import { useSession } from 'next-auth/react';
+import { useUserTier } from '@/hooks/useUserTier';
 
 interface NavigationBarProps {
   activeTab: string;
@@ -9,7 +10,8 @@ interface NavigationBarProps {
 
 const NavigationBar: React.FC<NavigationBarProps> = ({ activeTab, setActiveTab }) => {
   const { data: session } = useSession();
-  const isPRO = session?.user?.tier === 'Simula PRO';
+  const { tier } = useUserTier();
+  const isPRO = tier === 'Simula PRO';
 
   return (
     <div className="mb-6">

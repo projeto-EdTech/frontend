@@ -91,12 +91,6 @@ export const authOptions: NextAuthOptions = {
       // 1. No primeiro login (quando 'account' está presente)
       if (account && user) {
         console.log("[JWT] Primeiro login. Salvando tokens e dados do usuário.");
-  let userTier: "FREE" | "Simula PRO" = "FREE"; // Padrão é FREE
-        // Verifica se o e-mail do usuário é o específico para o teste
-        if (user.email === "fegrolla0210@gmail.com") {
-          userTier = "Simula PRO"; // Atribui o tier de teste
-          console.log(`[JWT] Usuário de teste ${user.email} identificado. Atribuindo tier: ${userTier}`);
-        }
         // Calcula expiracao com fallback de 1h quando não fornecida
         const expiresAt =
           typeof account.expires_at === "number"
@@ -109,7 +103,7 @@ export const authOptions: NextAuthOptions = {
           accessToken: account.access_token,
           expires_at: expiresAt,
           refreshToken: account.refresh_token ?? (token as JWT).refreshToken,
-          tier: userTier, // Definindo o tier do usuário
+          tier: "FREE", // Definindo o tier do usuário (padrão FREE, atualizado via sync)
           user,
         } as JWT;
       }

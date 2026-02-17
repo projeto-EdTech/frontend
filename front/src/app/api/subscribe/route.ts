@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
-const backendApiUrl = process.env.BACKEND_API_URL;
-
 export async function POST(req: Request) {
-  if (!backendApiUrl) {
+  if (!process.env.BACKEND_API_URL) {
     console.error('BACKEND_API_URL não está configurado nas variáveis de ambiente.');
     return NextResponse.json({ error: 'Erro de configuração do servidor.' }, { status: 500 });
   }
@@ -18,28 +16,33 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 2. Obter apenas o campo 'newsletter' do corpo da requisição
-    const body = await req.json();
-    const { newsletter } = body;
+    // 2. O JSON a ser enviado deve conter apenas o e-mail, conforme solicitado.
+    // Usaremos o e-mail da sessão validada no passo anterior.
 
-    // Validação do dado recebido
-    if (typeof newsletter !== 'boolean') {
-      return NextResponse.json({ error: 'Dados inválidos. O status do newsletter é obrigatório.' }, { status: 400 });
-    }
-
-    // 3. Usar os dados da sessão e-mail e o 'newsletter' do corpo
-    const response = await fetch(`${backendApiUrl}/CAMINHO_BACK_END`, {
+    // 3. Enviar apenas o e-mail para o back-end
+    const response = await fetch(`${process.env.BACKEND_API_URL}/usuarios/newsletter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         email: session.user.email,
-        newsletter: newsletter,
       }),
     });
 
-    const data = await response.json();
+    // Diagnóstico: Verificando o status e o tipo de conteúdo da resposta
+    console.log(`[Newsletter] Status do Backend: ${response.status}`);
+    const contentType = response.headers.get("content-type");
+
+    let data;
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+      console.log('[Newsletter] Resposta JSON do Backend:', data);
+    } else {
+      const textData = await response.text();
+      console.warn('[Newsletter] Backend response:', textData);
+      data = { message: textData || 'O servidor de destino não enviou uma resposta legível.' };
+    }
 
     if (response.ok) {
       return NextResponse.json(data, { status: response.status });

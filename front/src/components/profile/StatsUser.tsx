@@ -21,6 +21,7 @@ interface SubjectPerformanceForTab {
 interface StatsUserProps {
   stats: ProfileStatsForTab;
   subjectPerformance: SubjectPerformanceForTab[];
+  monthlyProgress: { label: string; value: number }[];
   isPremiumUser?: boolean;
 }
 
@@ -35,7 +36,7 @@ const CHART_COLORS = [
   "#EF4444", // red-500
 ];
 
-const StatsUser: React.FC<StatsUserProps> = ({ stats, subjectPerformance }) => {
+const StatsUser: React.FC<StatsUserProps> = ({ stats, subjectPerformance, monthlyProgress }) => {
   const { theme } = useTheme();
   // Estado para ordenação do gráfico de performance por matéria
   const [sortOrder, setSortOrder] = useState<"none" | "asc" | "desc">("none");

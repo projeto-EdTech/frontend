@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useUserTier } from "@/hooks/useUserTier";
 import { SimuladoMockup, BancoProvasMockup, NotaDeCorteMockup } from "@/components/mockups";
 import SphereCarousel from "@/components/SphereCarousel";
 import { DndProvider } from "react-dnd";
@@ -100,7 +101,8 @@ export default function Home() {
   const [selectedAnswer, setSelectedAnswer] = useState<number>(3); // Estado para resposta selecionada no mockup (0-4 para A-E)
 
   // Verificar se o usuário tem plano pago
-  const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
+  const { tier } = useUserTier();
+  const hasPaidPlan = tier && tier !== "FREE";
 
   // Função para navegar para a página de estatísticas da matéria
   const handleSubjectClick = (subjectName: string) => {
@@ -198,10 +200,11 @@ export default function Home() {
   // Debug: Log do tier do usuário para verificar
   useEffect(() => {
     if (session?.user) {
-      console.log("User tier:", session.user.tier);
+      console.log("User tier (session):", session.user.tier);
+      console.log("User tier (hook):", tier);
       console.log("Has paid plan:", hasPaidPlan);
     }
-  }, [session, hasPaidPlan]);
+  }, [session, tier, hasPaidPlan]);
 
   // Efeito para controlar a animação macOS na seção "Por dentro do Vestibuline"
   useEffect(() => {
