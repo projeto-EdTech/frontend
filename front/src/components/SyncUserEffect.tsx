@@ -50,7 +50,7 @@ export default function SyncUserEffect() {
                     id: data.id,
                     name: session?.user?.name || "",
                     email: session?.user?.email || "",
-                    tier: data.tipoUsuario, // Mapeia tipoUsuario -> tier
+                    tier: data.type, // Mapeia type -> tier
                     newsletter: data.newsLetter // Mapeia newsLetter -> newsletter
                 };
 

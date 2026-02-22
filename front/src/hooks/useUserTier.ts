@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
-export type Tier = "FREE" | "Simula PRO";
+export type Tier = "FREE" | "SIMULAPRO" | "TEACHER" | "ADMIN";
 
 export function useUserTier() {
   const { data: session, status } = useSession();
@@ -59,5 +59,7 @@ export function useUserTier() {
     };
   }, [session, status]);
 
-  return { tier, isPro: tier === "Simula PRO", loading };
+  const isPro = tier === "SIMULAPRO" || tier === "TEACHER" || tier === "ADMIN";
+
+  return { tier, isPro, loading };
 }

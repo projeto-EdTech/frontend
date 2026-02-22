@@ -10,8 +10,7 @@ interface NavigationBarProps {
 
 const NavigationBar: React.FC<NavigationBarProps> = ({ activeTab, setActiveTab }) => {
   const { data: session } = useSession();
-  const { tier } = useUserTier();
-  const isPRO = tier === 'Simula PRO';
+  const { isPro: isPRO } = useUserTier();
 
   return (
     <div className="mb-6">

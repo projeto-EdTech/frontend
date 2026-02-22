@@ -1,6 +1,5 @@
 // --- TIPAGENS COMPARTILHADAS ---
 // Estas tipos serão usados tanto no backend (route.ts) quanto no frontend (NotaCorteConsulta.tsx)
-
 export type CourseStatus = 'approved' | 'borderline' | 'reproved';
 
 export interface CourseResult {

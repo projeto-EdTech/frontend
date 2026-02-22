@@ -23,7 +23,7 @@ interface Country {
 export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
   const { data: session } = useSession();
-  const { tier } = useUserTier();
+  const { tier, isPro } = useUserTier();
   const { universities } = useUniversityStorage();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -421,7 +421,7 @@ export default function Sidebar() {
 
 
       {/* Call-to-Action Premium - macOS Style colorido */}
-      {tier !== "Simula PRO" && (
+      {!isPro && (
         <div className={`
           p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl relative overflow-hidden group
           ${isDarkMode 
