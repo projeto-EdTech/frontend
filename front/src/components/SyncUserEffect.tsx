@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { decodeJWT } from "@/app/service/jwtDecoder";
 
 export default function SyncUserEffect() {
   const { data: session, status } = useSession();
@@ -12,22 +13,18 @@ export default function SyncUserEffect() {
   useEffect(() => {
     if (status === "authenticated") {
         const email = session?.user?.email || "";
-        // Verifica se já temos os dados deste usuário no localStorage
-        const storedData = localStorage.getItem("user_data");
+        // Verifica se já temos o JWT deste usuário no localStorage
+        const storedToken = localStorage.getItem("user_data");
         let alreadySynced = false;
 
-        if (storedData) {
-            try {
-                const parsed = JSON.parse(storedData);
-                if (parsed.email === email && parsed.id) {
-                    alreadySynced = true;
-                }
-            } catch (e) {
-                console.error("Erro ao ler user_data do localStorage", e);
+        if (storedToken) {
+            const decoded = decodeJWT(storedToken);
+            if (decoded && decoded.email === email && decoded.id) {
+                alreadySynced = true;
             }
         }
         
-        // Se já sincronizou e tem ID, não precisa chamar novamente, a menos que forçado
+        // Se já sincronizou e tem ID no token, não precisa chamar novamente
         if (alreadySynced) return;
         
         if (syncingRef.current) return;
@@ -35,8 +32,6 @@ export default function SyncUserEffect() {
 
         (async () => {
         try {
-            // A rota /api/sync-user agora pega os dados do token automaticamente
-            // não precisamos enviar body, mas mantemos compatibilidade se necessário
             const res = await fetch("/api/sync-user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -44,18 +39,15 @@ export default function SyncUserEffect() {
 
             if (res.ok) {
                 const data = await res.json();
-                // O backend retorna: { id, tipoUsuario, newsLetter, ... }
+                // O backend retorna uma string JWT ou { token: "..." }
+                const token = typeof data === 'string' ? data : data.token;
                 
-                const userDataToStore = {
-                    id: data.id,
-                    name: session?.user?.name || "",
-                    email: session?.user?.email || "",
-                    tier: data.type, // Mapeia type -> tier
-                    newsletter: data.newsLetter // Mapeia newsLetter -> newsletter
-                };
-
-                localStorage.setItem("user_data", JSON.stringify(userDataToStore));
-                console.log("[SyncUserEffect] Dados do usuário salvos no localStorage:", userDataToStore);
+                if (token) {
+                    localStorage.setItem("user_data", token);
+                    console.log("[SyncUserEffect] JWT do usuário salvo no localStorage");
+                } else {
+                    console.warn("[SyncUserEffect] Token não encontrado na resposta");
+                }
             } else {
                 console.warn("[SyncUserEffect] Erro na resposta da API:", res.status);
             }

@@ -57,12 +57,17 @@ export default function EstatisticasPage() {
     async function carregar() {
       setLoading(true);
       try {
+        const storedToken = localStorage.getItem('user_data');
         const url = `/api/estatisticas/${subject}?vestibular=${vestibularSelecionado}`;
         console.log("Frontend - Buscando estatísticas na URL:", url); // Verifique se o ID está aqui
         const res = await fetch(url, {
           method: "GET",
           cache: "no-store",
           signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${storedToken}`,
+          },
         });
 
         if (!res.ok) {

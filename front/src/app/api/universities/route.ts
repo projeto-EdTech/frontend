@@ -8,7 +8,17 @@ export async function GET(request: Request) {
   }
 
   try {
+    const authHeader = request.headers.get('Authorization');
+    const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+    if (!userToken) {
+       return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
+    }
+
     const apiResponse = await fetch(`${externalApiUrl}/api/sigla`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+      },
       next: {
         revalidate: 3600, 
       },

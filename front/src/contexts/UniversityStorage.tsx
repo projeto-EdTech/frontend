@@ -23,7 +23,16 @@ export const UniversityStorage: React.FC<UniversityStorageProps> = ({ children }
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
-        const response = await fetch('/api/universities');
+        const storedToken = localStorage.getItem('user_data');
+        
+        const response = await fetch('/api/universities', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${storedToken}`,
+          },
+        });
+
         if (!response.ok) {
           throw new Error('Falha ao buscar universidades');
         }

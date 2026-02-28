@@ -5,12 +5,17 @@ import { jwtDecode } from 'jwt-decode';
  * Adjust this interface according to the actual fields in your JWT.
  */
 export interface JWTPayload {
+  // Standard claims
   sub?: string;
-  name?: string;
-  email?: string;
-  exp?: number;
   iat?: number;
-  // Add other custom claims here as needed
+  exp?: number;
+  
+  // Custom claims from backend
+  id?: number;
+  nome?: string;
+  email?: string;
+  type?: string;        // Mapped to tier
+  newsLetter?: boolean; // Mapped to newsletter
   [key: string]: any;
 }
 

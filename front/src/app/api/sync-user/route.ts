@@ -2,30 +2,17 @@ import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function POST(req: Request) {
-  // Debug inicial: loga o método, URL e alguns headers úteis
-  console.log("[sync-user][START]", {
-    method: req.method,
-    url: req.url,
-    ua: req.headers.get("user-agent"),
-    time: new Date().toISOString(),
-  });
-
   // Obtém o token da sessão (JWT decodificado pelo next-auth)
   // getToken typing expects NextRequest/NextApiRequest; cast via unknown -> NextRequest to avoid 'any'
   const token = await getToken({ req: req as unknown as NextRequest, secret: process.env.NEXTAUTH_SECRET });
-
-  // Logs detalhados do token (não use em produção se contiver info sensível)
-  console.log("[sync-user][TOKEN RAW]", token);
   
-  if (!token?.email) {
-    console.log("[sync-user][ABORT] Email ausente no token");
+  if (!token?.googleAccount) {
+    console.log("[sync-user][ABORT] googleAccount ausente no token");
     return NextResponse.json(
-      { message: "Não autorizado: e-mail não encontrado" },
+      { message: "Não autorizado: token de acesso não encontrado" },
       { status: 401 }
     );
   }
-
-  const displayName = token.name ?? token.email.split("@")[0];
 
   if (!process.env.BACKEND_API_URL) {
     console.log("[sync-user][ERROR] BACKEND_API_URL ausente");
@@ -36,16 +23,23 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Monta o payload conforme solicitado: nome e email
+    const idToken = (token.googleAccount as any)?.id_token;
+
+    if (!idToken) {
+      console.log("[sync-user][ABORT] id_token ausente no googleAccount");
+      return NextResponse.json(
+        { message: "Não autorizado: id_token não encontrado" },
+        { status: 401 }
+      );
+    }
+
+    // Monta o payload enviando apenas o id_token conforme solicitado
     const payload = {
-      nome: displayName,
-      email: token.email,
+      token: idToken
     };
 
-    console.log("[sync-user][FETCH] Enviando para backend (/usuarios/login):", payload);
-
     // Faz a chamada ao backend na rota especificada
-    const response = await fetch(`${process.env.BACKEND_API_URL}/usuarios/login`, {
+    const response = await fetch(`${process.env.BACKEND_API_URL}/auth/google`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -63,11 +57,6 @@ export async function POST(req: Request) {
       backendData = await response.text();
     }
 
-    console.log("[sync-user][BACKEND RESPONSE]", {
-      status: response.status,
-      data: backendData
-    });
-
     if (!response.ok) {
        return NextResponse.json(
         {
@@ -78,7 +67,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Retorna a resposta exata do backend (id, tipoUsuario, newsLetter)
+    // Retorna a resposta exata do backend. 
+    // Se o backend envia uma string (JWT), backendData será essa string.
+    // Se o backend envia um objeto { token: "..." }, retornamos o objeto.
     return NextResponse.json(backendData, { status: 200 });
 
   } catch (e) {

@@ -44,20 +44,29 @@ export async function GET(
     universidadeId = "all";
   }
 
+  // Token de autenticação enviado pelo client via header Authorization (padrão Bearer)
+  const authHeader = req.headers.get("Authorization");
+  const userToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+
+  if (!userToken) {
+    return NextResponse.json(
+      { error: "Não autorizado: Token do backend não encontrado." },
+      { status: 401 }
+    );
+  }
+
   try {
     // 3. Construir a URL final para o back-end externo
     // Caminho solicitado: BACKENDURL/api/sigla/estatiscas/[universidadeID]/[materiaID]
     // Usando string template para manter o acento visível no log (o fetch tratará a codificação necessária)
     const backendApiUrl = `${BACKEND_API_URL}/api/sigla/estatisticas/${universidadeId}/${materia}`;
 
-    console.log(`API Route - Recebido ID: "${universidadeId}", Matéria: "${materia}"`);
-    console.log(`API Route - Chamando Backend: ${backendApiUrl}`);
-
     // 4. Fazer a chamada (fetch) para o seu back-end
     const res = await fetch(backendApiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${userToken}`,
       },
       // Configuração de cache (opcional, 'no-store' busca sempre os dados mais recentes)
       cache: 'no-store',

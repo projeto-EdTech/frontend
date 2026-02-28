@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { decodeJWT } from "@/app/service/jwtDecoder";
 
 export type Tier = "FREE" | "SIMULAPRO" | "TEACHER" | "ADMIN";
 
@@ -13,17 +14,13 @@ export function useUserTier() {
   useEffect(() => {
     const checkTier = () => {
       // 1. Tente ler do localStorage (prioridade para simulação/dados sincronizados)
-      const storedData = localStorage.getItem("user_data");
-      if (storedData) {
-        try {
-          const parsed = JSON.parse(storedData);
-          if (parsed.tier) {
-            setTier(parsed.tier as Tier);
-            setLoading(false);
-            return;
-          }
-        } catch (e) {
-          console.error("Erro ao ler tier do localStorage", e);
+      const storedToken = localStorage.getItem("user_data");
+      if (storedToken) {
+        const decoded = decodeJWT(storedToken);
+        if (decoded && decoded.type) {
+          setTier(decoded.type as Tier);
+          setLoading(false);
+          return;
         }
       }
 

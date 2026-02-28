@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { decodeJWT } from '@/app/service/jwtDecoder';
 
 export default function SubscribeButton() {
     const { data: session, status } = useSession();
@@ -12,31 +13,20 @@ export default function SubscribeButton() {
     // Carrega o estado inicial do LocalStorage
     useEffect(() => {
         if (status === 'authenticated') {
-            const storedData = localStorage.getItem('user_data');
-            if (storedData) {
-                try {
-                    const parsedData = JSON.parse(storedData);
-                    // Garante que é booleano (pode vir como string do backend se não tratado, mas aqui assumimos bool)
-                    setIsSubscribed(!!parsedData.newsletter);
-                } catch (e) {
-                    console.error("Erro ao ler user_data do localStorage", e);
+            const storedToken = localStorage.getItem('user_data');
+            if (storedToken) {
+                const decoded = decodeJWT(storedToken);
+                if (decoded) {
+                    setIsSubscribed(!!decoded.newsLetter);
                 }
             }
         }
     }, [status]);
 
-    const updateLocalStorage = (newStatus: boolean) => {
-        const storedData = localStorage.getItem('user_data');
-        if (storedData) {
-            try {
-                const parsedData = JSON.parse(storedData);
-                parsedData.newsletter = newStatus;
-                localStorage.setItem('user_data', JSON.stringify(parsedData));
-            } catch (e) {
-                console.error("Erro ao atualizar user_data no localStorage", e);
-            }
-        }
-    };
+    // Nota: updateLocalStorage foi removido pois o JWT no localStorage é imutável
+    // O estado do newsletter será atualizado na próxima sincronização (SyncUserEffect)
+    // ou ao recarregar a página/sessão.
+
 
     const handleSubscribe = async () => {
         if (!session?.user?.email) {
@@ -48,13 +38,17 @@ export default function SubscribeButton() {
         setMessage('');
 
         try {
+            // Pegamos o token do nosso backend que está no localStorage
+            const backendToken = localStorage.getItem('user_data');
+
             const response = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    email: session.user.email, 
+                    email: session.user.email,
+                    token: backendToken // Enviamos o token para a nossa API route
                 }), 
             });
 
@@ -65,20 +59,7 @@ export default function SubscribeButton() {
                 const responseMessage = data.message || '';
                 
                 if (responseMessage.toLowerCase().includes('inscrito')) {
-                    setIsSubscribed(true);
-                    updateLocalStorage(true);
-                    setMessage('Inscrito com sucesso! 🎉');
-                } else if (responseMessage.toLowerCase().includes('cancelada')) {
-                    setIsSubscribed(false);
-                    updateLocalStorage(false);
-                    setMessage('Inscrição cancelada.');
-                } else {
-                    // Fallback se a mensagem não for clara, inverte o atual
-                    setIsSubscribed((prev) => {
-                        const newState = !prev;
-                        updateLocalStorage(newState);
-                        return newState;
-                    });
+                    setIsSubscribed((prev) => !prev);
                     setMessage(responseMessage);
                 }
             } else {

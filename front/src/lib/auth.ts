@@ -100,7 +100,8 @@ export const authOptions: NextAuthOptions = {
         // Espalha o token existente para manter compatibilidade com o tipo JWT
         return {
           ...token,
-          accessToken: account.access_token,
+          googleAccount: account, // Armazena o objeto inteiro do Google (tokens, expiração, scopes, etc)
+          token: account.access_token, // Mantém a referência que você já está usando na rota
           expires_at: expiresAt,
           refreshToken: account.refresh_token ?? (token as JWT).refreshToken,
           tier: "FREE", // Definindo o tier do usuário (padrão FREE, atualizado via sync)

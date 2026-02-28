@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { NextResponse, NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 export async function POST(req: Request) {
   if (!process.env.BACKEND_API_URL) {
@@ -8,30 +7,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Erro de configuração do servidor.' }, { status: 500 });
   }
 
-  // 1. Obter a sessão do usuário no lado do servidor para segurança
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user?.email) {
-    return NextResponse.json({ error: 'Não autorizado. Usuário precisa estar logado.' }, { status: 401 });
-  }
-
   try {
-    // 2. O JSON a ser enviado deve conter apenas o e-mail, conforme solicitado.
-    // Usaremos o e-mail da sessão validada no passo anterior.
+    // 1. Pegamos o e-mail e o token que vieram do componente (client-side)
+    const { email, token: userToken } = await req.json();
 
-    // 3. Enviar apenas o e-mail para o back-end
+    if (!userToken) {
+      return NextResponse.json({ error: 'Não autorizado: Token do backend não encontrado.' }, { status: 401 });
+    }
+
+    // 2. Enviar o e-mail para o back-end com o Bearer token do nosso backend
     const response = await fetch(`${process.env.BACKEND_API_URL}/usuarios/newsletter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`,
       },
       body: JSON.stringify({
-        email: session.user.email,
+        email: email,
       }),
     });
 
-    // Diagnóstico: Verificando o status e o tipo de conteúdo da resposta
-    console.log(`[Newsletter] Status do Backend: ${response.status}`);
     const contentType = response.headers.get("content-type");
 
     let data;
