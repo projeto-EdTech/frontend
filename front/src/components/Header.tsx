@@ -11,13 +11,11 @@ import {
   LogOut,
   PersonStanding,
   Home,
-  BarChart3,
   Menu,
   X,
   Library,
   Newspaper,
   ChevronRight,
-  BrainCircuit,
   Gamepad2,
 } from "lucide-react";
 import LoginModal from "./Login-modal";
@@ -188,12 +186,19 @@ export default function Header() {
     ...(isAuthenticated
       ? [
           {
+            name: "Arena",
+            href: "/Arena",
+            icon: Gamepad2,
+            description: "Venha explorar os mini games do Vestibuline",
+            color: "from-orange-500 to-red-500",
+          },
+          {
             name: "Biblioteca",
             href: "/library",
             icon: Library,
             description: "Acervo completo",
             color: "from-orange-500 to-red-500",
-          }
+          },
         ]
       : []),
   ];

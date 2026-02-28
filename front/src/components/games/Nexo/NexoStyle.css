@@ -1,0 +1,169 @@
+/* NexoStyle.css - Apenas estilos estáticos (sem animações) */
+
+/* --- BASE DO CARD --- */
+
+/* Base do Card: Estrutura necessária para o pseudo-elemento funcionar */
+.nexo-card {
+  position: relative; /* Necessário para posicionar o gradiente ::before */
+  z-index: 1;         /* Garante que o texto fique acima do fundo */
+  overflow: hidden;   /* Mantém o gradiente dentro das bordas arredondadas */
+}
+
+/* O "Fantasma Azul": Camada do gradiente que fica invisível por padrão */
+.nexo-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;       /* Ocupa todo o espaço do cartão */
+  z-index: -1;    /* Fica atrás do texto */
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  opacity: 0;     /* Começa invisível */
+  transition: opacity 0.3s ease; /* A mágica do fade-out acontece aqui */
+}
+
+/* Estado DEFAULT */
+.nexo-card.default {
+  background-color: rgba(241, 245, 249, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #334155;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Estado SELECTED */
+.nexo-card.selected {
+  /* Fundo transparente para ver o gradiente do ::before */
+  background-color: transparent; 
+  color: white;
+  font-weight: 700;
+  border: 1px #E5E7EB;
+  box-shadow:
+    0 0 0 1px rgba(96, 165, 250, 0.3),
+    0 8px 20px -6px rgba(37, 99, 235, 0.6);
+}
+
+/* Quando selecionado, o gradiente azul aparece suavemente */
+.nexo-card.selected::before {
+  opacity: 1;
+}
+
+.nexo-card.errado {
+  background-color: #fee2e2 !important; /* bg-red-100 */
+  color: #991b1b !important;            /* text-red-800 */
+  border: 1px solid #f87171 !important; /* border-red-400 */
+  box-shadow: 0 0 0 1px #f87171 !important;
+}
+
+/* Garante que o estado de erro vença o estado de dica visualmente */
+.nexo-card.dica-visual.errado {
+  border-style: solid !important;
+  background-image: none !important;
+}
+
+.nexo-card.selected.errado::before {
+  opacity: 0;
+}
+
+/* --- SEÇÃO DE ACERTOS --- */
+
+.acertos div {
+  width: 100%;
+  border-radius: 0.75rem; /* Mais arredondado (iOS style) */
+  padding: 1rem 1.25rem;  /* Mais respiro interno */
+  margin-bottom: 0.75rem;
+  text-align: center;
+  
+  /* Sombra suave e profunda para dar "peso" ao elemento 3D */
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2); /* Brilho interno no topo (efeito vidro) */
+  
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.group-0 {
+  background: linear-gradient(to right, #f59e0b, #d97706);
+}
+
+.group-1 {
+  background: linear-gradient(to right, #10b981, #059669);
+}
+
+.group-2 {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+}
+
+.group-3 {
+  background: linear-gradient(to right, #a855f7, #7c3aed);
+}
+
+.acertos h2 {
+  color: rgba(255, 255, 255, 0.95); /* Branco levemente suavizado */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-weight: 800;          /* Extra bold */
+  text-transform: uppercase;
+  font-size: 0.7rem;         /* Pequeno, mas legível */
+  letter-spacing: 0.15em;    /* O "segredo" da elegância: espaçamento largo */
+  margin-bottom: 0.35rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15); /* Contraste sutil */
+}
+
+.acertos p {
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-weight: 600;  /* Semi-bold para leitura clara */
+  font-size: 0.95rem;
+  line-height: 1.4;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
+
+/* Estado visual durante o embaralhamento */
+.nexo-card.embaralhando {
+  pointer-events: none;
+  z-index: 50; /* Garante que fiquem por cima de tudo */
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+/* Estado visual da DICA (Marcado mas não selecionado) */
+.nexo-card.dica-visual {
+  background-color: #fffbeb; /* Fundo amarelado suave */
+  border: 2px dashed #f59e0b; /* Borda tracejada laranja/dourada */
+  color: #b45309;             /* Texto escuro dourado */
+  font-weight: 600;
+}
+
+/* Se o usuário clicar na dica (selecionar), o azul deve vencer o amarelo */
+.nexo-card.selected.dica-visual {
+  border-style: solid;
+  background-color: transparent; /* Permite ver o gradiente azul do ::before */
+  color: white;
+  border-color: #E5E7EB;
+}
+
+/* --- SISTEMA DE VIDAS (CORAÇÕES) --- */
+
+/* Classe base para todos os corações */
+.nexo-heart {
+  width: 20px;  /* Tamanho padrão, pode ser ajustado via Tailwind também */
+  height: 20px;
+}
+
+/* Estado CHEIO (Vida Ativa) */
+.nexo-heart.full {
+  fill: #ef4444;       /* Preenchimento Vermelho (Red-500) */
+  color: #ef4444;      /* Borda Vermelha */
+  filter: drop-shadow(0 2px 3px rgba(239, 68, 68, 0.3)); /* Leve brilho/aura */
+  opacity: 1;
+}
+
+/* Estado VAZIO (Vida Perdida) */
+.nexo-heart.lost {
+  fill: transparent;   /* Remove o preenchimento vermelho */
+  color: #cbd5e1;      /* Borda Cinza Claro (Slate-300) */
+  transform: scale(0.85); /* Fica visualmente menor */
+  opacity: 0.5;        /* Fica meio apagado */
+}
