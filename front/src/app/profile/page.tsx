@@ -20,10 +20,6 @@ import UserConfig from "@/components/profile/UserConfig";
 // --- TIPAGENS PARA RANKING ---
 // Removido UserRanking type duplicado, usando UserRankingData importado
 
-// Componente Card Estatística (Sem alterações)
-// REMOVIDO: StatCardProps, StatTrend, ProfileStats, StatCard, StatusBadge, SkeletonCard
-// Essas interfaces e componentes foram movidos para GeneralStats.tsx
-
 interface RecentExam {
   name: string;
   date: string;
@@ -111,7 +107,12 @@ export default function ProfilePage() {
 
         try {
           // Buscar apenas dados do perfil da API
-          const profileResponse = await fetch('/api/user/stats');
+          const storedToken = localStorage.getItem('user_data');
+          const profileResponse = await fetch('/api/user/stats', {
+            headers: {
+              'Authorization': `Bearer ${storedToken}`,
+            },
+          });
 
         if (!profileResponse.ok) {
             throw new Error('Falha ao carregar os dados do perfil.');
@@ -216,9 +217,13 @@ export default function ProfilePage() {
       
       const fetchCutoff = async () => {
         try {
+          const storedToken = localStorage.getItem('user_data');
           const response = await fetch('/api/Nota-corte', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${storedToken}`,
+            },
             body: JSON.stringify({ targetExam, targetCourse }),
           });
 

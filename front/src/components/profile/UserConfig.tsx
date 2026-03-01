@@ -63,8 +63,13 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
       try {
         // Como a rota Nota-corte é POST, podemos ter que adaptar ou usar os dados diretamente se houver um GET.
         // Se não houver GET, buscamos de dataNotaCorte.ts (simulando a API)
+        const storedToken = localStorage.getItem('user_data');
         const response = await fetch('/api/Nota-corte', {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${storedToken}`,
+          },
           body: JSON.stringify({ userScore: 0, targetCourse: '' })
         });
         if (response.ok) {

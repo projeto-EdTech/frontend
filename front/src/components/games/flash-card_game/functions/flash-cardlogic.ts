@@ -10,7 +10,6 @@ import {
   COMBO_COLORS,
   SUBJECT_COLORS,
   DEFAULT_SUBJECT_COLOR,
-  flashCardsData,
 } from '../lib/flash-cardData';
 
 /**
@@ -42,26 +41,55 @@ export class FlashCardGameLogic {
    * Busca as matérias e prepara os dados iniciais
    */
   async fetchCards(): Promise<{ cards: FlashCard[]; subjects: string[] }> {
-    const subjects = flashCardsData.map(s => s.subject);
-    const allCards: FlashCard[] = [];
-    
-    // Achata todos os cards injetando metadados de matéria e tópico
-    flashCardsData.forEach(subjectEntry => {
-      subjectEntry.topics.forEach(topic => {
-        const cardsWithMetadata = topic.cards.map(card => ({
-          ...card,
-          subject: subjectEntry.subject,
-          topic: topic.name
-        }));
-        allCards.push(...cardsWithMetadata);
-      });
+    // ============================================================
+    // LÓGICA LOCAL ANTERIOR (referência/fallback)
+    // Descomentar se o backend não estiver disponível:
+    // ============================================================
+    // const subjects = flashCardsData.map(s => s.subject);
+    // const allCards: FlashCard[] = [];
+    // flashCardsData.forEach(subjectEntry => {
+    //   subjectEntry.topics.forEach(topic => {
+    //     const cardsWithMetadata = topic.cards.map(card => ({
+    //       ...card,
+    //       subject: subjectEntry.subject,
+    //       topic: topic.name
+    //     }));
+    //     allCards.push(...cardsWithMetadata);
+    //   });
+    // });
+    // const availableCards = allCards.filter(card => card.available ?? true);
+    // return { cards: availableCards, subjects };
+    // ============================================================
+
+    const storedToken = localStorage.getItem('user_data');
+
+    console.log('[FlashCardLogic] 📤 fetchCards — Buscando cards do backend...');
+    console.log('[FlashCardLogic]    Token (primeiros 20 chars):', storedToken ? storedToken.substring(0, 20) + '...' : 'não encontrado');
+
+    const response = await fetch('/api/games/flash-cards', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${storedToken}`,
+      },
+      cache: 'no-store',
     });
 
-    const availableCards = allCards.filter(card => card.available ?? true);
+    console.log('[FlashCardLogic] 📥 fetchCards — Status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido.' }));
+      console.error('[FlashCardLogic] ❌ Erro ao buscar cards:', errorData);
+      throw new Error(errorData.error || `Falha ao buscar flash cards (${response.status})`);
+    }
+
+    // TODO: Validar com o backend o formato exato da resposta.
+    // Esperado: { subjects: string[], cards: FlashCard[] }
+    const data = await response.json();
+    console.log('[FlashCardLogic] ✅ fetchCards — Cards recebidos:', JSON.stringify(data).substring(0, 200) + '...');
 
     return {
-      cards: availableCards,
-      subjects,
+      cards: data.cards ?? [],
+      subjects: data.subjects ?? [],
     };
   }
 
@@ -74,13 +102,11 @@ export class FlashCardGameLogic {
     if (selectedSubject === 'Todas') {
       filteredCards = [...cards];
     } else {
-      // Busca a matéria específica na estrutura original para garantir que pegamos os tópicos corretos
-      const subjectData = flashCardsData.find(s => s.subject === selectedSubject);
-      if (subjectData) {
-        subjectData.topics.forEach(topic => {
-          filteredCards.push(...topic.cards);
-        });
-      }
+      // Filtra diretamente no array de cards recebido do backend (já contém metadata de subject)
+      // Lógica anterior usava flashCardsData (dado local) — mantida abaixo como referência:
+      // const subjectData = flashCardsData.find(s => s.subject === selectedSubject);
+      // if (subjectData) { subjectData.topics.forEach(topic => { filteredCards.push(...topic.cards); }); }
+      filteredCards = cards.filter(card => card.subject === selectedSubject);
     }
 
     // Filtra apenas cards marcados como disponíveis
@@ -98,11 +124,18 @@ export class FlashCardGameLogic {
   }
 
   /**
-   * Retorna os tópicos de uma matéria específica
+   * Retorna os tópicos de uma matéria específica.
+   * @param allCards Array completo de cards recebidos do backend (contém metadata de subject/topic)
    */
-  getTopicsBySubject(subjectName: string): string[] {
-    const subject = flashCardsData.find(s => s.subject === subjectName);
-    return subject ? subject.topics.map(t => t.name) : [];
+  getTopicsBySubject(subjectName: string, allCards: FlashCard[] = []): string[] {
+    // Extrai tópicos únicos a partir dos cards recebidos do backend
+    // Lógica anterior usava flashCardsData (dado local):
+    // const subject = flashCardsData.find(s => s.subject === subjectName);
+    // return subject ? subject.topics.map(t => t.name) : [];
+    const topics = allCards
+      .filter(card => card.subject === subjectName && card.topic)
+      .map(card => card.topic as string);
+    return Array.from(new Set(topics));
   }
 
   /**
@@ -281,18 +314,32 @@ export class FlashCardGameLogic {
    */
   async submitResults(correctIds: number[]): Promise<void> {
     try {
-      console.log('[Flash-card][CONCLUIDO] CorrectIds:', correctIds);
-      
-      const response = await fetch('/api/games/Flash-cards', {
+      const storedToken = localStorage.getItem('user_data');
+
+      console.log('[FlashCardLogic] 📤 submitResults — Enviando resultados ao backend:');
+      console.log('[FlashCardLogic]    CorrectIds:', correctIds);
+      console.log('[FlashCardLogic]    Token (primeiros 20 chars):', storedToken ? storedToken.substring(0, 20) + '...' : 'não encontrado');
+
+      const response = await fetch('/api/games/flash-cards', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`,
+        },
         body: JSON.stringify({ correctIds }),
       });
-      
+
+      console.log('[FlashCardLogic] 📥 submitResults — Status:', response.status, response.statusText);
+
       const json = await response.json();
-      console.log('[Flash-card][POST] correctIds enviados:', correctIds, 'resposta:', json);
+
+      if (response.ok) {
+        console.log('[FlashCardLogic] ✅ Resultados enviados com sucesso:', json);
+      } else {
+        console.error('[FlashCardLogic] ❌ Erro ao salvar resultados:', json.error || json);
+      }
     } catch (e) {
-      console.error('[Flash-card][POST] erro ao enviar correctIds:', e);
+      console.error('[FlashCardLogic] ❌ Erro de comunicação ao enviar resultados:', e);
     }
   }
 

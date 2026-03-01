@@ -133,9 +133,15 @@ export default function SimulationPage() {
       setError(null);
 
       try {
+        const storedToken = localStorage.getItem('user_data');
         const qRes = await fetch(
             `/api/questions/${universitySlug}?count=${numberOfQuestions}&year=${examYear || ""}&day=${day}`,
-            { cache: "no-store" }
+            {
+              cache: 'no-store',
+              headers: {
+                'Authorization': `Bearer ${storedToken}`,
+              },
+            }
           );
 
         // Questões

@@ -185,78 +185,97 @@ export async function GET(
 ) {
   const params = await paramsPromise;
   const backendApiUrl = process.env.BACKEND_API_URL;
-  // removida verificação de serverApiKey pois o front não a envia
 
   if (!backendApiUrl) {
-    console.error("Variável de ambiente BACKEND_API_URL não está configurada.");
-    return NextResponse.json({ message: "Erro de configuração no servidor." }, { status: 500 });
+    console.error('[API_QUESTIONS_ERROR] BACKEND_API_URL não está configurado nas variáveis de ambiente.');
+    return NextResponse.json({ message: 'Erro de configuração no servidor.' }, { status: 500 });
+  }
+
+  // Lê o token JWT enviado pelo cliente no header Authorization
+  const authHeader = request.headers.get('Authorization');
+  const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+  if (!userToken) {
+    console.warn('[API_QUESTIONS] ❌ Requisição sem token JWT.');
+    return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
   }
 
   const universitySlug = params.university.toLowerCase();
+  const backendUrl = `${backendApiUrl}/api/exams/${universitySlug}`;
+
+  console.log('[API_QUESTIONS] 📤 Enviando requisição ao backend:');
+  console.log('[API_QUESTIONS]    URL:', backendUrl);
+  console.log('[API_QUESTIONS]    Universidade:', universitySlug);
+  console.log('[API_QUESTIONS]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
 
   try {
-    const apiRes = await fetch(`${backendApiUrl}/api/exams/${universitySlug}`, {
+    const apiRes = await fetch(backendUrl, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`,
       },
-      next: {
-        revalidate: 60,
-      },
+      cache: 'no-store',
     });
 
+    console.log('[API_QUESTIONS] 📥 Resposta recebida do backend:');
+    console.log('[API_QUESTIONS]    Status:', apiRes.status, apiRes.statusText);
+
     if (!apiRes.ok) {
-      // Tentar ler mensagem de erro
-      const errorData = await apiRes.json().catch(() => ({ message: "Erro ao decodificar a resposta do back-end." }));
-      
+      const errorData = await apiRes.json().catch(() => ({ message: 'Erro ao decodificar a resposta do back-end.' }));
+
       if (apiRes.status === 404) {
-          return NextResponse.json({ error: "Universidade ou questões não encontradas" }, { status: 404 });
+        console.warn('[API_QUESTIONS] ⚠️  Questões não encontradas para:', universitySlug);
+        return NextResponse.json({ error: 'Universidade ou questões não encontradas' }, { status: 404 });
       }
-      
+
+      console.error('[API_QUESTIONS] ❌ Erro retornado pelo backend. Status:', apiRes.status, '| Mensagem:', errorData.message);
       return NextResponse.json(
-        { message: errorData.message || "Ocorreu um erro ao buscar os dados." },
+        { message: errorData.message || 'Ocorreu um erro ao buscar os dados.' },
         { status: apiRes.status }
       );
     }
 
     const universityQuestionsRaw = await apiRes.json();
-    
-    // Formatar os dados
+    console.log('[API_QUESTIONS]    Dados raw recebidos (questões brutas):', JSON.stringify(universityQuestionsRaw).substring(0, 200) + '...');
+
+    // Formata os dados do backend para o contrato do frontend
     const formattedQuestions = formatApiData(universityQuestionsRaw);
+    console.log('[API_QUESTIONS]    Total de questões formatadas:', formattedQuestions.length);
 
-    // Filtragem de query parameters (year, count) opcional pode ser feita aqui ou no backend.
-    // O código anterior filtrava no Next.js. O código comentado não filtrava, mas backend poderia filtrar.
-    // Vamos manter a formatação e devolver tudo, ou aplicar filtros básicos se necessário.
-    // O front pede ?count=X&year=Y. Se o backend retornar TUDO, podemos filtrar aqui para manter consistência.
-    
+    // Aplica filtros de query parameters (year, count, day)
     const url = new URL(request.url);
-    const countParam = url.searchParams.get("count");
-    const yearParam = url.searchParams.get("year");
-    
+    const countParam = url.searchParams.get('count');
+    const yearParam = url.searchParams.get('year');
+
     let result = formattedQuestions;
-    
+
     if (yearParam) {
-        const y = Number(yearParam);
-        if (!isNaN(y)) {
-             result = result.filter(q => q.year === y);
-        }
-    }
-    
-    // Sort
-    result.sort((a, b) => a.id - b.id);
-    
-    if (countParam) {
-        const c = Number(countParam);
-        if (!isNaN(c) && c > 0) {
-            result = result.slice(0, c);
-        }
+      const y = Number(yearParam);
+      if (!isNaN(y)) {
+        result = result.filter(q => q.year === y);
+        console.log('[API_QUESTIONS]    Filtro year=' + y + ' → questões restantes:', result.length);
+      }
     }
 
+    // Ordena por ID
+    result.sort((a, b) => a.id - b.id);
+
+    if (countParam) {
+      const c = Number(countParam);
+      if (!isNaN(c) && c > 0) {
+        result = result.slice(0, c);
+        console.log('[API_QUESTIONS]    Filtro count=' + c + ' → questões retornadas:', result.length);
+      }
+    }
+
+    console.log('[API_QUESTIONS] ✅ Sucesso! Retornando', result.length, 'questões ao frontend.');
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error("Falha na chamada fetch para o back-end:", error);
+    console.error('[API_QUESTIONS_ERROR] Erro de comunicação com o back-end:', error);
     return NextResponse.json(
-      { message: "Não foi possível conectar ao serviço de questões." },
+      { message: 'Não foi possível conectar ao serviço de questões.' },
       { status: 503 }
     );
   }

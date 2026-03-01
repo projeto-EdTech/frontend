@@ -236,9 +236,13 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
     try {
       // *** INÍCIO DAS ALTERAÇÕES ***
       // Esta é a chamada de API real para o endpoint que criamos
+      const storedToken = localStorage.getItem('user_data');
       const apiResponse = await fetch('/api/Nota-corte', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`,
+        },
         body: JSON.stringify({
           userScore: userScore,
           targetCourse: localTargetCourse,

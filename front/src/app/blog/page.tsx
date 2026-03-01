@@ -63,10 +63,14 @@ export default function BlogPage() {
 
   useEffect(() => {
     async function getPostsFromApi(): Promise<Post[]> {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       try {
+        const storedToken = localStorage.getItem("user_data");
         const res = await fetch(`${apiUrl}/api/blog`, {
           cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${storedToken}`,
+          },
         });
         if (!res.ok) {
           throw new Error("Falha ao buscar os posts da API");
@@ -104,7 +108,7 @@ export default function BlogPage() {
   const regularPosts = filteredPosts.length > 1 ? filteredPosts.slice(1) : [];
 
   const handleNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
+    e: React.MouseEvent<HTMLElement>,
     href: string
   ) => {
     e.preventDefault();
