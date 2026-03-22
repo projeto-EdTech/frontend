@@ -233,7 +233,8 @@ export default function Home() {
   if (isNavigating) {
     return <LoadingScreen message="Carregando..." />;
   }
-
+  
+  console.log("User tier (session):", session);
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="themed-main-container min-h-screen force-themed-bg flex flex-col">

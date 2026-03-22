@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getAllPosts } from '@/lib/post';
 
 export async function GET(request: Request) {
   const externalApiUrl = process.env.BACKEND_API_URL;
@@ -19,7 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
     }
 
-    const backendUrl = `${externalApiUrl}/blog`;
+    const backendUrl = `${externalApiUrl}/api/artigos`;
     console.log('[API_BLOG] 📤 Enviando requisição ao backend:');
     console.log('[API_BLOG]    URL:', backendUrl);
     console.log('[API_BLOG]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
@@ -50,8 +49,24 @@ export async function GET(request: Request) {
     }
 
     if (apiResponse.ok) {
-      console.log('[API_BLOG] ✅ Sucesso! Retornando dados ao frontend.');
-      return NextResponse.json(data, { status: apiResponse.status });
+      console.log('[API_BLOG] ✅ Sucesso! Formatando e retornando dados ao frontend.');
+
+      // Mapeia os dados do backend (português) para o contrato do frontend (inglês)
+      const formattedData = Array.isArray(data) ? data.map((post: any) => ({
+        id: post.id,
+        slug: post.slug || post.id, // Fallback para ID se não houver slug
+        title: post.titulo || 'Sem título',
+        publishedAt: post.dataPublicacao || new Date().toISOString(),
+        excerpt: post.resumo || '',
+        category: post.categoria || 'Geral',
+        stats: {
+          readingTime: post.tempoLeitura || 5,
+          views: post.visualizacoes || 0,
+          likes: post.curtidas || 0,
+        }
+      })) : [];
+
+      return NextResponse.json(formattedData, { status: apiResponse.status });
     } else {
       console.error('[API_BLOG] ❌ Erro retornado pelo backend. Status:', apiResponse.status, '| Mensagem:', data.message);
       return NextResponse.json(

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Target, Search, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Building, Info, SearchX } from 'lucide-react';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
-import { type CourseResult, type ApiResponse } from '@/lib/dataNotaCorte';
+import { type CourseResult, type ApiResponse } from '@/types/nota-corte';
 
 interface Props {
   userScore: number;

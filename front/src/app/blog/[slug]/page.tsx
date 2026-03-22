@@ -1,8 +1,9 @@
+"use client";
+
 import { PostCard } from "@/components/blog/PostCard";
 import Link from "next/link";
-import { Post } from "@/types";
-import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { Post, PostPreview } from "@/types";
+import { notFound, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
@@ -24,74 +25,74 @@ import {
 import ShareModal from "@/components/blog/ShareModal";
 import SubscribeButton from "@/components/blog/SubscribeButton";
 import Image from "next/image";
-import { getAllPosts, getPostBySlug } from "@/lib/post";
 import NavigationLink from "@/components/blog/NavigationLink";
+import { useState, useEffect, use } from "react";
+import LoadingScreen from "@/components/LoadingScreen";
 
-// Busca diretamente do módulo do servidor (sem chamadas HTTP)
-async function getPostData(slug: string): Promise<Post | null> {
-  const post = getPostBySlug(slug);
-  return post ?? null;
-}
-
-async function getRelatedPosts(currentSlug: string): Promise<Post[]> {
-  const posts = getAllPosts();
-  return posts.filter((p) => p.slug !== currentSlug).slice(0, 3);
-}
-
-// Geração de Metadados Dinâmicos - CORRIGIDA
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  // CORREÇÃO: Aguardar a resolução dos params
-  const { slug } = await params;
-  const post = await getPostData(slug);
-
-  if (!post) {
-    return { title: "Post não encontrado" };
-  }
-
-  return {
-    title: `${post.title} | Blog Vestibuline`,
-    description: post.excerpt,
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      type: "article",
-    },
-  };
-}
-
-// Geração de Rotas Estáticas - CORRIGIDA
-export async function generateStaticParams() {
-  try {
-    const posts = getAllPosts();
-    return posts.map((post) => ({ slug: post.slug }));
-  } catch (error) {
-    console.error("Error generating static params:", error);
-    return [];
-  }
-}
-
-// O Componente da Página - CORRIGIDO
-export default async function BlogPostPage({
-  params,
+// O Componente da Página
+export default function BlogPostPage({
+  params: paramsPromise,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  // CORREÇÃO: Aguardar a resolução dos params antes de usar
-  const { slug } = await params;
+  const params = use(paramsPromise);
+  const slug = params.slug;
+  const searchParams = useSearchParams();
+  const articleId = searchParams.get("id");
 
-  // Agora usar a variável 'slug' nas chamadas de API
-  const [post, relatedPosts] = await Promise.all([
-    getPostData(slug),
-    getRelatedPosts(slug),
-  ]);
+  const [post, setPost] = useState<Post | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<PostPreview[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // A validação continua a mesma
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const storedToken = localStorage.getItem("user_data");
+        const idParam = articleId ? `?id=${articleId}` : "";
+        
+        // Busca o post principal
+        const postRes = await fetch(`/api/blog/${slug}${idParam}`, {
+          headers: {
+            "Authorization": `Bearer ${storedToken}`,
+          },
+        });
+
+        if (postRes.ok) {
+          const postData = await postRes.json();
+          setPost(postData);
+        } else if (postRes.status === 404) {
+          setPost(null);
+        }
+
+        // Busca posts relacionados (usando a lista geral e filtrando)
+        const relatedRes = await fetch(`/api/blog`, {
+          headers: {
+            "Authorization": `Bearer ${storedToken}`,
+          },
+        });
+
+        if (relatedRes.ok) {
+          const allPosts: PostPreview[] = await relatedRes.json();
+          setRelatedPosts(allPosts.filter((p) => p.slug !== slug).slice(0, 3));
+        }
+
+      } catch (error) {
+        console.error("Erro ao buscar dados do post:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [slug, articleId]);
+
+  if (isLoading) {
+    return <LoadingScreen message="Carregando artigo..." />;
+  }
+
   if (!post) {
     notFound();
+    return null;
   }
 
   // Garante que métricas existam mesmo se ausentes na fonte
@@ -192,7 +193,7 @@ export default async function BlogPostPage({
                 <div className="flex items-center gap-2.5 px-4 py-2 bg-white backdrop-blur-xl rounded-full shadow-sm border border-gray-200/50">
                   <Clock className="w-4 h-4 text-gray-600" />
                   <span className="text-sm font-medium text-gray-700">
-                    {post.readingTime} min de leitura
+                    {stats.readingTime} min de leitura
                   </span>
                 </div>
 
@@ -241,7 +242,7 @@ export default async function BlogPostPage({
                     date={post.publishedAt}
                     excerpt={post.excerpt}
                     content={post.content}
-                    readTime={post.readingTime}
+                    readTime={stats.readingTime}
                     views={stats.views}
                     likes={stats.likes}
                   />
@@ -339,7 +340,7 @@ export default async function BlogPostPage({
                             Tempo de Leitura
                           </p>
                           <p className="text-xl font-bold text-white">
-                            {post.readingTime} min
+                            {stats.readingTime} min
                           </p>
                         </div>
                       </div>
@@ -387,7 +388,7 @@ export default async function BlogPostPage({
                 {relatedPosts.map((relatedPost, index) => (
                   <NavigationLink
                     key={relatedPost.slug}
-                    href={`/blog/${relatedPost.slug}`}
+                    href={`/blog/${relatedPost.slug}?id=${relatedPost.id}`}
                     className="group block animate-fade-in-up"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >

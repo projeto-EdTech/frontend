@@ -10,6 +10,7 @@ import {
   COMBO_COLORS,
   SUBJECT_COLORS,
   DEFAULT_SUBJECT_COLOR,
+  flashCardsData // Importando os dados locais
 } from '../lib/flash-cardData';
 
 /**
@@ -38,33 +39,10 @@ export class FlashCardGameLogic {
   }
 
   /**
-   * Busca as matérias e prepara os dados iniciais
+   * Busca as matérias e prepara os dados iniciais com base nas recomendações do backend
    */
   async fetchCards(): Promise<{ cards: FlashCard[]; subjects: string[] }> {
-    // ============================================================
-    // LÓGICA LOCAL ANTERIOR (referência/fallback)
-    // Descomentar se o backend não estiver disponível:
-    // ============================================================
-    // const subjects = flashCardsData.map(s => s.subject);
-    // const allCards: FlashCard[] = [];
-    // flashCardsData.forEach(subjectEntry => {
-    //   subjectEntry.topics.forEach(topic => {
-    //     const cardsWithMetadata = topic.cards.map(card => ({
-    //       ...card,
-    //       subject: subjectEntry.subject,
-    //       topic: topic.name
-    //     }));
-    //     allCards.push(...cardsWithMetadata);
-    //   });
-    // });
-    // const availableCards = allCards.filter(card => card.available ?? true);
-    // return { cards: availableCards, subjects };
-    // ============================================================
-
     const storedToken = localStorage.getItem('user_data');
-
-    console.log('[FlashCardLogic] 📤 fetchCards — Buscando cards do backend...');
-    console.log('[FlashCardLogic]    Token (primeiros 20 chars):', storedToken ? storedToken.substring(0, 20) + '...' : 'não encontrado');
 
     const response = await fetch('/api/games/flash-cards', {
       method: 'GET',
@@ -74,22 +52,42 @@ export class FlashCardGameLogic {
       cache: 'no-store',
     });
 
-    console.log('[FlashCardLogic] 📥 fetchCards — Status:', response.status, response.statusText);
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido.' }));
-      console.error('[FlashCardLogic] ❌ Erro ao buscar cards:', errorData);
-      throw new Error(errorData.error || `Falha ao buscar flash cards (${response.status})`);
+      throw new Error(errorData.error || `Falha ao buscar recomendações (${response.status})`);
     }
 
-    // TODO: Validar com o backend o formato exato da resposta.
-    // Esperado: { subjects: string[], cards: FlashCard[] }
     const data = await response.json();
-    console.log('[FlashCardLogic] ✅ fetchCards — Cards recebidos:', JSON.stringify(data).substring(0, 200) + '...');
+    const recommendedMaterias = data.materias || [];
+
+    const filteredCards: FlashCard[] = [];
+    const subjectsSet = new Set<string>();
+
+    // Filtra o banco de dados local baseado no que o backend recomendou
+    recommendedMaterias.forEach((recMateria: any) => {
+      const actualSubject = flashCardsData.find(s => s.subject.toLowerCase() === recMateria.nome.toLowerCase());
+      
+      if (actualSubject) {
+        recMateria.topicos.forEach((recTopic: any) => {
+          const actualTopic = actualSubject.topics.find(t => t.name.toLowerCase() === recTopic.nome.toLowerCase());
+          
+          if (actualTopic) {
+            subjectsSet.add(actualSubject.subject);
+            actualTopic.cards.forEach(card => {
+              filteredCards.push({
+                ...card,
+                subject: actualSubject.subject,
+                topic: actualTopic.name
+              });
+            });
+          }
+        });
+      }
+    });
 
     return {
-      cards: data.cards ?? [],
-      subjects: data.subjects ?? [],
+      cards: filteredCards,
+      subjects: Array.from(subjectsSet),
     };
   }
 

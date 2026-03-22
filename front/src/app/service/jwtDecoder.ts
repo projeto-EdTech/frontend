@@ -11,11 +11,11 @@ export interface JWTPayload {
   exp?: number;
   
   // Custom claims from backend
-  id?: number;
+  id?: string;
   nome?: string;
   email?: string;
-  type?: string;        // Mapped to tier
-  newsLetter?: boolean; // Mapped to newsletter
+  tipo?: string;        // Tier do usuário (ex: FREE, SIMULAPRO, TEACHER, ADMIN)
+  newsletter?: boolean; // Preferência de newsletter
   [key: string]: any;
 }
 

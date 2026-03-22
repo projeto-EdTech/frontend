@@ -13,6 +13,7 @@ interface QuestaoBruta {
   alternativas: AlternativaBruta[] | null;
   opcaoCorreta: string | null;
   conteudo: string[] | null;
+  dia: number | null;
   imageNames?: string[];
 }
 
@@ -37,6 +38,7 @@ interface QuestaoFormatada {
     correctAnswer: number;
     materia: string[];
     conteudo: string[];
+    dia: number;
     imageNames?: string[];
     images?: string[];
 }
@@ -162,6 +164,7 @@ function formatApiData(jsonData: any): QuestaoFormatada[] {
             correctAnswer: correctAnswerIndex,
             materia: Array.from(materias),
             conteudo: conteudos,
+            dia: questao.dia || 1,
             imageNames: questao.imageNames || []
         };
         
@@ -179,7 +182,7 @@ function formatApiData(jsonData: any): QuestaoFormatada[] {
 
 // --- Rota da API ---
 
-export async function GET(
+export async function POST(
   request: Request,
   { params: paramsPromise }: { params: Promise<{ university: string }> }
 ) {
@@ -191,7 +194,7 @@ export async function GET(
     return NextResponse.json({ message: 'Erro de configuração no servidor.' }, { status: 500 });
   }
 
-  // Lê o token JWT enviado pelo cliente no header Authorization
+  // Lê o token JWT enviado pelo cliente no header Authorization (Mantendo a barreira de segurança)
   const authHeader = request.headers.get('Authorization');
   const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
@@ -200,21 +203,38 @@ export async function GET(
     return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
   }
 
-  const universitySlug = params.university.toLowerCase();
-  const backendUrl = `${backendApiUrl}/api/exams/${universitySlug}`;
-
-  console.log('[API_QUESTIONS] 📤 Enviando requisição ao backend:');
-  console.log('[API_QUESTIONS]    URL:', backendUrl);
-  console.log('[API_QUESTIONS]    Universidade:', universitySlug);
-  console.log('[API_QUESTIONS]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
-
   try {
+    // 1. EXTRAINDO DADOS DO CORPO DA REQUISIÇÃO (DO FRONTEND)
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      console.warn('[API_QUESTIONS] ⚠️ Corpo da requisição não é um JSON válido ou está vazio sugerindo uso de parâmetros de URL.');
+    }
+    
+    // Fallback para query params se o body estiver vazio (para compatibilidade ou flexibilidade)
+    const url = new URL(request.url);
+    const rawYear = body.year || url.searchParams.get('year');
+    const year = rawYear ? Number(rawYear) : undefined;
+    const universitySlug = params.university.toUpperCase();
+
+    // 2. CONFIGURANDO A CHAMADA AO BACKEND (POST COM BODY)
+    const backendUrl = `${backendApiUrl}/api/prova/instituicao`;
+
+    console.log('[API_QUESTIONS] 📤 Enviando requisição ao backend:');
+    console.log('[API_QUESTIONS]    URL:', backendUrl);
+    console.log('[API_QUESTIONS]    Payload:', { slug: universitySlug, ano: year });
+
     const apiRes = await fetch(backendUrl, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`,
       },
+      body: JSON.stringify({
+        slug: universitySlug,
+        ano: year
+      }),
       cache: 'no-store',
     });
 
@@ -238,13 +258,12 @@ export async function GET(
 
     const universityQuestionsRaw = await apiRes.json();
     console.log('[API_QUESTIONS]    Dados raw recebidos (questões brutas):', JSON.stringify(universityQuestionsRaw).substring(0, 200) + '...');
-
+    
     // Formata os dados do backend para o contrato do frontend
     const formattedQuestions = formatApiData(universityQuestionsRaw);
     console.log('[API_QUESTIONS]    Total de questões formatadas:', formattedQuestions.length);
 
-    // Aplica filtros de query parameters (year, count, day)
-    const url = new URL(request.url);
+    // Filtros adicionais (como quantidade) podem ser mantidos via Query Params se necessário
     const countParam = url.searchParams.get('count');
     const yearParam = url.searchParams.get('year');
 
@@ -273,9 +292,9 @@ export async function GET(
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error('[API_QUESTIONS_ERROR] Erro de comunicação com o back-end:', error);
+    console.error('[API_QUESTIONS_ERROR] Erro na comunicação com o backend:', error);
     return NextResponse.json(
-      { message: 'Não foi possível conectar ao serviço de questões.' },
+      { message: 'Não foi possível buscar as questões. Verifique se o corpo da requisição está correto.' },
       { status: 503 }
     );
   }

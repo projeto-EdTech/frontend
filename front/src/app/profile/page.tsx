@@ -224,7 +224,11 @@ export default function ProfilePage() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${storedToken}`,
             },
-            body: JSON.stringify({ targetExam, targetCourse }),
+            body: JSON.stringify({ 
+              userScore: profileData.stats.percentagem, 
+              targetCourse, 
+              targetInstitution: targetExam 
+            }),
           });
 
           if (!response.ok) {

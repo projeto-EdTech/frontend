@@ -16,18 +16,25 @@ export async function GET(
     const params = await props.params;
     const slug = params.slug;
 
-    console.log('[API_BLOG_SLUG] 📝 Slug recebido:', slug);
+    // Obtém o 'id' dos parâmetros de busca da URL, se enviado pelo frontend
+    const { searchParams } = new URL(request.url);
+    const articleId = searchParams.get('id');
+
+    // Usa o ID se estiver presente, caso contrário usa o slug como fallback
+    const identifier = articleId || slug;
+
+    console.log('[API_BLOG_SLUG] 📝 Identificador recebido:', identifier, articleId ? '(ID)' : '(Slug)');
 
     // Lê o token JWT enviado pelo cliente no header Authorization
     const authHeader = request.headers.get('Authorization');
     const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
     if (!userToken) {
-      console.warn('[API_BLOG_SLUG] ❌ Requisição sem token JWT para slug:', slug);
+      console.warn('[API_BLOG_SLUG] ❌ Requisição sem token JWT para identificador:', identifier);
       return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
     }
 
-    const backendUrl = `${externalApiUrl}/blog/${slug}`;
+    const backendUrl = `${externalApiUrl}/api/artigos/${identifier}`;
     console.log('[API_BLOG_SLUG] 📤 Enviando requisição ao backend:');
     console.log('[API_BLOG_SLUG]    URL:', backendUrl);
     console.log('[API_BLOG_SLUG]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
@@ -58,8 +65,25 @@ export async function GET(
     }
 
     if (apiResponse.ok) {
-      console.log('[API_BLOG_SLUG] ✅ Sucesso! Retornando dados ao frontend.');
-      return NextResponse.json(data, { status: apiResponse.status });
+      console.log('[API_BLOG_SLUG] ✅ Sucesso! Formatando e retornando dados ao frontend.');
+
+      // Mapeia os dados do backend (português) para o contrato do frontend (inglês)
+      const formattedPost = {
+        id: data.id,
+        slug: data.slug || slug, // Usa o slug da URL se o backend não enviar
+        title: data.titulo || 'Sem título',
+        publishedAt: data.dataPublicacao || new Date().toISOString(),
+        excerpt: data.resumo || '',
+        content: data.conteudoHtml || '',
+        category: data.categoria || 'Geral',
+        stats: {
+          readingTime: data.tempoLeitura || 5,
+          views: data.visualizacoes || 0,
+          likes: data.curtidas || 0,
+        }
+      };
+
+      return NextResponse.json(formattedPost, { status: apiResponse.status });
     } else {
       console.error('[API_BLOG_SLUG] ❌ Erro retornado pelo backend. Status:', apiResponse.status, '| Mensagem:', data.message);
       return NextResponse.json(

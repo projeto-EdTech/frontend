@@ -17,8 +17,8 @@ export function useUserTier() {
       const storedToken = localStorage.getItem("user_data");
       if (storedToken) {
         const decoded = decodeJWT(storedToken);
-        if (decoded && decoded.type) {
-          setTier(decoded.type as Tier);
+        if (decoded && decoded.tipo) {
+          setTier(decoded.tipo as Tier);
           setLoading(false);
           return;
         }

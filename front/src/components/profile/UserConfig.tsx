@@ -65,12 +65,10 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
         // Se não houver GET, buscamos de dataNotaCorte.ts (simulando a API)
         const storedToken = localStorage.getItem('user_data');
         const response = await fetch('/api/Nota-corte', {
-          method: 'POST',
+          method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${storedToken}`,
           },
-          body: JSON.stringify({ userScore: 0, targetCourse: '' })
         });
         if (response.ok) {
           const data = await response.json();

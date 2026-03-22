@@ -2,7 +2,7 @@
 
 import Header from "@/components/Header";
 import Link from "next/link";
-import { Post } from "@/types";
+import { PostPreview } from "@/types";
 import {
   Search,
   BookOpen,
@@ -31,7 +31,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import useEmblaCarousel from "embla-carousel-react";
 
 export default function BlogPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<PostPreview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const filterCategories = [
     "Todos",
@@ -62,11 +62,10 @@ export default function BlogPage() {
   }, [emblaApi]);
 
   useEffect(() => {
-    async function getPostsFromApi(): Promise<Post[]> {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    async function getPostsFromApi(): Promise<PostPreview[]> {
       try {
         const storedToken = localStorage.getItem("user_data");
-        const res = await fetch(`${apiUrl}/api/blog`, {
+        const res = await fetch(`/api/blog`, {
           cache: "no-store",
           headers: {
             "Authorization": `Bearer ${storedToken}`,
@@ -630,7 +629,7 @@ export default function BlogPage() {
                     <div
                       className="group relative bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200 hover:border-blue-500 hover:shadow-blue-500/30 cursor-pointer"
                       onClick={(e) =>
-                        handleNavigation(e, `/blog/${featuredPost.slug}`)
+                        handleNavigation(e, `/blog/${featuredPost.slug}?id=${featuredPost.id}`)
                       }
                     >
                       <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -726,7 +725,7 @@ export default function BlogPage() {
                               key={post.slug}
                               className="flex-[0_0_100%] sm:flex-[0_0_calc(50%-1rem)] lg:flex-[0_0_calc(33.333%-1.33rem)] min-w-0 px-1 cursor-pointer animate-fade-in-up"
                               onClick={(e) =>
-                                handleNavigation(e, `/blog/${post.slug}`)
+                                handleNavigation(e, `/blog/${post.slug}?id=${post.id}`)
                               }
                               style={{ animationDelay: `${index * 0.1}s` }}
                             >
@@ -766,7 +765,7 @@ export default function BlogPage() {
                                       onClick={(e) =>
                                         handleNavigation(
                                           e,
-                                          `/blog/${post.slug}`
+                                          `/blog/${post.slug}?id=${post.id}`
                                         )
                                       }
                                       className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-semibold text-sm group-hover:gap-2.5 transition-all duration-300"

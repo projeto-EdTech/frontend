@@ -91,8 +91,8 @@ Abaixo está a explicação detalhada de cada rota, seu método HTTP suportado e
 
 ### `/api/Nota-corte`
 
-- **Método:** `POST`
-- **Descrição:** Calcula ou verifica a aprovação baseada na nota do usuário e o curso desejado. Simula um processamento com delay de rede.
+- **Método:** `GET`, `POST`
+- **Descrição:** **POST:** Calcula a aprovação baseada na nota do usuário e o curso. **GET:** Busca a lista de todos os cursos disponíveis.
 - **📥 Payload Esperado (JSON):**
 
   ```json
@@ -103,8 +103,8 @@ Abaixo está a explicação detalhada de cada rota, seu método HTTP suportado e
   }
   ```
 
-- **📄 Origem dos Dados:** Compara com o array `mockApiData` em `src/lib/dataNotaCorte.ts`.
-- **Por que é utilizada:** Funcionalidade de "Calculadora de Aprovação", onde o aluno insere sua nota e vê se passaria no curso desejado.
+- **📄 Origem dos Dados:** Consulta o Backend Externo (URL definida em variáveis de ambiente).
+- **Por que é utilizada:** Integra com a base de dados real de notas de corte do backend para fornecer resultados precisos de aprovação e listar cursos para o perfil do usuário.
 
 ### `/api/blog`
 
@@ -231,14 +231,15 @@ Abaixo listamos onde cada rota está sendo consumida nos componentes e páginas 
 | :--- | :--- | :--- |
 | ✅ | **`/api/auth/[...nextauth]`** | `src/app/api/auth/[...nextauth]/route.ts` |
 | ✅ | **`/api/sync-user`** | `src/components/SyncUserEffect.tsx` |
-| [ ] | **`/api/user/stats`** | `src/app/profile/page.tsx` |
+| ‼️ | **`/api/user/stats`** | `src/app/profile/page.tsx` |
 | ✅ | **`/api/subscribe`** | `src/components/blog/SubscribeButton.tsx` |
 | ✅ | **`/api/universities`** | `src/components/Sidebar.tsx`<br>`src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/library/page.tsx`<br>`src/app/page.tsx` |
-| [ ] | **`/api/questions/[university]`** | `src/app/simulation/[university]/page.tsx` |
+| 🟠 | **`/api/questions/[university]`** | `src/app/simulation/[university]/page.tsx` |
 | ✅ | **`/api/estatisticas/[subject]`** | `src/app/estatisticas/[subject]/page.tsx` |
-| [ ] | **`/api/Nota-corte`** | `src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/profile/page.tsx` |
-| [ ] | **`/api/blog`** | `src/app/blog/page.tsx` |
-| [ ] | **`/api/blog/[slug]`** | `src/app/blog/[slug]/page.tsx` |
+| 🟠 | **`/api/Nota-corte`** | `src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/profile/page.tsx` |
+| ✅ | **`/api/games/flash-cards`** | `src/components/games/flash-card_game/Flash-card.tsx` |
+| ✅ | **`/api/blog`** | `src/app/blog/page.tsx` |
+| ✅ | **`/api/blog/[slug]`** | `src/app/blog/[slug]/page.tsx` |
 | ✅ | **`/api/webhooks/mercadopago`** | `` |
 | ✅ | **`/api/process-subscription/credit-card`** | `src/app/paidPlan/page.tsx` |
 | ✅ | **`/api/process-subscription/pix`** | `src/app/paidPlan/page.tsx` |

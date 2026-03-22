@@ -11,6 +11,30 @@ export default function SyncUserEffect() {
   const syncingRef = useRef(false);
 
   useEffect(() => {
+    // 1. Limpeza ao deslogar
+    if (status === "unauthenticated") {
+      const keysToClear = [
+        "user_data",
+        "flashcard_count",
+        "flashcard_last_date",
+        "flashcard_daily_stats"
+      ];
+      
+      let cleared = false;
+      keysToClear.forEach(key => {
+        if (localStorage.getItem(key)) {
+          localStorage.removeItem(key);
+          cleared = true;
+        }
+      });
+
+      if (cleared) {
+        console.log("[SyncUserEffect] 🧹 Dados do usuário limpos ao deslogar");
+      }
+      return;
+    }
+
+    // 2. Sincronização ao logar
     if (status === "authenticated") {
         const email = session?.user?.email || "";
         // Verifica se já temos o JWT deste usuário no localStorage
@@ -19,12 +43,15 @@ export default function SyncUserEffect() {
 
         if (storedToken) {
             const decoded = decodeJWT(storedToken);
-            if (decoded && decoded.email === email && decoded.id) {
+            // Verifica se o token pertence ao mesmo usuário, tem ID e usa o campo 'tipo' correto
+            // Se o token ainda usa o campo legado 'type' (sem 'tipo'), força re-sincronização
+            const hasTipo = decoded && typeof decoded.tipo !== "undefined";
+            if (decoded && decoded.email === email && decoded.id && hasTipo) {
                 alreadySynced = true;
             }
         }
         
-        // Se já sincronizou e tem ID no token, não precisa chamar novamente
+        // Se já sincronizou e tem ID e campo 'tipo' correto no token, não precisa chamar novamente
         if (alreadySynced) return;
         
         if (syncingRef.current) return;

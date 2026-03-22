@@ -135,12 +135,17 @@ export default function SimulationPage() {
       try {
         const storedToken = localStorage.getItem('user_data');
         const qRes = await fetch(
-            `/api/questions/${universitySlug}?count=${numberOfQuestions}&year=${examYear || ""}&day=${day}`,
+            `/api/questions/${universitySlug}?count=${numberOfQuestions}`,
             {
+              method: 'POST',
               cache: 'no-store',
               headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${storedToken}`,
               },
+              body: JSON.stringify({ 
+                year: examYear || ""
+              })
             }
           );
 
