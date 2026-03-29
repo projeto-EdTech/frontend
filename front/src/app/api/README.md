@@ -236,7 +236,7 @@ Abaixo listamos onde cada rota está sendo consumida nos componentes e páginas 
 | ✅ | **`/api/universities`** | `src/components/Sidebar.tsx`<br>`src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/library/page.tsx`<br>`src/app/page.tsx` |
 | 🟠 | **`/api/questions/[university]`** | `src/app/simulation/[university]/page.tsx` |
 | ✅ | **`/api/estatisticas/[subject]`** | `src/app/estatisticas/[subject]/page.tsx` |
-| 🟠 | **`/api/Nota-corte`** | `src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/profile/page.tsx` |
+| ✅ | **`/api/Nota-corte`** | `src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/profile/page.tsx` |
 | ✅ | **`/api/games/flash-cards`** | `src/components/games/flash-card_game/Flash-card.tsx` |
 | ✅ | **`/api/blog`** | `src/app/blog/page.tsx` |
 | ✅ | **`/api/blog/[slug]`** | `src/app/blog/[slug]/page.tsx` |

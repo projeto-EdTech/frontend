@@ -15,7 +15,7 @@ export async function GET(request: Request) {
        return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
     }
 
-    const apiResponse = await fetch(`${externalApiUrl}/api/sigla`, {
+    const apiResponse = await fetch(`${externalApiUrl}/api/instituicao`, {
       headers: {
         'Authorization': `Bearer ${userToken}`,
       },

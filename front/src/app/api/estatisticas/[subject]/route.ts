@@ -57,9 +57,8 @@ export async function GET(
 
   try {
     // 3. Construir a URL final para o back-end externo
-    // Caminho solicitado: BACKENDURL/api/sigla/estatiscas/[universidadeID]/[materiaID]
     // Usando string template para manter o acento visível no log (o fetch tratará a codificação necessária)
-    const backendApiUrl = `${BACKEND_API_URL}/api/sigla/estatisticas/${universidadeId}/${materia}`;
+    const backendApiUrl = `${BACKEND_API_URL}/api/instituicao/estatisticas/${universidadeId}/${materia}`;
 
     // 4. Fazer a chamada (fetch) para o seu back-end
     const res = await fetch(backendApiUrl, {

@@ -7,7 +7,7 @@ import { check, sleep } from 'k6';
 export const options = {
     stages: [
         { duration: '30s', target: 100 }, // Sobe para 100 usuários em 30s
-        { duration: '1m', target: 100 },  // Mantém 100 usuários por 1 minuto
+        { duration: '4m', target: 100 },  // Mantém 100 usuários por 1 minuto
         { duration: '30s', target: 0 },  // Desce para 0 usuários
     ],
     thresholds: {
@@ -25,12 +25,19 @@ export default function () {
         '/Arena',
         '/blog',
         '/contato',
-        '/estatisticas',
+        '/estatisticas/matematica',
+        '/estatisticas/portugues',
+        '/estatisticas/quimica',
+        '/estatisticas/fisica',
+        '/estatisticas/biologia',
+        '/estatisticas/historia',
+        '/estatisticas/geografia',
+        '/estatisticas/filosofia',
+        '/estatisticas/sociologia',
         '/library',
         '/paidPlan',
         '/privacy',
-        '/profile',
-        '/simulation',
+        //'/profile',
         '/terms',
     ];
 
