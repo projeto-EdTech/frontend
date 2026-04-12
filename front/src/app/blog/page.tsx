@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ListMusic,
+  Plus
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
@@ -30,6 +31,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
 import { PlaylistHub } from "@/components/community/PlaylistHub";
+import { CreatePlaylistModal } from "@/components/community/CreatePlaylistModal";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -78,6 +80,7 @@ export default function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [playlistCount, setPlaylistCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
   const filterCategories = [
     "Todos",
     "Mais Recentes",
@@ -306,6 +309,18 @@ export default function BlogPage() {
                 className="flex flex-col sm:flex-row items-center justify-center gap-6"
               >
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                  <button
+                    onClick={() => setIsPlaylistModalOpen(true)}
+                    className="group relative bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-500 flex items-center gap-4 overflow-hidden shadow-xl cursor-pointer"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    <ListMusic className="w-5 h-5" />
+                    <span className="relative z-10 text-lg">Criar Playlist Própria</span>
+                    <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform relative z-10" />
+                  </button>
+                </motion.div>
+                
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
                   <Link
                     href="/library"
                     onClick={(e) => handleNavigation(e, "/library")}
@@ -333,7 +348,15 @@ export default function BlogPage() {
         </div>
 
         {/* Playlist Hub Section */}
-        <PlaylistHub searchQuery={searchQuery} />
+        <div className="relative">
+          <PlaylistHub searchQuery={searchQuery} />
+        </div>
+
+        {/* Modal de Criação de Playlist */}
+        <CreatePlaylistModal 
+          isOpen={isPlaylistModalOpen} 
+          onClose={() => setIsPlaylistModalOpen(false)} 
+        />
 
         {/* Filtros Section */}
         <motion.div

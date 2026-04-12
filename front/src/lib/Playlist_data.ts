@@ -28,6 +28,7 @@ export interface Playlist {
   mainColor?: string;
   creatorAvatar?: string;
   duration?: string;
+  isPublic?: boolean;
   questions?: Question[];
 }
 
@@ -93,4 +94,42 @@ export const PLAYLISTS_MOCK: Playlist[] = [
       { id: 12, title: "Questão 12: Correção Gramatical", subject: "Redação", topic: "Gramática", difficulty: "Difícil", dateAdded: "2 semanas atrás", duration: "5 min", completed: false, institution: "ENEM", year: 2024 }
     ]
   },
+  {
+    id: "dxtsn9kms",
+    title: "matematica 3",
+    creatorName: "Felipe Grolla Freitas",
+    questionCount: 0,
+    likesCount: 0,
+    gradient: "from-indigo-500 to-purple-600",
+    category: "Geral",
+    tags: [
+        "matematica"
+    ],
+    description: "sxfggsd",
+    coverGradient: "from-indigo-700 to-purple-900",
+    mainColor: "bg-indigo-600",
+    creatorAvatar: "",
+    duration: "0 min",
+    isPublic: true,
+    questions: []
+  },
+  {
+    id: "eufb3r8ru",
+    title: "Matematica 2",
+    creatorName: "Felipe Grolla Freitas",
+    questionCount: 0,
+    likesCount: 0,
+    gradient: "from-indigo-500 to-purple-600",
+    category: "Matemática",
+    tags: [
+        "matemática"
+    ],
+    description: "sdfgsdf",
+    coverGradient: "from-indigo-700 to-purple-900",
+    mainColor: "bg-indigo-600",
+    creatorAvatar: "",
+    duration: "0 min",
+    isPublic: true,
+    questions: []
+  }
 ];
