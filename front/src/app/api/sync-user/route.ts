@@ -70,7 +70,20 @@ export async function POST(req: Request) {
     // Retorna a resposta exata do backend. 
     // Se o backend envia uma string (JWT), backendData será essa string.
     // Se o backend envia um objeto { token: "..." }, retornamos o objeto.
-    return NextResponse.json(backendData, { status: 200 });
+    const responseNext = NextResponse.json(backendData, { status: 200 });
+
+    const tokenFromBackend = typeof backendData === "string" ? backendData : backendData?.token;
+    if (tokenFromBackend) {
+      responseNext.cookies.set("user_data", tokenFromBackend, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60 // 30 dias
+      });
+    }
+
+    return responseNext;
 
   } catch (e) {
     console.error("[sync-user][EXCEPTION]", e);

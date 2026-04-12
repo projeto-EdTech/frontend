@@ -10,7 +10,13 @@ export async function GET(request: Request) {
 
   try {
     const authHeader = request.headers.get('Authorization');
-    const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    let userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+    if (!userToken) {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      userToken = cookieStore.get('user_data')?.value || null;
+    }
 
     if (!userToken) {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -64,9 +70,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Lê o token JWT enviado pelo cliente no header Authorization
+    // 1. Lê o token JWT enviado pelo cliente no header Authorization ou via Cookies (para chamadas SWR Client-Side)
     const authHeader = request.headers.get('Authorization');
-    const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    let userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+    if (!userToken) {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      userToken = cookieStore.get('user_data')?.value || null;
+    }
 
     if (!userToken) {
       console.warn('[API_NOTA_CORTE] ❌ Requisição sem token JWT.');

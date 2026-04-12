@@ -14,8 +14,18 @@ import GeneralStats, { SkeletonCard, type ProfileStats } from "@/components/prof
 import StatsUser from "@/components/profile/StatsUser";
 import SimulationHistoric from "@/components/profile/SimulationHistoric";
 import NavigationBar from "@/components/profile/NavigationBar";
+import useSWR from 'swr';
 import NotaCorteConsulta from "@/components/Simula_PRO/NotaCorteConsulta";
 import UserConfig from "@/components/profile/UserConfig";
+
+const fetcher = async (url: string) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('user_data') : '';
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Falha ao carregar os dados do perfil.');
+  return res.json();
+};
 
 // --- TIPAGENS PARA RANKING ---
 // Removido UserRanking type duplicado, usando UserRankingData importado
@@ -99,60 +109,49 @@ export default function ProfilePage() {
     return universityData ? universityData.logo : null;
   }, [groupedQuestions, selectedSubject, currentQuestionIndex]);
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-    const fetchProfileData = async () => {
-        setIsDataLoading(true);
-        setError(null);
-
-        try {
-          // Buscar apenas dados do perfil da API
-          const storedToken = localStorage.getItem('user_data');
-          const profileResponse = await fetch('/api/user/stats', {
-            headers: {
-              'Authorization': `Bearer ${storedToken}`,
-            },
-          });
-
-        if (!profileResponse.ok) {
-            throw new Error('Falha ao carregar os dados do perfil.');
-        }
-
-        const profileData = await profileResponse.json();
-        setProfileData(profileData);
-
-        if (profileData.reviewableQuestions && profileData.reviewableQuestions.length > 0) {
-          const groups = profileData.reviewableQuestions.reduce((acc: Map<string, ReviewableQuestion[]>, question: ReviewableQuestion) => {
-            const subject = question.displaySubject;
-            if (!acc.has(subject)) {
-              acc.set(subject, []);
-            }
-            acc.get(subject)!.push(question);
-            return acc;
-          }, new Map<string, ReviewableQuestion[]>());
-
-          setGroupedQuestions(groups);
-
-          const firstSubject = Array.from(groups.keys())[0] || "";
-
-          setSelectedSubject(firstSubject as string);
-        }
-
-        } catch (err: unknown) {
-        console.error("Erro ao buscar dados do perfil:", err);
-          if (err instanceof Error) {
-            setError(err.message);
-          } else {
-            setError("Ocorreu um erro desconhecido.");
-          }
-        } finally {
-          setIsDataLoading(false);
-        }
-    };
-
-    fetchProfileData();
+  // Busca de dados utilizando SWR
+  const { data: profileDataResponse, error: swrError, isLoading: isSwrLoading } = useSWR(
+    status === 'authenticated' ? '/api/user/stats' : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      refreshInterval: 120000 // 2 minutos
     }
-}, [status, session?.user?.name]);
+  );
+
+  useEffect(() => {
+    if (profileDataResponse) {
+      setProfileData(profileDataResponse);
+      setIsDataLoading(false);
+      
+      if (profileDataResponse.reviewableQuestions && profileDataResponse.reviewableQuestions.length > 0) {
+        const groups = profileDataResponse.reviewableQuestions.reduce((acc: Map<string, ReviewableQuestion[]>, question: ReviewableQuestion) => {
+          const subject = question.displaySubject;
+          if (!acc.has(subject)) {
+            acc.set(subject, []);
+          }
+          acc.get(subject)!.push(question);
+          return acc;
+        }, new Map<string, ReviewableQuestion[]>());
+
+        setGroupedQuestions(groups);
+        const firstSubject = Array.from(groups.keys())[0] || "";
+        setSelectedSubject(firstSubject as string);
+      }
+    }
+  }, [profileDataResponse]);
+
+  useEffect(() => {
+    if (swrError) {
+      console.error("Erro ao buscar dados do perfil:", swrError);
+      setError(swrError.message || "Ocorreu um erro desconhecido.");
+      setIsDataLoading(false);
+    }
+  }, [swrError]);
+
+  useEffect(() => {
+    if (isSwrLoading) setIsDataLoading(true);
+  }, [isSwrLoading]);
 
   const [formData, setFormData] = useState({
     fullName: "",

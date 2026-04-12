@@ -28,6 +28,9 @@ export default function SyncUserEffect() {
         }
       });
 
+      // Limpar os cookies setados pelo backend
+      document.cookie = "user_data=; Max-Age=0; path=/;";
+
       if (cleared) {
         console.log("[SyncUserEffect] 🧹 Dados do usuário limpos ao deslogar");
       }
