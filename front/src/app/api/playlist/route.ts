@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     // Criando um objeto de playlist simulado seguindo estritamente a interface Playlist 
     // com todos os campos presentes. Campos não preenchidos recebem string vazia ou undefined.
     const newPlaylist = {
-      id: Math.random().toString(36).substring(2, 11), 
+      id: Date.now().toString(), 
       title,
       creatorName: creatorName || "Usuário", 
       questionCount: 0,

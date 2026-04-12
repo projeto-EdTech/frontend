@@ -135,7 +135,7 @@ export default function BlogPage() {
   // Buscar contagem de playlists
   useEffect(() => {
     async function getPlaylistCount(): Promise<number> {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
       try {
         const res = await fetch(`${apiUrl}/api/playlist`, {
           cache: "no-store",

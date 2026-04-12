@@ -8,9 +8,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css'; // Importe o CSS do KaTeX
+import { BookmarkPlus } from "lucide-react";
 import { type Question, type University, allQuestions, universities } from "@/lib/dataUniversity";
 import QuestionCarousel from '@/components/QuestionCarousel';
 import LoadingScreen from "@/components/LoadingScreen";
+import { AddToPlaylistModal } from "@/components/community/AddToPlaylistModal";
 import Image from "next/image";
 
 interface ErroDetalhado {
@@ -87,10 +89,52 @@ export default function SimulationPage() {
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
   const [currentUniversity, setCurrentUniversity] = useState<University | null>(null);
 
+  // Status de playlists do usuário
+  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  // Mapeia se a questão atual já está salva em alguma playlist
+  const isQuestionSavedLocally = userPlaylists.some(p => 
+    p.questions && p.questions.some((q: any) => q.rawQuestion?.id === questions[currentQuestion]?.id)
+  );
+
   // Get university details da API
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFinishing, setIsFinishing] = useState(false); // <-- ADDED LOADING STATE
+  const [isAddPlaylistModalOpen, setIsAddPlaylistModalOpen] = useState(false); // Modal de salvar na playlist
+
+  // Buscar playlists do usuário ao carregar para verificar se a questão já está salva
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        const res = await fetch("/api/playlist");
+        if (res.ok) {
+          const data = await res.json();
+          setUserPlaylists(data);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar playlists", err);
+      }
+    };
+    fetchPlaylists();
+  }, []);
+
+  // Recarregar os dados das playlists caso o modal seja fechado (atualizando o estado se algo foi salvo)
+  const handleClosePlaylistModal = () => {
+    setIsAddPlaylistModalOpen(false);
+    // Dispara timeout pra esperar a rota de add-question terminar o save no arquivo/DB
+    setTimeout(async () => {
+      try {
+        const res = await fetch("/api/playlist");
+        if (res.ok) {
+          const data = await res.json();
+          setUserPlaylists(data);
+        }
+      } catch (err) {
+        console.error("Erro ao recarregar playlists", err);
+      }
+    }, 500); 
+  };
+
 
   // "Observa" o estado 'questions'.
   useEffect(() => {
@@ -684,6 +728,19 @@ export default function SimulationPage() {
                     })()
                   )}
                 </div>
+
+                {/* Botão de Adicionar na Playlist */}
+                <button
+                  onClick={() => setIsAddPlaylistModalOpen(true)}
+                  className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-gray-200 flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer float-right ml-4 ${
+                    isQuestionSavedLocally 
+                      ? "bg-blue-100 border-blue-300 text-blue-600" 
+                      : "bg-gray-50 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 text-gray-500"
+                  }`}
+                  title={isQuestionSavedLocally ? "Salvo em Playlist" : "Salvar na Playlist"}
+                >
+                  <BookmarkPlus className={`w-5 h-5 sm:w-6 sm:h-6 ${isQuestionSavedLocally ? "fill-blue-600" : ""}`} />
+                </button>
               </div>
 
               {/* Answer options - Mobile optimized */}
@@ -739,6 +796,13 @@ export default function SimulationPage() {
             </div>
           </div>
         </div>
+
+      <AddToPlaylistModal 
+        isOpen={isAddPlaylistModalOpen}
+        onClose={handleClosePlaylistModal}
+        question={questions[currentQuestion] || null}
+      />
+
       <Footer />
     </div>
   )
