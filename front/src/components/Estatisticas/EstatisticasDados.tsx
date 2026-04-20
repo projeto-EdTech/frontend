@@ -1,9 +1,34 @@
 import React from 'react';
-import TopicPieChart from '@/components/Simula_PRO/graficos_stats/TopicPieChart';
-import TopicBarChart from '@/components/Simula_PRO/graficos_stats/TopicBarChart';
-import RankingMaterias from "@/components/RankingMaterias";
+import dynamic from 'next/dynamic';
 import Image from "next/image";
 import { cookies } from "next/headers";
+
+const TopicBarChart = dynamic(
+  () => import('@/components/Simula_PRO/graficos_stats/TopicBarChart'),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-gray-100" />
+    ),
+  }
+);
+
+const TopicPieChart = dynamic(
+  () => import('@/components/Simula_PRO/graficos_stats/TopicPieChart'),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-gray-100" />
+    ),
+  }
+);
+
+const RankingMaterias = dynamic(
+  () => import('@/components/RankingMaterias'),
+  {
+    loading: () => (
+      <div className="h-48 animate-pulse rounded-xl bg-gray-100" />
+    ),
+  }
+);
 
 type Metrica = {
   topico: string;

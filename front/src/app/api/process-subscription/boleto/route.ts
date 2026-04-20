@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       payment_id: result.id,
       status: result.status,
       boleto_url: result.transaction_details?.external_resource_url, // Link para o PDF
-      boleto_code: result.barcode?.content, // Linha digitável (código de barras)
+      boleto_code: (result as any).barcode?.content, // Linha digitável (código de barras)
       due_date: result.date_of_expiration, // Data de vencimento
     }, { status: 201 }); // 201 Created
 

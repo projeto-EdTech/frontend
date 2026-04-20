@@ -19,6 +19,9 @@ import { SimuladoMockup, BancoProvasMockup, NotaDeCorteMockup } from "@/componen
 import SphereCarousel from "@/components/SphereCarousel";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import React, { Suspense } from "react";
+import UniversitiesCountBadge from "@/components/UniversitiesCountBadge";
+import UniversitiesCountSkeleton from "@/components/Skeletons/UniversitiesCountSkeleton";
 
 // Dados das features para o carrossel 3D da Hero Section
 const HERO_FEATURES = [
@@ -89,12 +92,6 @@ export default function Home() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Estado para contagem de universidades
-  const [universitiesCount, setUniversitiesCount] = useState<number | null>(
-    null
-  );
-  const [universitiesError, setUniversitiesError] = useState<boolean>(false);
-
   // Estado para a seção "Por dentro do Vestibuline" (sem rotação automática)
   const [activeFeaturePlatform, setActiveFeaturePlatform] = useState(0);
   const [isAnimatingPlatform, setIsAnimatingPlatform] = useState(false);
@@ -162,32 +159,6 @@ export default function Home() {
       setIsLoginModalOpen(true); // Abre modal de login se não autenticado
     }
   };
-
-  // Buscar quantidade de universidades
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/universities", { cache: "no-store" });
-        if (!res.ok) throw new Error("Failed");
-        const data = await res.json();
-        if (!cancelled) {
-          if (Array.isArray(data)) {
-            setUniversitiesCount(data.length);
-          } else if (Array.isArray(data?.universities)) {
-            setUniversitiesCount(data.universities.length);
-          } else {
-            setUniversitiesError(true);
-          }
-        }
-      } catch (e) {
-        if (!cancelled) setUniversitiesError(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     // Simulate loading data with performance optimization
@@ -321,26 +292,9 @@ export default function Home() {
                     >
                       <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
                         {/* Universidades parceiras */}
-                        <div className="flex items-center gap-2 force-themed-card backdrop-blur-sm px-3 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow select-none">
-                          <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">
-                              🎓
-                            </span>
-                          </div>
-                          <span
-                            className="text-xs font-medium themed-text"
-                            aria-live="polite"
-                          >
-                            {universitiesError &&
-                              universitiesCount === null &&
-                              "Universidades"}
-                            {!universitiesError &&
-                              universitiesCount === null &&
-                              "..."}
-                            {universitiesCount !== null &&
-                              `${universitiesCount} Universidades`}
-                          </span>
-                        </div>
+                        <Suspense fallback={<UniversitiesCountSkeleton />}>
+                           <UniversitiesCountBadge />
+                        </Suspense>
                         {/* Aprovações */}
                         <div className="flex items-center gap-2 force-themed-card backdrop-blur-sm px-3 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow select-none">
                           <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">

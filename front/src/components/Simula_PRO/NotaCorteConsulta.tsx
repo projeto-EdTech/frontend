@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Target, Search, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Building, Info, SearchX } from 'lucide-react';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -36,7 +36,9 @@ const ResultSkeleton: React.FC<{ theme: string }> = ({ theme }) => (
 /**
  * Card de resultado de curso - ATUALIZADO COM TEMA E DESIGN PROFISSIONAL
  */
-const CourseResultCard: React.FC<{ result: CourseResult; theme: string }> = ({ result, theme }) => {
+// Memoizamos o card para evitar re-render de toda a lista quando muda página ou filtro.
+// Cada card só re-renderiza se `result` ou `theme` mudarem (comparação shallow).
+const CourseResultCard = React.memo(function CourseResultCard({ result, theme }: { result: CourseResult; theme: string }) {
   const isDark = theme === 'dark';
   const [logoPath, setLogoPath] = React.useState<string | null>(null);
   const [logoError, setLogoError] = React.useState(false);
@@ -170,8 +172,7 @@ const CourseResultCard: React.FC<{ result: CourseResult; theme: string }> = ({ r
       </div>
     </div>
   );
-};
-
+});
 
 // --- COMPONENTE PRINCIPAL ---
 
@@ -227,15 +228,14 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
   }, []);
 
   /**
-   * Função principal de consulta (MODIFICADA)
+   * Função principal de consulta
+   * Estabilizada com useCallback: referência só muda quando os inputs do formulário mudam.
    */
-  const handleConsult = async () => {
+  const handleConsult = useCallback(async () => {
     setIsLoading(true);
     setHasSearched(true);
     setError(null);
     try {
-      // *** INÍCIO DAS ALTERAÇÕES ***
-      // Esta é a chamada de API real para o endpoint que criamos
       const storedToken = localStorage.getItem('user_data');
       const apiResponse = await fetch('/api/Nota-corte', {
         method: 'POST',
@@ -246,7 +246,7 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
         body: JSON.stringify({
           userScore: userScore,
           targetCourse: localTargetCourse,
-          targetInstitution: localTargetInstitution || undefined // Inclui instituição se preenchida
+          targetInstitution: localTargetInstitution || undefined
         }),
       });
 
@@ -259,9 +259,7 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
 
       setTargetCourseResults(response.targetCourseResults);
       setAllResults(response.allResults);
-      // Atualiza os estados dos filtros com os dados da API
       setAvailableAreas(response.availableAreas);
-      // *** FIM DAS ALTERAÇÕES ***
 
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.');
@@ -269,7 +267,7 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userScore, localTargetCourse, localTargetInstitution]);
 
   /**
    * Memo para filtrar e ordenar os resultados da lista (Sem alterações na lógica)
@@ -330,6 +328,31 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
   useEffect(() => {
     setCurrentPage(1);
   }, [filters, sortBy]);
+  /**
+   * Handlers de filtro estabilizados com useCallback.
+   * Necessário para que React.memo no CourseResultCard funcione corretamente:
+   * sem useCallback, onChange cria nova referência a cada render e invalida o memo.
+   */
+  const handleFilterArea = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setFilters(prev => ({ ...prev, area: e.target.value }));
+    },
+    []
+  );
+
+  const handleFilterInstitution = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setFilters(prev => ({ ...prev, institution: e.target.value }));
+    },
+    []
+  );
+
+  const handleSortChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setSortBy(e.target.value);
+    },
+    []
+  );
 
   useEffect(() => {
     // Função para carregar as instituições da sua API
@@ -676,7 +699,7 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
                 <select 
                   id="filterArea"
                   value={filters.area}
-                  onChange={(e) => setFilters(prev => ({ ...prev, area: e.target.value }))}
+                  onChange={handleFilterArea}
                   className={`w-full px-3.5 py-2.5 border ${isDark ? 'border-gray-600/60 bg-gray-700/60 text-white focus:border-blue-500' : 'border-gray-300/60 bg-white text-gray-900 focus:border-blue-500'} rounded-lg focus:ring-4 focus:ring-blue-500/15 backdrop-blur-sm font-medium transition-all text-[14px]`}
                 >
                   {availableAreas.map(area => (
@@ -693,7 +716,7 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
                 <select 
                     id="filterInstitution"
                     value={filters.institution}
-                    onChange={(e) => setFilters(prev => ({ ...prev, institution: e.target.value }))}
+                    onChange={handleFilterInstitution}
                     className={`w-full px-3.5 py-2.5 border ${isDark ? 'border-gray-600/60 bg-gray-700/60 text-white focus:border-blue-500' : 'border-gray-300/60 bg-white text-gray-900 focus:border-blue-500'} rounded-lg focus:ring-4 focus:ring-blue-500/15 backdrop-blur-sm font-medium transition-all text-[14px]`}
                     disabled={isLoadingInstitutions}
                     >
@@ -715,7 +738,7 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
                 <select 
                   id="sortBy"
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={handleSortChange}
                   className={`w-full px-3.5 py-2.5 border ${isDark ? 'border-gray-600/60 bg-gray-700/60 text-white focus:border-blue-500' : 'border-gray-300/60 bg-white text-gray-900 focus:border-blue-500'} rounded-lg focus:ring-4 focus:ring-blue-500/15 backdrop-blur-sm font-medium transition-all text-[14px]`}
                 >
                   <option value="probability">Maior Probabilidade (mais fácil)</option>

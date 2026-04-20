@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import SimulacaoLoader from "@/components/Simula_PRO/SimulacaoLoader";
 import SimulacaoSkeleton from "@/components/Skeletons/SimulacaoSkeleton";
 
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
+const Footer = dynamic(() => import("@/components/Footer"));
 
 export default async function SimulationPage(props: {
   params: Promise<{ university: string }>;

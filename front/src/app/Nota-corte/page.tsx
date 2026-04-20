@@ -1,9 +1,19 @@
 import React, { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import NotaCorteForm from "@/components/Simula_PRO/NotaCorteForm";
 import NotaCorteResultados from "@/components/Simula_PRO/NotaCorteResultados";
 import ResultSkeleton from "@/components/Skeletons/ResultSkeleton";
+
+const Footer = dynamic(() => import("@/components/Footer"));
+
+const NotaCorteForm = dynamic(
+  () => import("@/components/Simula_PRO/NotaCorteForm"),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-gray-100 mb-8" />
+    ),
+  }
+);
 
 // Configuração Next 15 para Server Components assíncronos (Aguardar Promise de searchParams)
 export default async function NotaCortePage(props: {

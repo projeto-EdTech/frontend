@@ -1,9 +1,19 @@
 import React, { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import FiltrosEstatisticas from "@/components/Filtros/FiltrosEstatisticas";
 import EstatisticasDados from "@/components/Estatisticas/EstatisticasDados";
 import EstatisticasSkeleton from "@/components/Skeletons/EstatisticasSkeleton";
+
+const Footer = dynamic(() => import("@/components/Footer"));
+
+const FiltrosEstatisticas = dynamic(
+  () => import("@/components/Filtros/FiltrosEstatisticas"),
+  {
+    loading: () => (
+      <div className="h-32 animate-pulse rounded-2xl bg-gray-100 mb-10" />
+    ),
+  }
+);
 
 export default async function EstatisticasPage(props: {
   params: Promise<{ subject: string }>;

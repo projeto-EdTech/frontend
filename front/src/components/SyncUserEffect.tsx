@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { decodeJWT } from "@/app/service/jwtDecoder";
+// GA4: serviço centralizado de analytics (no-op seguro em dev e SSR)
+import { setUserId, trackLogin, resetAnalytics } from "@/lib/analytics";
 
 export default function SyncUserEffect() {
   const { data: session, status } = useSession();
@@ -13,6 +15,9 @@ export default function SyncUserEffect() {
   useEffect(() => {
     // 1. Limpeza ao deslogar
     if (status === "unauthenticated") {
+      // Limpa rastros e identificação nos analytics
+      resetAnalytics();
+
       const keysToClear = [
         "user_data",
         "flashcard_count",
@@ -75,6 +80,14 @@ export default function SyncUserEffect() {
                 if (token) {
                     localStorage.setItem("user_data", token);
                     console.log("[SyncUserEffect] JWT do usuário salvo no localStorage");
+
+                    // GA4: identifica o usuário pelo UUID do banco (nunca e-mail/CPF)
+                    // e registra o evento de login para métricas de retenção
+                    const decoded = decodeJWT(token);
+                    if (decoded?.id) {
+                        setUserId(decoded.id, decoded.tipo);
+                        trackLogin('oauth');
+                    }
                 } else {
                     console.warn("[SyncUserEffect] Token não encontrado na resposta");
                 }
