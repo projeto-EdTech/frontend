@@ -180,7 +180,11 @@ const Planner: React.FC = () => {
         const response = await fetch("/api/planner/Google");
 
         if (!response.ok) {
-          throw new Error("Falha ao carregar o cronograma do Google Agenda");
+          const errorData = await response.json().catch(() => null);
+          const errorMessage = errorData?.error || errorData?.details || "Falha ao carregar o cronograma do Google Agenda";
+          setError(errorMessage);
+          setIsFetchingSchedule(false);
+          return;
         }
 
         const googleEvents: StudyEvent[] = await response.json();

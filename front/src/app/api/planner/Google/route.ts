@@ -165,9 +165,20 @@ export async function GET() {
 
     return NextResponse.json(formattedEvents, { status: 200 });
 
-  } catch (error) {
-    console.error("[GET] ERRO:", error);
-    return NextResponse.json({ error: "Falha ao buscar eventos do Google Calendar" }, { status: 500 });
+  } catch (error: any) {
+    console.error("[GET] ERRO GOOGLE CALENDAR:", error?.response?.data || error);
+
+    // Se for um erro de credenciais inválidas ou escopo insuficiente
+    if (error?.code === 401 || error?.response?.status === 401 || error?.response?.status === 403) {
+       return NextResponse.json({ 
+         error: "Conexão com o Google Agenda expirada ou permissão negada. Por favor, faça login novamente e certifique-se de autorizar o acesso à agenda." 
+       }, { status: 401 });
+    }
+
+    return NextResponse.json({ 
+      error: "Falha ao buscar eventos do Google Calendar", 
+      details: error?.message || "Erro desconhecido" 
+    }, { status: 500 });
   }
 }
 
