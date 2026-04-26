@@ -2,58 +2,72 @@
 trigger: always_on
 ---
 
-## 1. Renderização Progressiva com React Suspense (Streaming)
+# Antigravity Rules — Otimização & Performance
+# vestibuline | NextJS + BFF Java | v1.0 2026
 
-Rotas monolíticas são proibidas. Toda rota que realiza chamada ao BFF Java **deve** decompor sua árvore de componentes em partes independentes, permitindo que o servidor entregue a "casca" da página instantaneamente enquanto os dados pesados são transmitidos em background.
+## CONTEXTO DA ARQUITETURA
 
-### 1.1 Obrigatoriedade do `<Suspense>`
+O vestibuline opera com arquitetura **BFF (Backend for Frontend)**:
+- **Frontend:** NextJS (App Router, React 18+)
+- **Backend:** Java (BFF — fonte de dados pesados)
+- **Padrão de dados:** chamadas do NextJS → BFF Java → resposta ao cliente
 
-Todo componente que depende de dados do BFF deve ser envolvido em `<Suspense>` com um fallback de Skeleton Screen funcional. Nunca deixar o fallback como `null` ou um spinner genérico.
+Todo código gerado deve respeitar esta arquitetura. Nunca assumir que dados chegam instantaneamente — toda chamada ao BFF é potencialmente lenta e deve ser tratada com estratégia de cache e streaming.
+
+---
+
+## REGRA 1 — Streaming Obrigatório: Nunca Bloquear o TTFB
+
+Rotas monolíticas que aguardam todos os dados antes de renderizar são **proibidas**. A casca da página deve ser entregue instantaneamente; dados pesados do BFF Java são transmitidos em background via `<Suspense>`.
 
 ```tsx
-// ✅ CORRETO
+// ✅ CORRETO — casca entregue imediatamente, dados streamados
 import { Suspense } from 'react'
 import { DataTableSkeleton } from '@/components/skeletons/DataTableSkeleton'
-import { DataTable } from '@/components/DataTable'
 
 export default function Page() {
   return (
     <main>
-      <PageHeader /> {/* entregue instantaneamente */}
+      <PageHeader />  {/* entregue no primeiro byte */}
       <Suspense fallback={<DataTableSkeleton />}>
-        <DataTable /> {/* streamado do BFF em background */}
+        <DataTable />  {/* streamado do BFF em background */}
       </Suspense>
     </main>
   )
 }
 
-// ❌ ERRADO — bloqueia o TTFB inteiro
+// ❌ ERRADO — bloqueia o TTFB inteiro até o BFF responder
 export default async function Page() {
-  const data = await fetchFromBFF() // trava o render até o BFF responder
+  const data = await fetchFromBFF()
   return <DataTable data={data} />
 }
 ```
 
-### 1.2 Skeleton Screens
+Ao gerar qualquer rota ou page component que faça chamada ao BFF, **sempre** decompor em `<Suspense>` + Skeleton Screen.
 
-Skeleton Screens são obrigatórios como fallback de todo `<Suspense>`. Devem replicar fielmente o layout do componente real para eliminar o layout shift (CLS).
+---
+
+## REGRA 2 — Skeleton Screens: Fallback Obrigatório
+
+Todo `<Suspense>` deve ter um Skeleton Screen funcional como fallback. `null`, spinners genéricos e `"Carregando..."` são **proibidos** como fallback.
+
+O Skeleton deve replicar o layout real do componente para evitar layout shift (CLS = 0).
 
 ```tsx
-// Exemplo: DataTableSkeleton.tsx
-export function DataTableSkeleton() {
+// Skeleton com shimmer animation obrigatória
+export function CardSkeleton() {
   return (
-    <div className="skeleton-wrapper" aria-busy="true" aria-label="Carregando dados...">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="skeleton-row" />
-      ))}
+    <div className="skeleton-card" aria-busy="true" aria-label="Carregando...">
+      <div className="skeleton-line skeleton-line--title" />
+      <div className="skeleton-line" />
+      <div className="skeleton-line skeleton-line--short" />
     </div>
   )
 }
 ```
 
-**Regra de CSS dos Skeletons:**
 ```css
-.skeleton-row {
+.skeleton-line {
   background: linear-gradient(
     90deg,
     var(--color-bg-alt) 25%,
@@ -66,192 +80,154 @@ export function DataTableSkeleton() {
   height: 1rem;
   margin-bottom: var(--space-2);
 }
-
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 ```
 
-### 1.3 Métrica de Referência
-
-> Ao implementar Streaming, monitorar **dois** indicadores no k6:
-> - `http_req_duration` (TTFB) — deve cair drasticamente com o streaming
-> - `iteration_duration` — deve cair também; se não cair, o problema está no tempo total de montagem da tela, não só na entrega inicial
-
 ---
 
-## REGRA 2 — Estratégia de Fetching e Cache
+## REGRA 3 — Cache de Dados: Estratégia Explícita Sempre
 
-Nenhuma rota deve buscar dados sem uma estratégia de cache explicitamente definida. A escolha entre ISR, SWR/React Query e fetch direto deve ser documentada no próprio arquivo da rota via comentário.
+Toda rota ou hook de dados deve ter estratégia de cache **declarada explicitamente**. Nunca deixar implícita.
 
-### 2.1 ISR — Incremental Static Regeneration
-
-Usar para rotas com dados que não variam por usuário e têm baixa frequência de atualização (conteúdo didático, rankings públicos, artigos).
+### ISR — para conteúdo estático ou pouco volátil
+Usar em: artigos, questões do banco, rankings públicos, conteúdo didático.
 
 ```ts
 // app/artigos/[slug]/page.tsx
-export const revalidate = 60 // revalida a cada 60 segundos
+export const revalidate = 60 // revalida a cada 60s
 
-export default async function ArtigoPage({ params }) {
+export default async function Page({ params }) {
   const artigo = await fetchArtigo(params.slug)
   return <ArtigoView artigo={artigo} />
 }
 ```
 
-### 2.2 Stale-While-Revalidate com SWR ou React Query
-
-Usar para dados dinâmicos e personalizados por usuário (progresso do aluno, métricas, histórico de questões). Hidratar a interface em background sem travar o render inicial.
+### SWR — para dados dinâmicos e personalizados por usuário
+Usar em: progresso do aluno, histórico, métricas, notificações.
 
 ```ts
-// hooks/useProgresso.ts
 import useSWR from 'swr'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
-
 export function useProgresso(alunoId: string) {
-  const { data, error, isLoading } = useSWR(
+  return useSWR(
     `/api/progresso/${alunoId}`,
-    fetcher,
+    (url) => fetch(url).then(r => r.json()),
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      dedupingInterval: 30_000, // 30s — evita chamadas redundantes
+      dedupingInterval: 30_000,
     }
   )
-
-  return { progresso: data, isLoading, isError: error }
 }
 ```
 
-### 2.3 Proibição de Waterfalls
+Ao gerar um hook de dados, sempre perguntar internamente: *"Este dado muda por usuário?"*
+- Sim → SWR/React Query
+- Não → ISR com `revalidate`
 
-Chamadas ao BFF Java **nunca** devem ser feitas em série quando podem ser paralelas. Usar `Promise.all` ou as capacidades de fetch paralelo do Next.js App Router.
+---
+
+## REGRA 4 — Proibição de Waterfalls: Fetches Sempre Paralelos
+
+Chamadas ao BFF Java em série são **proibidas** quando podem ser paralelas. Ao gerar código de fetch múltiplo, usar `Promise.all` ou fetch paralelo do App Router.
 
 ```ts
-// ✅ CORRETO — paralelo
+// ✅ CORRETO — paralelo, sem waterfall
 const [aluno, progresso, questoes] = await Promise.all([
   fetchAluno(id),
   fetchProgresso(id),
   fetchQuestoes(id),
 ])
 
-// ❌ ERRADO — waterfall (cada await espera o anterior)
-const aluno    = await fetchAluno(id)
+// ❌ ERRADO — waterfall, cada chamada espera a anterior
+const aluno     = await fetchAluno(id)
 const progresso = await fetchProgresso(id)
 const questoes  = await fetchQuestoes(id)
 ```
 
 ---
 
-## REGRA 3 — Code Splitting e Dynamic Imports
+## REGRA 5 — Dynamic Imports: Code Splitting Obrigatório
 
-O bundle principal de cada rota deve conter apenas o essencial para o First Contentful Paint (FCP). Tudo que não é visível no viewport inicial deve ser carregado de forma assíncrona.
+O bundle principal de cada rota deve conter apenas o essencial para o First Contentful Paint. Os componentes abaixo **obrigatoriamente** usam `next/dynamic`:
 
-### 3.1 `next/dynamic` — Obrigatoriedade
-
-Os seguintes tipos de componentes **devem** usar `next/dynamic` sem exceção:
-
-| Tipo de Componente | Estratégia |
+| Tipo | Estratégia |
 |---|---|
 | Modais e Drawers | `dynamic` com `ssr: false` |
-| Bibliotecas de gráficos (Recharts, Chart.js) | `dynamic` com `ssr: false` |
-| Editors de texto rico | `dynamic` com `ssr: false` |
-| Componentes "below the fold" | `dynamic` com `loading` skeleton |
-| Componentes de terceiros pesados | `dynamic` com `ssr: false` |
+| Bibliotecas de gráfico (Recharts, Chart.js) | `dynamic` com `ssr: false` + skeleton |
+| Editores de texto rico | `dynamic` com `ssr: false` |
+| Componentes below the fold | `dynamic` com `loading` skeleton |
+| Qualquer lib > 50kb gzipped | `dynamic` obrigatório |
 
 ```tsx
 import dynamic from 'next/dynamic'
 import { GraficoSkeleton } from '@/components/skeletons/GraficoSkeleton'
 
-// Componente de gráfico — nunca importar diretamente
+// ✅ CORRETO
 const GraficoDesempenho = dynamic(
   () => import('@/components/GraficoDesempenho'),
-  {
-    ssr: false,
-    loading: () => <GraficoSkeleton />,
-  }
+  { ssr: false, loading: () => <GraficoSkeleton /> }
 )
 
-// Modal — carregado apenas quando o usuário acionar
 const ModalQuestao = dynamic(
   () => import('@/components/ModalQuestao'),
   { ssr: false }
 )
+
+// ❌ ERRADO — import direto de componente pesado
+import GraficoDesempenho from '@/components/GraficoDesempenho'
 ```
 
-### 3.2 Análise de Bundle
-
-Antes de qualquer PR que adicione uma nova dependência, verificar o impacto no bundle:
-
+Antes de sugerir qualquer nova dependência, verificar o peso com:
 ```bash
-# Analisar bundle size
-ANALYZE=true next build
-
-# Checar tamanho de dependência antes de instalar
 npx bundlephobia <nome-do-pacote>
 ```
 
-**Regra:** Nenhuma dependência com mais de **50kb gzipped** deve ser importada no bundle principal. Obrigatório usar `dynamic` ou buscar alternativa mais leve.
-
 ---
 
-## REGRA 4 — Memoização e Prevenção de Re-renders
+## REGRA 6 — Memoização: Proteger Listas de Alta Densidade
 
-Durante picos de carga (múltiplos Virtual Users simultâneos), re-renders em cascata degradam a experiência. Componentes de alta densidade de dados devem ser protegidos com memoização.
-
-### 4.1 `React.memo` — Quando Usar
-
-Aplicar em componentes que:
-- Recebem props estáveis mas são filhos de componentes que re-renderizam com frequência
-- Renderizam listas com muitos itens
-- São "folhas" da árvore de componentes (sem filhos)
+Durante picos de carga com múltiplos usuários simultâneos, re-renders em cascata degradam a experiência. Componentes de lista e filhos de componentes que atualizam com frequência devem ser memoizados.
 
 ```tsx
-// ✅ QuestaoCard memoizado — re-renderiza só se props mudarem
+// React.memo — para componentes folha estáveis
 export const QuestaoCard = React.memo(function QuestaoCard({ questao, onResponder }) {
   return (
-    <div className="questao-card">
+    <div>
       <p>{questao.enunciado}</p>
       <button onClick={() => onResponder(questao.id)}>Responder</button>
     </div>
   )
 })
-```
 
-### 4.2 `useMemo` e `useCallback`
-
-```tsx
 // useMemo — para cálculos derivados pesados
 const questoesFiltradas = useMemo(
   () => questoes.filter(q => q.materia === materiaAtiva),
-  [questoes, materiaAtiva] // só recalcula quando estas dependências mudarem
+  [questoes, materiaAtiva]
 )
 
-// useCallback — para funções passadas como prop a componentes memoizados
+// useCallback — para funções passadas a componentes memoizados
 const handleResponder = useCallback(
-  (questaoId: string) => {
-    dispatch({ type: 'RESPONDER', payload: questaoId })
-  },
-  [dispatch] // referência estável
+  (questaoId: string) => dispatch({ type: 'RESPONDER', payload: questaoId }),
+  [dispatch]
 )
 ```
 
-**Regra:** `useMemo` e `useCallback` sem dependências corretas são piores que não usá-los. Todo lint rule de `exhaustive-deps` deve estar ativo no projeto.
+**Regra crítica:** Nunca usar `useMemo`/`useCallback` com array de dependências vazio `[]` para funções que usam valores do escopo — isso cria bugs silenciosos. O lint rule `exhaustive-deps` deve estar sempre ativo.
 
 ---
 
-## REGRA 5 — Virtualização de Listas
+## REGRA 7 — Virtualização: Listas com Mais de 50 Itens
 
-Listas com mais de **50 itens** no DOM são proibidas sem virtualização. Renderizar elementos fora do viewport consome memória e degrada o scroll.
-
-### 5.1 `react-window` — Padrão do Projeto
+Listas com mais de **50 itens** no DOM são proibidas sem virtualização. Usar `react-window` como padrão do projeto.
 
 ```tsx
 import { FixedSizeList as List } from 'react-window'
-import { QuestaoCard } from '@/components/QuestaoCard'
 
-const ITEM_HEIGHT = 120 // altura fixa de cada item em px
+const ITEM_HEIGHT = 120
 
 export function ListaQuestoes({ questoes }) {
   const Row = ({ index, style }) => (
@@ -262,7 +238,7 @@ export function ListaQuestoes({ questoes }) {
 
   return (
     <List
-      height={600}          // altura visível da lista
+      height={600}
       itemCount={questoes.length}
       itemSize={ITEM_HEIGHT}
       width="100%"
@@ -273,90 +249,91 @@ export function ListaQuestoes({ questoes }) {
 }
 ```
 
-**Quando usar `VariableSizeList`:** itens com altura dinâmica (questões com enunciados de tamanho variável). Neste caso, medir a altura com `useRef` + `ResizeObserver`.
+Para itens de altura variável (questões com enunciados longos): usar `VariableSizeList` com `ResizeObserver` para medir altura dinamicamente.
 
 ---
 
-## REGRA 6 — Otimização de Imagens com `next/image`
+## REGRA 8 — Imagem LCP: Priority Obrigatório
 
-Toda imagem da aplicação deve passar pelo componente `next/image`. Usar a tag `<img>` direta é proibido, exceto em SVGs inline.
-
-### 6.1 LCP — Largest Contentful Paint
-
-A imagem principal de cada rota (hero, foto de perfil, banner) deve ter `priority` declarado para ser pré-carregada pelo browser antes do render.
+A imagem principal (hero, banner, foto de capa) de **cada rota** deve ter `priority` declarado para ser pré-carregada antes do render. Esquecer o `priority` no LCP é tratado como bug de performance.
 
 ```tsx
 import Image from 'next/image'
 
-// ✅ Imagem LCP — carregada com prioridade máxima
+// ✅ LCP da rota — priority obrigatório
 <Image
   src="/hero-estudante.webp"
-  alt="Estudante focado com fones de ouvido"
+  alt="Estudante focado preparando para o vestibular"
   width={1200}
   height={600}
-  priority // <- obrigatório para o LCP da rota
+  priority
   quality={85}
 />
-
-// Imagens secundárias — lazy load padrão (não precisa de priority)
-<Image
-  src="/avatar.webp"
-  alt="Avatar do aluno"
-  width={48}
-  height={48}
-/>
 ```
 
-### 6.2 Formatos e Qualidade
-
-- Formato preferencial: **WebP** (fallback automático pelo `next/image`)
-- Qualidade padrão: `85` — equilíbrio entre visual e tamanho de arquivo
-- Imagens de conteúdo didático (fórmulas, diagramas): usar `quality={95}` para preservar legibilidade
+Nunca usar `<img>` direta. Formato preferencial: WebP.
 
 ---
 
-## REGRA 7 — Definição de Pronto (Definition of Ready)
+## REGRA 9 — Comentário de Estratégia de Cache Obrigatório
 
-Um componente ou rota **só pode ser considerado pronto** quando todos os itens abaixo estiverem verificados:
+Toda rota (`page.tsx`) ou hook de dados deve ter um comentário no topo declarando a estratégia de cache escolhida e o motivo. Isso elimina ambiguidade para o time.
 
-### Checklist de Entrega
+```ts
+// CACHE STRATEGY: ISR — revalidate 60s
+// Motivo: conteúdo didático estático, não varia por usuário
+export const revalidate = 60
 
-```
-[ ] Streaming implementado
-    → Componentes de dados envoltos em <Suspense> com Skeleton Screens funcionais
-    → TTFB medido e comparado com baseline anterior
+// CACHE STRATEGY: SWR — revalidateOnFocus + 30s dedup
+// Motivo: progresso do aluno é dinâmico e personalizado
+export function useProgresso(id: string) { ... }
 
-[ ] Code Splitting aplicado
-    → Bundle size da rota analisado com ANALYZE=true next build
-    → Modais, gráficos e componentes below-the-fold usando next/dynamic
-    → React.memo e useCallback aplicados em listas de alta densidade
-
-[ ] Cache de rota configurado
-    → ISR com revalidate definido para rotas de conteúdo estático
-    → SWR/React Query para dados dinâmicos de usuário
-    → Nenhuma chamada ao BFF em waterfall (todas paralelas via Promise.all)
-
-[ ] Virtualização de listas
-    → react-window aplicado em listas com > 50 itens
-
-[ ] Imagens otimizadas
-    → Nenhuma tag <img> direta no código
-    → priority declarado na imagem LCP de cada rota
-
-[ ] Memoização validada
-    → Sem re-renders desnecessários verificados no React DevTools Profiler
-    → Todas as dependências de useMemo/useCallback corretas (lint sem warnings)
+// CACHE STRATEGY: no-store
+// Motivo: dado financeiro sensível, nunca cachear
+export const dynamic = 'force-dynamic'
 ```
 
 ---
 
-## REGRA 8 — Notas de Monitoramento (k6)
+## REGRA 10 — Checklist de Entrega (Definition of Ready)
 
-Ao realizar testes de carga com k6, monitorar **obrigatoriamente** as duas métricas abaixo em conjunto. Melhorar apenas uma delas não é suficiente.
+Ao finalizar qualquer componente ou rota, verificar internamente todos os itens antes de considerar pronto:
 
-| Métrica | O que mede | Meta |
-|---|---|---|
-| `http_req_duration` (TTFB) | Tempo até o primeiro byte — melhora com Streaming | Redução vs baseline |
-| `iteration_duration` | Tempo total de montagem da tela | Deve cair junto com o TTFB |
+```
+[ ] Streaming
+    → Componentes de dados em <Suspense> com Skeleton Screen funcional
+    → TTFB não bloqueado pela espera do BFF Java
 
-> ⚠️ **Atenção:** Uma queda no `http_req_duration` sem queda no `iteration_duration` indica que o Streaming está funcionando, mas o tempo total de experiência do usuário não melhorou. Investigar gargalos no BFF Java ou no processo de hidratação do cliente.
+[ ] Cache declarado
+    → Comentário de estratégia no topo do arquivo
+    → ISR para estático / SWR para dinâmico / force-dynamic para sensível
+
+[ ] Sem waterfalls
+    → Todos os fetches múltiplos usam Promise.all
+
+[ ] Code splitting
+    → Modais, gráficos e componentes pesados com next/dynamic
+    → Nenhuma lib > 50kb no bundle principal
+
+[ ] Memoização
+    → React.memo em componentes de lista
+    → useCallback em handlers passados como prop
+    → Sem dependências incorretas no useMemo/useCallback
+
+[ ] Virtualização
+    → react-window em listas com > 50 itens
+
+[ ] Imagem LCP
+    → priority declarado na imagem principal de cada rota
+    → Nenhuma tag <img> direta
+
+[ ] Métricas k6
+    → http_req_duration (TTFB) reduzido vs baseline
+    → iteration_duration (tempo total de tela) também reduzido
+```
+
+> ⚠️ **Atenção k6:** queda no `http_req_duration` sem queda no `iteration_duration` indica que o streaming está funcionando mas o tempo total de experiência não melhorou. Investigar gargalo no BFF Java ou na hidratação do cliente.
+
+---
+
+*vestibuline | antigravity-optimization.md | v1.0 2026*

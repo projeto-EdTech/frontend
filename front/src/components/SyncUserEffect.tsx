@@ -52,14 +52,17 @@ export default function SyncUserEffect() {
         if (storedToken) {
             const decoded = decodeJWT(storedToken);
             // Verifica se o token pertence ao mesmo usuário, tem ID e usa o campo 'tipo' correto
-            // Se o token ainda usa o campo legado 'type' (sem 'tipo'), força re-sincronização
             const hasTipo = decoded && typeof decoded.tipo !== "undefined";
-            if (decoded && decoded.email === email && decoded.id && hasTipo) {
+            
+            // Verificação adicional: o cookie 'user_data' também deve existir para que os Server Components funcionem
+            const hasCookie = document.cookie.split(';').some(c => c.trim().startsWith('user_data='));
+
+            if (decoded && decoded.email === email && decoded.id && hasTipo && hasCookie) {
                 alreadySynced = true;
             }
         }
         
-        // Se já sincronizou e tem ID e campo 'tipo' correto no token, não precisa chamar novamente
+        // Se já sincronizou e tem o cookie necessário, não precisa chamar novamente
         if (alreadySynced) return;
         
         if (syncingRef.current) return;

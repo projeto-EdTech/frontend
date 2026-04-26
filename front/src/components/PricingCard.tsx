@@ -257,7 +257,7 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({ loading, onPlanClick
       priceMain: "0",
       icon: <Gift className="text-gray-700" size={48}/>,
       benefits: [
-        { icon: <Rocket className="w-full h-full p-1.5" />, text: "Acesso limitado a simulados" },
+        { icon: <Rocket className="w-full h-full p-1.5" />, text: "Acesso ilimitado a simulados" },
         { icon: <Library className="w-full h-full p-1.5" />, text: "Biblioteca de provas" },
         { icon: <Activity className="w-full h-full p-1.5" />, text: "Estatística em tempo real" }
       ],
@@ -282,7 +282,10 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({ loading, onPlanClick
         { icon: <Rocket className="w-full h-full p-1.5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
         { icon: <Library className="w-full h-full p-1.5" />, color: '#007AFF', text: "Biblioteca de provas" },
         { icon: <Activity className="w-full h-full p-1.5" />, color: '#34C759', text: "Estatística em tempo real" },
+        { icon: <Cpu className="w-full h-full p-1.5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
+        { icon: <Lightbulb className="w-full h-full p-1.5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
         { icon: <GraduationCap className="w-full h-full p-1.5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
+        { icon: <BarChart3 className="w-full h-full p-1.5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
         { icon: <Headset className="w-full h-full p-1.5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
       ],
       buttonText: "Assinar Plano Anual",
@@ -302,7 +305,10 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({ loading, onPlanClick
         { icon: <Rocket className="w-full h-full p-1.5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
         { icon: <Library className="w-full h-full p-1.5" />, color: '#007AFF', text: "Biblioteca de provas" },
         { icon: <Activity className="w-full h-full p-1.5" />, color: '#34C759', text: "Estatística em tempo real" },
+        { icon: <Cpu className="w-full h-full p-1.5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
+        { icon: <Lightbulb className="w-full h-full p-1.5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
         { icon: <GraduationCap className="w-full h-full p-1.5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
+        { icon: <BarChart3 className="w-full h-full p-1.5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
         { icon: <Headset className="w-full h-full p-1.5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
       ],
       buttonText: "Assinar Agora",

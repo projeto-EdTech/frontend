@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AccessibilityMenu from "./AccessibilityMenu";
+import AccessibilityMenu from "@/components/AccessibilityMenu";
 import Image from "next/image";
 import Link from "next/link";
 import UserAvatar from "./UserAvatar";
@@ -12,11 +12,13 @@ import {
   LogOut,
   PersonStanding,
   Home,
+  BarChart3,
   Menu,
   X,
   Library,
   Newspaper,
   ChevronRight,
+  BrainCircuit,
   Gamepad2,
 } from "lucide-react";
 import LoginModal from "./Login-modal";
@@ -167,6 +169,18 @@ export default function Header() {
   };
 
   const navigationItems = [
+    // Apenas inclua Simula IA se o usuário tiver plano pago
+    ...(hasPaidPlan
+      ? [
+          {
+            name: "Vest IA",
+            href: "/VestIA",
+            icon: BrainCircuit,
+            description: "Pagina de conversa com a VestiIA",
+            color: "from-blue-500 to-cyan-500",
+          },
+        ]
+      : []),
     // Itens públicos
     {
       name: "Início",
@@ -176,7 +190,7 @@ export default function Header() {
       color: "from-blue-500 to-cyan-500",
     },
     {
-      name: "News",
+      name: "Comunidade",
       href: "/blog",
       icon: Newspaper,
       description: "Últimas notícias",
@@ -192,6 +206,13 @@ export default function Header() {
             icon: Gamepad2,
             description: "Venha explorar os mini games do Vestibuline",
             color: "from-orange-500 to-red-500",
+          },
+          {
+            name: "Criar Simulado",
+            href: "/create",
+            icon: BarChart3,
+            description: "Monte seu simulado",
+            color: "from-green-500 to-emerald-500",
           },
           {
             name: "Biblioteca",
@@ -210,7 +231,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="themed-header sticky top-0 z-50 backdrop-blur-md shadow-sm transition-all duration-300">
+      <header className="themed-header sticky top-0 z-50 backdrop-blur-md transition-all duration-300">
         <div className="absolute inset-0 bg-gradient from-background/90 to-white-50 dark:from-background/90 dark:via-blue-950/30 dark:to-sky-950/30"></div>
         <div className="container mx-auto px-4 relative">
           <div className="flex items-center justify-between h-16 lg:h-18">

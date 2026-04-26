@@ -2,8 +2,12 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 
 export default function Footer() {
+  const { data: session } = useSession();
+  const userTier = session?.user?.tier ?? 'FREE';
+
   return (
     <footer className="relative footer-themed border-t themed-border backdrop-blur-xl">
       <div className="container mx-auto px-6 py-16 relative">
@@ -37,16 +41,24 @@ export default function Footer() {
                   Biblioteca
                 </Link>
               </li>
-              <li>
-                <Link href="/paidPlan" className="group inline-flex items-center themed-text-secondary hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium transition-all duration-300 hover:translate-x-1">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 group-hover:bg-purple-500 transition-colors duration-300"></span>
-                  Planos
-                </Link>
-              </li>
+              {userTier !== "Simula PRO" && (
+                <li>
+                  <Link href="/paidPlan" className="group inline-flex items-center themed-text-secondary hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium transition-all duration-300 hover:translate-x-1">
+                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 group-hover:bg-purple-500 transition-colors duration-300"></span>
+                    Planos
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/blog" className="group inline-flex items-center themed-text-secondary hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium transition-all duration-300 hover:translate-x-1">
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 group-hover:bg-purple-500 transition-colors duration-300"></span>
                   News
+                </Link>
+              </li>
+              <li>
+                <Link href="/#downloads" className="group inline-flex items-center themed-text-secondary hover:text-purple-600 dark:hover:text-purple-400 text-sm font-medium transition-all duration-300 hover:translate-x-1">
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 group-hover:bg-purple-500 transition-colors duration-300"></span>
+                  Download da plataforma
                 </Link>
               </li>
             </ul>

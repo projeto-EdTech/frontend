@@ -676,28 +676,6 @@ export function PlaylistDetail({ playlist }: PlaylistDetailProps) {
   );
 }
 
-export function PlaylistDetailSkeleton() {
-  const { theme } = useTheme();
-  
-  return (
-    <div className={cn(
-      "min-h-screen flex items-center justify-center",
-      theme === 'dark' ? "bg-[#121212] text-white" : "bg-white text-gray-900"
-    )}>
-      <div className="text-center">
-        <div className={cn(
-          "w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4",
-          theme === 'dark'
-            ? "border-green-500 border-t-transparent"
-            : "border-green-600 border-t-transparent"
-        )}></div>
-        <p className={theme === 'dark' ? "text-white/70" : "text-gray-600"}>
-          Carregando playlist...
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export function PlaylistDetailError({ error, onBack }: { error: string; onBack: () => void }) {
   const { theme } = useTheme();

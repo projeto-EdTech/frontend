@@ -94,7 +94,10 @@ export default async function SimulacaoLoader({
   const cookieStore = await cookies();
   const token = cookieStore.get('user_data')?.value;
 
-  if (!token) {
+  // Em desenvolvimento, se não houver token ou BACKEND_API_URL, tentamos usar dados locais
+  const isDev = process.env.NODE_ENV !== 'production';
+  
+  if (!token && !isDev) {
     return <div className="text-red-500 font-bold p-8">Erro: Usuário não autenticado. Favor logar.</div>;
   }
 
@@ -102,44 +105,82 @@ export default async function SimulacaoLoader({
   const backendUrl = `${externalApiUrl}/api/prova/instituicao`;
 
   let result = [];
+  let useLocalFallback = isDev; // Em dev, sempre tentamos o fallback se a API falhar
+
   try {
-    const apiRes = await fetch(backendUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ slug: universitySlug, ano: year ? Number(year) : undefined }),
-      next: { revalidate: 60 },
-    });
+    if (token && externalApiUrl) {
+        const apiRes = await fetch(backendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ slug: universitySlug, ano: year ? Number(year) : undefined }),
+          next: { revalidate: 60 },
+        });
 
-    if (!apiRes.ok) {
-        if (apiRes.status === 404) return <div className="p-8 font-bold text-red-500">Questões não encontradas para esse simulado.</div>;
-        return <div className="p-8 font-bold text-red-500">Falha ao buscar simulado no servidor (Erro {apiRes.status}).</div>;
+        if (apiRes.ok) {
+            const rawData = await apiRes.json();
+            let formattedQuestions = formatApiData(rawData);
+
+            if (year) {
+                const yNum = Number(year);
+                if (!isNaN(yNum)) formattedQuestions = formattedQuestions.filter((q: any) => q.year === yNum);
+            }
+
+            formattedQuestions.sort((a, b) => a.id - b.id);
+
+            if (count > 0 && !isNaN(count)) {
+                formattedQuestions = formattedQuestions.slice(0, count);
+            }
+            
+            result = formattedQuestions;
+            useLocalFallback = false; // Sucesso na API, não precisa de fallback
+        } else if (!isDev) {
+            if (apiRes.status === 404) return <div className="p-8 font-bold text-red-500">Questões não encontradas para esse simulado.</div>;
+            return <div className="p-8 font-bold text-red-500">Falha ao buscar simulado no servidor (Erro {apiRes.status}).</div>;
+        }
     }
 
-    const rawData = await apiRes.json();
-    let formattedQuestions = formatApiData(rawData);
+    // Fallback para dados locais em ambiente de desenvolvimento
+    if (useLocalFallback && result.length === 0) {
+        const { allQuestions } = await import("@/lib/dataUniversity");
+        let localQuestions = allQuestions.filter(q => 
+            q.university.toLowerCase() === university.toLowerCase()
+        );
 
-    if (year) {
-        const yNum = Number(year);
-        if (!isNaN(yNum)) formattedQuestions = formattedQuestions.filter((q: any) => q.year === yNum);
+        if (year) {
+            const yNum = Number(year);
+            localQuestions = localQuestions.filter(q => q.year === yNum);
+        }
+
+        if (count > 0 && !isNaN(count)) {
+            localQuestions = localQuestions.slice(0, count);
+        }
+
+        result = localQuestions;
     }
-
-    formattedQuestions.sort((a, b) => a.id - b.id);
-
-    if (count > 0 && !isNaN(count)) {
-        formattedQuestions = formattedQuestions.slice(0, count);
-    }
-    
-    result = formattedQuestions;
 
   } catch (err) {
-      return <div className="p-8 font-bold text-red-500">Erro interno na montagem do simulado.</div>;
+      if (!isDev) {
+        return <div className="p-8 font-bold text-red-500">Erro interno na montagem do simulado.</div>;
+      }
+      // Em dev, se deu erro no fetch, o código acima já tentará o fallback
   }
 
   if (result.length === 0) {
-      return <div className="p-8 font-bold text-orange-500">O simulado está vazio ou indisponível.</div>;
+      return (
+        <div className="p-8 flex flex-col items-center gap-4">
+            <div className="font-bold text-orange-500 text-xl text-center">
+                O simulado para {university.toUpperCase()} {year ? `(${year})` : ""} está vazio ou indisponível no momento.
+            </div>
+            {isDev && (
+                <p className="text-gray-500 text-sm">
+                    Dica: Verifique se existem questões mapeadas em <code>src/lib/dataUniversity.ts</code> para esta universidade.
+                </p>
+            )}
+        </div>
+      );
   }
 
   return (
