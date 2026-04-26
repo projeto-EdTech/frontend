@@ -6,19 +6,17 @@ import Image from "next/image";
 import Link from "next/link";
 import UserAvatar from "./UserAvatar";
 import { useSession, signOut } from "next-auth/react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useUserTier } from "@/hooks/useUserTier";
 import {
   User,
   LogOut,
   PersonStanding,
   Home,
-  BarChart3,
   Menu,
   X,
   Library,
   Newspaper,
   ChevronRight,
-  BrainCircuit,
   Gamepad2,
 } from "lucide-react";
 import LoginModal from "./Login-modal";
@@ -39,7 +37,8 @@ export default function Header() {
   const [isAccessibilityMenuOpen, setIsAccessibilityMenuOpen] = useState(false);
 
   // Verificar se o usuário tem plano pago
-  const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
+  const { tier } = useUserTier();
+  const hasPaidPlan = tier && tier !== "FREE";
 
   // Estado para armazenar configurações de perfil do sessionStorage
   const [profileSettings, setProfileSettings] = useState({
@@ -168,19 +167,6 @@ export default function Header() {
   };
 
   const navigationItems = [
-    // Apenas inclua Simula IA se o usuário tiver plano pago
-    ...(hasPaidPlan
-      ? [
-          {
-            name: "Vest IA",
-            href: "/VestIA",
-            icon: BrainCircuit,
-            description: "Pagina de conversa com a VestiIA",
-            color: "from-blue-500 to-cyan-500",
-          },
-        ]
-      : []),
-
     // Itens públicos
     {
       name: "Início",
@@ -190,7 +176,7 @@ export default function Header() {
       color: "from-blue-500 to-cyan-500",
     },
     {
-      name: "Comunidade",
+      name: "News",
       href: "/blog",
       icon: Newspaper,
       description: "Últimas notícias",
@@ -204,15 +190,8 @@ export default function Header() {
             name: "Arena",
             href: "/Arena",
             icon: Gamepad2,
-            description: "Entre na arena de minigames",
-            color: "from-pink-500 to-red-500",
-          },
-          {
-            name: "Criar Simulado",
-            href: "/create",
-            icon: BarChart3,
-            description: "Monte seu simulado",
-            color: "from-green-500 to-emerald-500",
+            description: "Venha explorar os mini games do Vestibuline",
+            color: "from-orange-500 to-red-500",
           },
           {
             name: "Biblioteca",
@@ -275,7 +254,7 @@ export default function Header() {
               ))}
             </nav>
 
-            <div className="flex items-center space-x-3 md:mr-22">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={toggleMobileMenu}
                 className={`relative md:hidden p-2.5 rounded-lg transition-all duration-200 ${
@@ -336,106 +315,100 @@ export default function Header() {
                     />
                   </button>
 
-                  <AnimatePresence>
-                    {isUserMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10, filter: "blur(4px)" }}
-                        animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10, filter: "blur(4px)" }}
-                        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-                        className={`absolute right-0 mt-3 w-56 backdrop-blur-xl rounded-2xl shadow-2xl border py-2 z-50 overflow-hidden bg-white border-gray-200`}
-                        style={{
-                          boxShadow:
-                            theme === "dark"
-                              ? "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)"
-                              : "0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+                  {isUserMenuOpen && (
+                    <div
+                      className={`absolute right-0 mt-3 w-56 backdrop-blur-xl rounded-2xl shadow-2xl border py-2 z-50 overflow-hidden bg-white border-gray-200`}
+                      style={{
+                        boxShadow:
+                          theme === "dark"
+                            ? "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+                            : "0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+                      }}
+                    >
+                      <div
+                        className={`relative px-4 py-3 border-b ${
+                          theme === "dark"
+                            ? "border-gray-700/50"
+                            : "border-gray-200/50"
+                        }`}
+                      >
+                        <p
+                          className={`text-sm font-semibold truncate ${
+                            theme === "dark" ? "text-white" : "text-gray-900"
+                          }`}
+                        >
+                          {session.user?.name}
+                        </p>
+                        <p
+                          className={`text-xs truncate ${
+                            theme === "dark" ? "text-blue-400" : "text-blue-600"
+                          }`}
+                        >
+                          {session.user?.email}
+                        </p>
+                      </div>
+
+                      <Link
+                        href="/profile"
+                        className={`relative flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group ${
+                          theme === "dark"
+                            ? "text-gray-300 hover:bg-gray-800/60 hover:text-white"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                        onClick={(e) => {
+                          handleNavigation(e, "/profile");
+                          setIsUserMenuOpen(false);
                         }}
                       >
-                        <div
-                          className={`relative px-4 py-3 border-b ${
-                            theme === "dark"
-                              ? "border-gray-700/50"
-                              : "border-gray-200/50"
-                          }`}
-                        >
-                          <p
-                            className={`text-sm font-semibold truncate ${
-                              theme === "dark" ? "text-white" : "text-gray-900"
-                            }`}
-                          >
-                            {session.user?.name}
-                          </p>
-                          <p
-                            className={`text-xs truncate ${
-                              theme === "dark" ? "text-blue-400" : "text-blue-600"
-                            }`}
-                          >
-                            {session.user?.email}
-                          </p>
-                        </div>
+                        <User
+                          className="w-4 h-4 transition-transform duration-200 group-hover:scale-110"
+                          strokeWidth={2}
+                        />
+                        <span className="font-medium">Meu Perfil</span>
+                      </Link>
 
-                        <Link
-                          href="/profile"
-                          className={`relative flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group ${
-                            theme === "dark"
-                              ? "text-gray-300 hover:bg-gray-800/60 hover:text-white"
-                              : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                          }`}
-                          onClick={(e) => {
-                            handleNavigation(e, "/profile");
-                            setIsUserMenuOpen(false);
-                          }}
-                        >
-                          <User
-                            className="w-4 h-4 transition-transform duration-200 group-hover:scale-110"
-                            strokeWidth={2}
-                          />
-                          <span className="font-medium">Meu Perfil</span>
-                        </Link>
+                      <button
+                        onClick={() => {
+                          setIsAccessibilityMenuOpen(true);
+                          setIsUserMenuOpen(false);
+                        }}
+                        className={`w-full text-left relative flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group cursor-pointer ${
+                          theme === "dark"
+                            ? "text-gray-300 hover:bg-gray-800/60 hover:text-white"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                      >
+                        <PersonStanding
+                          className="w-4 h-4 transition-transform duration-200 group-hover:scale-110"
+                          strokeWidth={2}
+                        />
+                        <span className="font-medium">Acessibilidade</span>
+                      </button>
 
+                      <div
+                        className={`border-t mt-2 pt-2 ${
+                          theme === "dark"
+                            ? "border-gray-700/50"
+                            : "border-gray-200/50"
+                        }`}
+                      >
                         <button
-                          onClick={() => {
-                            setIsAccessibilityMenuOpen(true);
-                            setIsUserMenuOpen(false);
-                          }}
-                          className={`w-full text-left relative flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group cursor-pointer ${
+                          onClick={() => signOut()}
+                          className={`relative flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 w-full text-left group cursor-pointer ${
                             theme === "dark"
-                              ? "text-gray-300 hover:bg-gray-800/60 hover:text-white"
-                              : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                              ? "text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                              : "text-red-500 hover:bg-red-50 hover:text-red-600"
                           }`}
                         >
-                          <PersonStanding
+                          <LogOut
                             className="w-4 h-4 transition-transform duration-200 group-hover:scale-110"
                             strokeWidth={2}
                           />
-                          <span className="font-medium">Acessibilidade</span>
+                          <span className="font-medium">Sair</span>
                         </button>
-
-                        <div
-                          className={`border-t mt-2 pt-2 ${
-                            theme === "dark"
-                              ? "border-gray-700/50"
-                              : "border-gray-200/50"
-                          }`}
-                        >
-                          <button
-                            onClick={() => signOut()}
-                            className={`relative flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 w-full text-left group cursor-pointer ${
-                              theme === "dark"
-                                ? "text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                                : "text-red-500 hover:bg-red-50 hover:text-red-600"
-                            }`}
-                          >
-                            <LogOut
-                              className="w-4 h-4 transition-transform duration-200 group-hover:scale-110"
-                              strokeWidth={2}
-                            />
-                            <span className="font-medium">Sair</span>
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BookOpen, BarChart2, Settings, AlertCircle, CalendarDays, Target } from "lucide-react";
 import { useSession } from 'next-auth/react';
+import { useUserTier } from '@/hooks/useUserTier';
 
 interface NavigationBarProps {
   activeTab: string;
@@ -9,7 +10,7 @@ interface NavigationBarProps {
 
 const NavigationBar: React.FC<NavigationBarProps> = ({ activeTab, setActiveTab }) => {
   const { data: session } = useSession();
-  const isPRO = session?.user?.tier === 'Simula PRO';
+  const { isPro: isPRO } = useUserTier();
 
   return (
     <div className="mb-6">
@@ -50,30 +51,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ activeTab, setActiveTab }
           <BarChart2 size={18} className="flex-shrink-0" />
           <span className="hidden md:inline">Estatísticas</span>
         </button>
-        <button
-          onClick={() => setActiveTab('questoesNaoResolvidas')}
-          className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-            activeTab === 'questoesNaoResolvidas'
-              ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <AlertCircle size={18} className="flex-shrink-0" />
-          <span className="hidden lg:inline">Questões não resolvidas</span>
-        </button>
         {isPRO && (
           <>
-            <button
-              onClick={() => setActiveTab('planner')}
-              className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 items-center gap-2 hidden md:flex cursor-pointer ${
-                activeTab === 'planner'
-                  ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <CalendarDays size={18} className="flex-shrink-0" />
-              <span className="hidden lg:inline">Planner de estudos</span>
-            </button>
             <button
               onClick={() => setActiveTab('notasDeCorte')}
               className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${

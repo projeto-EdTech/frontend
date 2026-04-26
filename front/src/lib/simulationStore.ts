@@ -1,4 +1,4 @@
-import { Question } from './dataUniversity';
+import { Question } from '@/types/university';
 
 // Single, small in-memory store implementation. Short-lived and not persistent.
 type StoredSimulation = {

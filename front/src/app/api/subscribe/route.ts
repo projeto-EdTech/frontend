@@ -1,45 +1,43 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
-
-const backendApiUrl = process.env.BACKEND_API_URL;
+import { NextResponse, NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 export async function POST(req: Request) {
-  if (!backendApiUrl) {
+  if (!process.env.BACKEND_API_URL) {
     console.error('BACKEND_API_URL não está configurado nas variáveis de ambiente.');
     return NextResponse.json({ error: 'Erro de configuração do servidor.' }, { status: 500 });
   }
 
-  // 1. Obter a sessão do usuário no lado do servidor para segurança
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user?.email) {
-    return NextResponse.json({ error: 'Não autorizado. Usuário precisa estar logado.' }, { status: 401 });
-  }
-
   try {
-    // 2. Obter apenas o campo 'newsletter' do corpo da requisição
-    const body = await req.json();
-    const { newsletter } = body;
+    // 1. Pegamos o e-mail e o token que vieram do componente (client-side)
+    const { email, token: userToken } = await req.json();
 
-    // Validação do dado recebido
-    if (typeof newsletter !== 'boolean') {
-      return NextResponse.json({ error: 'Dados inválidos. O status do newsletter é obrigatório.' }, { status: 400 });
+    if (!userToken) {
+      return NextResponse.json({ error: 'Não autorizado: Token do backend não encontrado.' }, { status: 401 });
     }
 
-    // 3. Usar os dados da sessão e-mail e o 'newsletter' do corpo
-    const response = await fetch(`${backendApiUrl}/CAMINHO_BACK_END`, {
+    // 2. Enviar o e-mail para o back-end com o Bearer token do nosso backend
+    const response = await fetch(`${process.env.BACKEND_API_URL}/usuarios/newsletter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`,
       },
       body: JSON.stringify({
-        email: session.user.email,
-        newsletter: newsletter,
+        email: email,
       }),
     });
 
-    const data = await response.json();
+    const contentType = response.headers.get("content-type");
+
+    let data;
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+      console.log('[Newsletter] Resposta JSON do Backend:', data);
+    } else {
+      const textData = await response.text();
+      console.warn('[Newsletter] Backend response:', textData);
+      data = { message: textData || 'O servidor de destino não enviou uma resposta legível.' };
+    }
 
     if (response.ok) {
       return NextResponse.json(data, { status: response.status });

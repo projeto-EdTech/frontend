@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
-import { universities } from "@/lib/dataUniversity"
+import { useUniversityStorage } from "@/contexts/UniversityStorage"
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
@@ -25,6 +25,7 @@ export default function SummaryPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const examYear = searchParams.get('year');
+    const { universities } = useUniversityStorage();
     const [summaryData, setSummaryData] = useState<SummaryData | null>(null)
     const [errosQuestoes, setErrosQuestoes] = useState<{
         numero: number,

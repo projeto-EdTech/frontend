@@ -184,6 +184,63 @@ export default function ContatoPage() {
             animate={heroInView ? "animate" : "initial"}
             variants={staggerContainer}
           >
+            {/* Mascote decorativo esquerdo - Visível apenas em telas grandes */}
+            <motion.div 
+              className="hidden lg:block absolute -left-20 top-0 w-40 h-40"
+              initial={{ opacity: 0, x: -100, rotate: -20 }}
+              animate={heroInView ? { opacity: 1, x: 0, rotate: 0 } : {}}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+            >
+              <motion.div
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [-5, 5, -5]
+                }}
+                transition={{ 
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Image
+                  src="/Mascote/banners/Camaleão_1.png"
+                  alt="Mascote Vestibuline"
+                  width={160}
+                  height={160}
+                  className="drop-shadow-2xl"
+                />
+              </motion.div>
+            </motion.div>
+
+            {/* Mascote decorativo direito - Visível apenas em telas grandes */}
+            <motion.div 
+              className="hidden lg:block absolute -right-20 top-10 w-36 h-36"
+              initial={{ opacity: 0, x: 100, rotate: 20 }}
+              animate={heroInView ? { opacity: 1, x: 0, rotate: 0 } : {}}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
+            >
+              <motion.div
+                animate={{ 
+                  y: [0, 15, 0],
+                  rotate: [5, -5, 5]
+                }}
+                transition={{ 
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              >
+                <Image
+                  src="/Mascote/banners/Camaleão_3.png"
+                  alt="Mascote Vestibuline"
+                  width={140}
+                  height={140}
+                  className="drop-shadow-2xl"
+                />
+              </motion.div>
+            </motion.div>
+
             <motion.div 
               className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 border ${
                 theme === 'dark'

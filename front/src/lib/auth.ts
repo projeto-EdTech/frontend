@@ -82,19 +82,15 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  pages: {},
+  pages: {
+    signIn: "/",
+  },
   callbacks: {
     // Garantir um tipo consistente de retorno (JWT) em todos os caminhos
     async jwt({ token, account, user }): Promise<JWT> {
       // 1. No primeiro login (quando 'account' está presente)
       if (account && user) {
         console.log("[JWT] Primeiro login. Salvando tokens e dados do usuário.");
-  let userTier: "FREE" | "Simula PRO" = "FREE"; // Padrão é FREE
-        // Verifica se o e-mail do usuário é o específico para o teste
-        if (user.email === "fegrolla0210@gmail.com") {
-          userTier = "Simula PRO"; // Atribui o tier de teste
-          console.log(`[JWT] Usuário de teste ${user.email} identificado. Atribuindo tier: ${userTier}`);
-        }
         // Calcula expiracao com fallback de 1h quando não fornecida
         const expiresAt =
           typeof account.expires_at === "number"
@@ -104,10 +100,11 @@ export const authOptions: NextAuthOptions = {
         // Espalha o token existente para manter compatibilidade com o tipo JWT
         return {
           ...token,
-          accessToken: account.access_token,
+          googleAccount: account, // Armazena o objeto inteiro do Google (tokens, expiração, scopes, etc)
+          token: account.access_token, // Mantém a referência que você já está usando na rota
           expires_at: expiresAt,
           refreshToken: account.refresh_token ?? (token as JWT).refreshToken,
-          tier: userTier, // Definindo o tier do usuário
+          tier: "FREE", // Definindo o tier do usuário (padrão FREE, atualizado via sync)
           user,
         } as JWT;
       }

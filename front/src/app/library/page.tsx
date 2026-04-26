@@ -5,109 +5,13 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header"
 import LoginModal from "@/components/Login-modal";
 import { useState, useEffect } from "react";
-import { University } from "@/lib/dataUniversity";
+import { University } from "@/types/university";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; // Importa o hook useRouter
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
-
-// Variantes de animação estilo Apple - suaves e elegantes
-const appleEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1]; // Curva de easing estilo Apple
-
-const fadeInUp: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.6, ease: appleEase }
-  }
-};
-
-const fadeIn: Variants = {
-  hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1,
-    transition: { duration: 0.5, ease: appleEase }
-  }
-};
-
-const scaleIn: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    scale: 1,
-    transition: { duration: 0.5, ease: appleEase }
-  }
-};
-
-const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.06,
-      delayChildren: 0.1
-    }
-  }
-};
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1,
-    transition: { 
-      duration: 0.5, 
-      ease: appleEase 
-    }
-  }
-};
-
-const slideInFromRight: Variants = {
-  hidden: { opacity: 0, x: 30 },
-  visible: { 
-    opacity: 1, 
-    x: 0,
-    transition: { duration: 0.6, ease: appleEase }
-  }
-};
-
-const slideInFromLeft: Variants = {
-  hidden: { opacity: 0, x: -30 },
-  visible: { 
-    opacity: 1, 
-    x: 0,
-    transition: { duration: 0.6, ease: appleEase }
-  }
-};
-
-const floatAnimation: Variants = {
-  initial: { y: 0 },
-  animate: {
-    y: [-5, 5, -5],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  }
-};
-
-const bounceIn: Variants = {
-  hidden: { opacity: 0, scale: 0.3 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 15
-    }
-  }
-};
+import { useUniversityStorage } from "@/contexts/UniversityStorage";
 
 export default function LibraryPage() {
   const router = useRouter();
@@ -121,21 +25,25 @@ export default function LibraryPage() {
     }
   }, [status]);
 
-  const years = [2026, 2025, 2024, 2023, 2022, ];
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [searchText, setSearchText] = useState("");
-  const [selectedInstitution, setSelectedInstitution] = useState<string>("todas");
-  const [selectedState, setSelectedState] = useState<string>("todas");
-  const [universities, setUniversities] = useState<University[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const years = [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015];
+  const [selectedYear, setSelectedYear] = useState<number | null>(null); // State for selected year - null = todos os anos
+  const [searchText, setSearchText] = useState(""); // Estado para busca por texto
+  const [selectedInstitution, setSelectedInstitution] = useState<string>("todas"); // Estado para filtro de instituição
+  const [selectedState, setSelectedState] = useState<string>("todas"); // Estado para filtro por estado
+  const { universities, loading: isLoading } = useUniversityStorage();
   const [isNavigating, setIsNavigating] = useState(false);
+  
+  // Estados para paginação
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+
+  // Mapeamento de regiões por estado (nome completo) para colorir os indicadores e agrupar filtro
   const norte = new Set(["Acre","Amapá","Amazonas","Pará","Rondônia","Roraima","Tocantins"]);
   const nordeste = new Set(["Alagoas","Bahia","Ceará","Maranhão","Paraíba","Pernambuco","Piauí","Rio Grande do Norte","Sergipe"]);
   const centroOeste = new Set(["Distrito Federal","Goiás","Mato Grosso","Mato Grosso do Sul"]);
   const sudeste = new Set(["Espírito Santo","Minas Gerais","Rio de Janeiro","São Paulo"]);
   const sul = new Set(["Paraná","Rio Grande do Sul","Santa Catarina"]);
+
   const regionColorClass = (stateName?: string) => {
     if (!stateName) return "bg-gray-400";
     if (norte.has(stateName)) return "bg-green-500";        // Norte - verde
@@ -146,6 +54,7 @@ export default function LibraryPage() {
     return "bg-gray-400"; // Default / Nacional / não mapeado
   };
 
+  // Agrupamento de estados por região para o filtro
   const estadosPorRegiao = [
     { regiao: "Norte", estados: Array.from(norte) },
     { regiao: "Nordeste", estados: Array.from(nordeste) },
@@ -154,27 +63,30 @@ export default function LibraryPage() {
     { regiao: "Sul", estados: Array.from(sul) },
   ];
 
-    useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const response = await fetch('/api/universities');
-        const data = await response.json();
-        setUniversities(data); // Salva os dados no estado
-      } catch (error) {
-        console.error("Falha ao buscar dados:", error);
-      } finally {
-        setIsLoading(false); // Finaliza o carregamento (com sucesso ou erro)
-      }
-    };
 
-    fetchUniversities();
-  }, []);
 
+  // Filtro combinado: texto + tipo de instituição + ano
+  // Extend runtime type to include estado (foi adicionado em dataUniversity)
   const filteredUniversities = universities.filter((u: University) => {
-    const matchesSearch = u.name.toLowerCase().includes(searchText.toLowerCase()) || u.fullName.toLowerCase().includes(searchText.toLowerCase());
+    // Verificações de segurança para evitar crash se a API retornar dados incompletos
+    if (!u) return false;
+
+    // Adaptação para suportar tanto 'name' quanto 'sigla' (caso a API tenhas mudado)
+    const uAny = u as any;
+    const universityName = u.name || uAny.sigla || '';
+    
+    const matchesSearch = universityName.toLowerCase().includes(searchText.toLowerCase()) ||
+                         (u.fullName && u.fullName.toLowerCase().includes(searchText.toLowerCase()));
+    
     const matchesType = selectedInstitution === "todas" || u.type === selectedInstitution;
-    const matchesYear = selectedYear === null || u.year.includes(selectedYear);
+    
+    // Verificamos se o array de anos da universidade INCLUI o ano selecionado pelo usuário.
+    // Adicionada verificação se u.year é array válido
+    const matchesYear = selectedYear === null || (Array.isArray(u.year) && u.year.includes(selectedYear));
+    
+    // Filtro por estado
     const matchesState = selectedState === "todas" || u.state === selectedState;
+    
     return matchesSearch && matchesType && matchesYear && matchesState;
   });
 
@@ -199,55 +111,40 @@ export default function LibraryPage() {
   // Função para determinar o link correto para a universidade
   const getUniversityLink = (university: University) => {
     let targetYear;
+
+    // Caso 1: Se "Todos os anos" estiver selecionado
     if (!university.slug) return '#';
     
     if (selectedYear === null) {
+      // Pega o ano mais recente do array de anos da universidade.
+      // Math.max(...array) é uma forma segura de encontrar o maior número.
       targetYear = Math.max(...university.year);
     } else {
+      // Caso 2: Se um ano específico estiver selecionado
       targetYear = selectedYear;
     }
 
+    // Retorna a URL final com o slug e o ano como um parâmetro de busca (query param)
     return `/library/${university.slug}?year=${targetYear}`;
   };
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    setIsNavigating(true);
-    router.push(href);
+    e.preventDefault(); // Previne a navegação imediata do <Link>
+    setIsNavigating(true); // Ativa a tela de carregamento
+    router.push(href); // Inicia a navegação programaticamente
   };
 
+    // feedback de carregamento
   if (isLoading) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen bg-[#f5f5f7] relative overflow-hidden"
-      >
+      <div className="min-h-screen bg-[#f5f5f7] relative overflow-hidden">
         {/* Background decorativo minimalista */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 opacity-30">
-            {[
-              { top: '10%', left: '10%', delay: 0 },
-              { top: '20%', right: '20%', delay: 0.5 },
-              { bottom: '20%', left: '25%', delay: 1 },
-              { bottom: '10%', right: '33%', delay: 1.5 }
-            ].map((pos, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 bg-blue-400/40 rounded-full"
-                style={{ top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom }}
-                animate={{ 
-                  opacity: [0.3, 0.8, 0.3],
-                  scale: [1, 1.2, 1]
-                }}
-                transition={{ 
-                  duration: 2, 
-                  repeat: Infinity, 
-                  delay: pos.delay,
-                  ease: "easeInOut"
-                }}
-              />
-            ))}
+            <div className="absolute top-10 left-10 w-2 h-2 bg-blue-400/40 rounded-full animate-pulse"></div>
+            <div className="absolute top-20 right-20 w-1.5 h-1.5 bg-indigo-400/30 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+            <div className="absolute bottom-20 left-1/4 w-2 h-2 bg-purple-400/25 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-10 right-1/3 w-1.5 h-1.5 bg-blue-400/30 rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
           </div>
         </div>
 
@@ -260,12 +157,7 @@ export default function LibraryPage() {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Card container principal */}
             <div className="flex-1">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: appleEase }}
-                className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200 p-8 md:p-12 relative overflow-hidden"
-              >
+              <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200 p-8 md:p-12 relative overflow-hidden">
                 {/* Elementos decorativos minimalistas */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/30 to-transparent rounded-bl-[100px]"></div>
@@ -276,25 +168,10 @@ export default function LibraryPage() {
                   {/* Main content */}
                   <div className="flex-1">
                     {/* Título melhorado com animações */}
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.7, delay: 0.2, ease: appleEase }}
-                      className="mb-8 text-center relative"
-                    >
+                    <div className="mb-8 text-center animate-in fade-in slide-in-from-top-4 duration-700 relative">
                       {/* Mascote decorativo durante o carregamento */}
                       <div className="flex justify-center mb-6">
-                        <motion.div 
-                          className="relative w-32 h-32"
-                          animate={{ 
-                            y: [-8, 8, -8],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        >
+                        <div className="relative w-32 h-32 animate-bounce">
                           <Image
                             src="/Mascote/banners/Camaleão_15.png"
                             alt="Mascote Vestibuline carregando"
@@ -302,32 +179,21 @@ export default function LibraryPage() {
                             height={128}
                             className="object-contain filter drop-shadow-lg"
                           />
-                        </motion.div>
+                        </div>
                       </div>
-                      <motion.h2 
-                        className="text-2xl font-bold text-gray-900"
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                      >
+                      <h2 className="text-2xl font-bold text-gray-900 animate-pulse">
                         Carregando universidades...
-                      </motion.h2>
-                      <motion.p 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4, duration: 0.5 }}
-                        className="text-gray-600 mt-2"
-                      >
-                        Aguarde enquanto preparamos tudo para você!
-                      </motion.p>
-                    </motion.div>
+                      </h2>
+                      <p className="text-gray-600 mt-2">Aguarde enquanto preparamos tudo para você!</p>
+                    </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>
         <Footer />
-      </motion.div>
+      </div>
   );
 }
 
@@ -339,38 +205,15 @@ export default function LibraryPage() {
 
   return (
     <>
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, ease: appleEase }}
-        className="min-h-screen bg-[#f5f5f7] relative overflow-hidden"
-      >
+      <div className="min-h-screen bg-[#f5f5f7] relative overflow-hidden">
         {/* Background decorativo minimalista macOS */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Padrão sutil de fundo */}
           <div className="absolute inset-0 opacity-30">
-            {[
-              { top: '10%', left: '10%', delay: 0, color: 'bg-blue-400/40' },
-              { top: '20%', right: '20%', delay: 0.5, color: 'bg-indigo-400/30' },
-              { bottom: '20%', left: '25%', delay: 1, color: 'bg-purple-400/25' },
-              { bottom: '10%', right: '33%', delay: 1.5, color: 'bg-blue-400/30' }
-            ].map((pos, i) => (
-              <motion.div
-                key={i}
-                className={`absolute w-2 h-2 ${pos.color} rounded-full`}
-                style={{ top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom }}
-                animate={{ 
-                  opacity: [0.3, 0.8, 0.3],
-                  scale: [1, 1.2, 1]
-                }}
-                transition={{ 
-                  duration: 2, 
-                  repeat: Infinity, 
-                  delay: pos.delay,
-                  ease: "easeInOut"
-                }}
-              />
-            ))}
+            <div className="absolute top-10 left-10 w-2 h-2 bg-blue-400/40 rounded-full animate-pulse"></div>
+            <div className="absolute top-20 right-20 w-1.5 h-1.5 bg-indigo-400/30 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+            <div className="absolute bottom-20 left-1/4 w-2 h-2 bg-purple-400/25 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-10 right-1/3 w-1.5 h-1.5 bg-blue-400/30 rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
           </div>
         </div>
 
@@ -382,22 +225,12 @@ export default function LibraryPage() {
           {/* Layout: Sidebar + Card with main content */}
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Sidebar */}
-            <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: appleEase }}
-              className="hidden lg:block lg:w-80"
-            >
+            <div className="hidden lg:block lg:w-80">
               <Sidebar />
-            </motion.div>
+            </div>
             {/* Card container principal */}
             <div className="flex-1">
-              <motion.div 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: appleEase }}
-                className="bg-white backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200 p-8 md:p-12 relative overflow-hidden"
-              >
+              <div className="bg-white backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200 p-8 md:p-12 relative overflow-hidden">
                 {/* Elementos decorativos minimalistas */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/30 to-transparent rounded-bl-[100px]"></div>
@@ -408,121 +241,63 @@ export default function LibraryPage() {
                   {/* Main content */}
                   <div className="flex-1">
                     {/* Título melhorado com animações */}
-                    <motion.div 
-                      variants={fadeInUp}
-                      initial="hidden"
-                      animate="visible"
-                      className="mb-10 relative"
-                    >
+                    <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700 relative">
                       {/* Layout com mascote ao lado - alinhado com título e subtítulo */}
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-start gap-6 md:gap-8 max-w-5xl mx-auto">
                         {/* Mascote de boas-vindas - posicionado à esquerda */}
-                        <motion.div 
-                          variants={slideInFromLeft}
-                          initial="hidden"
-                          animate="visible"
-                          className="relative flex-shrink-0 mx-auto md:mx-0 md:ml-8 order-2 md:order-1"
-                        >
-                          <motion.div 
-                            className="relative w-32 h-32 md:w-40 md:h-40 lg:w-44 lg:h-44"
-                            variants={floatAnimation}
-                            initial="initial"
-                            animate="animate"
-                          >
+                        <div className="relative flex-shrink-0 mx-auto md:mx-0 md:ml-8 order-2 md:order-1">
+                          <div className="relative w-32 h-32 md:w-40 md:h-40 lg:w-44 lg:h-44">
                             <Image
                               src="/Mascote/banners/Camaleão_1.png"
                               alt="Mascote Vestibuline"
                               width={180}
                               height={180}
-                              className="object-contain filter drop-shadow-2xl"
+                              className="object-contain filter drop-shadow-2xl animate-in zoom-in duration-1000"
                             />
-                          </motion.div>
+                          </div>
                           {/* Balão de fala melhorado */}
-                          <motion.div 
-                            initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                            animate={{ opacity: 1, scale: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: 0.8, ease: appleEase }}
-                            className="absolute -top-2 -right-2 md:-top-4 md:-right-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl px-3 py-2 md:px-4 md:py-2.5 shadow-lg z-10"
-                          >
+                          <div className="absolute -top-2 -right-2 md:-top-4 md:-right-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl px-3 py-2 md:px-4 md:py-2.5 shadow-lg animate-in slide-in-from-right duration-700 delay-500 z-10">
                             <p className="text-xs md:text-sm font-bold whitespace-nowrap">Bora estudar? 📚</p>
                             <div className="absolute left-1/2 bottom-0 translate-y-full -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-indigo-600"></div>
-                          </motion.div>
-                        </motion.div>
+                          </div>
+                        </div>
                         
                         {/* Conteúdo de texto - Título e subtítulo */}
-                        <motion.div 
-                          variants={slideInFromRight}
-                          initial="hidden"
-                          animate="visible"
-                          className="flex-1 text-center md:text-left order-1 md:order-2"
-                        >
+                        <div className="flex-1 text-center md:text-left order-1 md:order-2">
                           <div className="relative inline-block">
-                            <motion.h1 
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.7, delay: 0.3, ease: appleEase }}
-                              className="text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-4 relative tracking-tight leading-tight"
-                            >
+                            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-4 animate-in fade-in slide-in-from-top-2 duration-1000 delay-200 relative tracking-tight leading-tight">
                               Conheça os seus desafios
                               {/* Linha decorativa sob o título */}
-                              <motion.div 
-                                initial={{ scaleX: 0, opacity: 0 }}
-                                animate={{ scaleX: 1, opacity: 1 }}
-                                transition={{ duration: 0.6, delay: 0.8, ease: appleEase }}
-                                className="absolute -bottom-1 left-0 md:left-0 w-24 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 rounded-full origin-left"
-                              />
-                            </motion.h1>
+                              <div className="absolute -bottom-1 left-0 md:left-0 w-24 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 rounded-full"></div>
+                            </h1>
                           </div>
-                          <motion.p 
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.5, ease: appleEase }}
-                            className="text-base md:text-lg text-gray-600 leading-relaxed mt-4"
-                          >
+                          <p className="text-base md:text-lg text-gray-600 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-1000 delay-400 mt-4">
                             Explore nossa biblioteca completa de simulados das principais universidades do Brasil. 
                             Prepare-se com questões reais e teste seus conhecimentos.
-                          </motion.p>
-                        </motion.div>
+                          </p>
+                        </div>
                       </div>
                       
                       {/* Estatísticas rápidas */}
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.7, ease: appleEase }}
-                        className="mt-10 flex flex-wrap justify-center items-center gap-4 md:gap-6 text-sm text-gray-600"
-                      >
-                        {[
-                          { color: 'bg-blue-500', text: `${universities.length} Universidades`, delay: 0 },
-                          { color: 'bg-green-500', text: 'Simulados Reais', delay: 0.3 },
-                          { color: 'bg-purple-500', text: 'Gratuito', delay: 0.6 }
-                        ].map((stat, i) => (
-                          <motion.div 
-                            key={i}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.4, delay: 0.8 + (i * 0.1), ease: appleEase }}
-                            className="flex items-center gap-2 px-4 py-2 bg-white backdrop-blur-xl rounded-full shadow-sm border border-gray-200"
-                          >
-                            <motion.div 
-                              className={`w-2 h-2 ${stat.color} rounded-full`}
-                              animate={{ opacity: [0.4, 1, 0.4] }}
-                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: stat.delay }}
-                            />
-                            <span className="font-medium">{stat.text}</span>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    </motion.div>
+                      <div className="mt-10 flex flex-wrap justify-center items-center gap-4 md:gap-6 text-sm text-gray-600 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-600">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white backdrop-blur-xl rounded-full shadow-sm border border-gray-200">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                          <span className="font-medium">{universities.length} Universidades</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white backdrop-blur-xl rounded-full shadow-sm border border-gray-200">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-300"></div>
+                          <span className="font-medium">Simulados Reais</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white backdrop-blur-xl rounded-full shadow-sm border border-gray-200">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-600"></div>
+                          <span className="font-medium">Gratuito</span>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Filtros Modernizados */}
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.3, ease: appleEase }}
-                      className="mb-10 w-full"
-                    >
-                      <div className="flex flex-wrap md:flex-nowrap gap-3 md:gap-4 items-center bg-white backdrop-blur-xl rounded-2xl shadow-lg px-4 py-4 md:py-3 relative border border-gray-200">
+                    <div className="mb-10 w-full">
+                      <div className="flex flex-wrap md:flex-nowrap gap-3 md:gap-4 items-center bg-white backdrop-blur-xl rounded-2xl shadow-lg px-4 py-4 md:py-3 relative animate-in fade-in slide-in-from-top-4 duration-600 border border-gray-200">
                         {/* Busca */}
                         <div className="flex items-center flex-1 min-w-[180px]">
                           <span className="mr-2 text-blue-500">
@@ -598,41 +373,30 @@ export default function LibraryPage() {
                         </div>
 
                         {/* Botão Limpar Filtros */}
-                        <AnimatePresence>
-                          {(searchText || selectedInstitution !== "todas" || selectedYear !== null || selectedState !== "todas") && (
-                            <motion.button
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.9 }}
-                              transition={{ duration: 0.2, ease: appleEase }}
-                              onClick={() => {
-                                setSearchText("");
-                                setSelectedInstitution("todas");
-                                setSelectedYear(null);
-                                setSelectedState("todas");
-                              }}
-                              className="ml-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400/50 text-sm font-medium"
-                              title="Limpar todos os filtros"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                              Limpar
-                            </motion.button>
-                          )}
-                        </AnimatePresence>
+                        {(searchText || selectedInstitution !== "todas" || selectedYear !== null || selectedState !== "todas") && (
+                          <button
+                            onClick={() => {
+                              setSearchText("");
+                              setSelectedInstitution("todas");
+                              setSelectedYear(null);
+                              setSelectedState("todas");
+                            }}
+                            className="ml-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400/50 text-sm font-medium"
+                            title="Limpar todos os filtros"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Limpar
+                          </button>
+                        )}
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Grid de universidades completamente redesenhado */}
                     <div className="space-y-8">
                       {/* Header da seção de resultados */}
-                      <motion.div 
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.4, ease: appleEase }}
-                        className="flex items-center justify-between"
-                      >
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
                             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -647,40 +411,28 @@ export default function LibraryPage() {
                           </h2>
                         </div>
                         {filteredUniversities.length > 0 && (
-                          <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.4, delay: 0.5, ease: appleEase }}
-                            className="hidden md:flex items-center gap-2 text-sm text-gray-500 px-4 py-2 bg-white backdrop-blur-xl rounded-full border border-gray-200"
-                          >
-                            <motion.div 
-                              className="w-2 h-2 bg-blue-500 rounded-full"
-                              animate={{ opacity: [0.4, 1, 0.4] }}
-                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                            />
+                          <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 px-4 py-2 bg-white backdrop-blur-xl rounded-full border border-gray-200">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                             <span className="font-medium">Clique para acessar</span>
-                          </motion.div>
+                          </div>
                         )}
-                      </motion.div>
+                      </div>
 
                       {/* Grid principal das universidades */}
-                      <motion.div 
-                        variants={staggerContainer}
-                        initial="hidden"
-                        animate="visible"
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                      >
-                        {currentUniversities.map((university) => (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-800 delay-300">
+                        {currentUniversities.map((university, index) => (
                           <Link 
                             href={getUniversityLink(university)} 
                             key={university.slug}
                             onClick={(e) => handleNavigation(e, getUniversityLink(university))}
                           >
-                            <motion.div 
-                              variants={cardVariants}
-                              whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.3, ease: appleEase } }}
-                              whileTap={{ scale: 0.98 }}
-                              className="group bg-white backdrop-blur-xl border border-gray-200 rounded-2xl p-6 flex flex-col items-center text-center h-full relative overflow-hidden min-h-[220px] hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/20 cursor-pointer"
+                            <div 
+                              className="group bg-white backdrop-blur-xl border border-gray-200 rounded-2xl p-6 transition-all duration-300 transform hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl flex flex-col items-center text-center h-full relative overflow-hidden min-h-[220px] animate-in fade-in slide-in-from-bottom-4 hover:border-blue-500 hover:shadow-blue-500/20"
+                              style={{
+                                animationDelay: `${index * 80}ms`,
+                                animationDuration: '600ms',
+                                animationFillMode: 'both'
+                              }}
                             >
                               {/* Background decorativo sutil */}
                               <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-indigo-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -756,19 +508,14 @@ export default function LibraryPage() {
                                   </svg>
                                 </div>
                               </div>
-                            </motion.div>
+                            </div>
                           </Link>
                         ))}
-                      </motion.div>
+                      </div>
                       
                       {/* Controles de Paginação */}
                       {filteredUniversities.length > itemsPerPage && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5, delay: 0.5, ease: appleEase }}
-                          className="flex flex-col items-center gap-4 mt-10"
-                        >
+                        <div className="flex flex-col items-center gap-4 mt-10 animate-in fade-in slide-in-from-bottom-4 duration-600">
                           {/* Informações da página atual */}
                           <div className="text-sm text-gray-600 font-medium">
                             Mostrando {startIndex + 1} a {Math.min(endIndex, filteredUniversities.length)} de {filteredUniversities.length} universidades
@@ -777,9 +524,7 @@ export default function LibraryPage() {
                           {/* Botões de navegação */}
                           <div className="flex items-center gap-2">
                             {/* Botão Primeira Página */}
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            <button
                               onClick={() => goToPage(1)}
                               disabled={currentPage === 1}
                               className="px-3 py-2 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 font-medium transition-all duration-300 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/90 disabled:hover:shadow-none hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
@@ -788,12 +533,10 @@ export default function LibraryPage() {
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
                               </svg>
-                            </motion.button>
+                            </button>
                             
                             {/* Botão Anterior */}
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            <button
                               onClick={() => goToPage(currentPage - 1)}
                               disabled={currentPage === 1}
                               className="px-4 py-2 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 font-medium transition-all duration-300 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/90 disabled:hover:shadow-none flex items-center gap-2 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
@@ -802,7 +545,7 @@ export default function LibraryPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                               </svg>
                               Anterior
-                            </motion.button>
+                            </button>
                             
                             {/* Números das páginas */}
                             <div className="flex items-center gap-2">
@@ -828,27 +571,23 @@ export default function LibraryPage() {
                                 if (!showPage) return null;
                                 
                                 return (
-                                  <motion.button
+                                  <button
                                     key={page}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
                                     onClick={() => goToPage(page)}
                                     className={`min-w-[40px] h-10 px-3 rounded-xl font-semibold transition-all duration-300 ${
                                       currentPage === page
                                         ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg scale-110'
-                                        : 'bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 hover:bg-white hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer'
+                                        : 'bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 hover:bg-white hover:scale-105 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer'
                                     }`}
                                   >
                                     {page}
-                                  </motion.button>
+                                  </button>
                                 );
                               })}
                             </div>
                             
                             {/* Botão Próximo */}
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            <button
                               onClick={() => goToPage(currentPage + 1)}
                               disabled={currentPage === totalPages}
                               className="px-4 py-2 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 font-medium transition-all duration-300 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/90 disabled:hover:shadow-none flex items-center gap-2 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
@@ -857,12 +596,10 @@ export default function LibraryPage() {
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
-                            </motion.button>
+                            </button>
                             
                             {/* Botão Última Página */}
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            <button
                               onClick={() => goToPage(totalPages)}
                               disabled={currentPage === totalPages}
                               className="px-3 py-2 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 font-medium transition-all duration-300 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/90 disabled:hover:shadow-none hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
@@ -871,88 +608,53 @@ export default function LibraryPage() {
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                               </svg>
-                            </motion.button>
+                            </button>
                           </div>
-                        </motion.div>
+                        </div>
                       )}
                       
                       {/* Mensagem quando não há resultados */}
-                      <AnimatePresence>
-                        {filteredUniversities.length === 0 && (
-                          <motion.div 
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.6, ease: appleEase }}
-                            className="text-center py-20"
-                          >
-                            {/* Mascote triste/pensativo */}
-                            <div className="flex justify-center mb-6">
-                              <motion.div 
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.5, delay: 0.2, ease: appleEase }}
-                                className="relative"
-                              >
-                                <Image
-                                  src="/Mascote/banners/Camaleão_8.png"
-                                  alt="Mascote pensativo"
-                                  width={150}
-                                  height={150}
-                                  className="object-contain filter drop-shadow-2xl"
-                                />
-                              </motion.div>
+                      {filteredUniversities.length === 0 && (
+                        <div className="text-center py-20 animate-in fade-in slide-in-from-bottom-4 duration-600">
+                          {/* Mascote triste/pensativo */}
+                          <div className="flex justify-center mb-6">
+                            <div className="relative">
+                              <Image
+                                src="/Mascote/banners/Camaleão_8.png"
+                                alt="Mascote pensativo"
+                                width={150}
+                                height={150}
+                                className="object-contain filter drop-shadow-2xl animate-in zoom-in duration-700"
+                              />
                             </div>
-                            
-                            <motion.h3 
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.5, delay: 0.3, ease: appleEase }}
-                              className="text-2xl font-bold text-gray-900 mb-3"
-                            >
-                              Nenhuma universidade encontrada
-                            </motion.h3>
-                            <motion.p 
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.5, delay: 0.4, ease: appleEase }}
-                              className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed"
-                            >
-                              Não encontramos universidades que correspondam aos seus critérios de busca. 
-                              Tente ajustar os filtros ou fazer uma nova pesquisa.
-                            </motion.p>
-                            <motion.button
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.5, delay: 0.5, ease: appleEase }}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => {
-                                setSearchText("");
-                                setSelectedInstitution("todas");
-                                setSelectedYear(null);
-                                setSelectedState("todas");
-                              }}
-                              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                              Ver todas as universidades
-                            </motion.button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                          </div>
+                          
+                          <h3 className="text-2xl font-bold text-gray-900 mb-3">Nenhuma universidade encontrada</h3>
+                          <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                            Não encontramos universidades que correspondam aos seus critérios de busca. 
+                            Tente ajustar os filtros ou fazer uma nova pesquisa.
+                          </p>
+                          <button
+                            onClick={() => {
+                              setSearchText("");
+                              setSelectedInstitution("todas");
+                              setSelectedYear(null);
+                              setSelectedState("todas");
+                            }}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-semibold"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Ver todas as universidades
+                          </button>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Seção motivacional com mascote no final */}
                     {filteredUniversities.length > 0 && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.7, delay: 0.4, ease: appleEase }}
-                        className="mt-16 bg-transparent rounded-3xl p-8 md:p-10 relative overflow-hidden"
-                      >
+                      <div className="mt-16 bg-transparent rounded-3xl p-8 md:p-10 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
                         {/* Padrão decorativo de fundo minimalista */}
                         <div className="absolute inset-0 opacity-5">
                           <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full blur-3xl"></div>
@@ -961,12 +663,7 @@ export default function LibraryPage() {
                         
                         <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
                           {/* Texto motivacional */}
-                          <motion.div 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.6, delay: 0.5, ease: appleEase }}
-                            className="flex-1 text-center md:text-left"
-                          >
+                          <div className="flex-1 text-center md:text-left">
                             <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                               Pronto para começar? 🎯
                             </h3>
@@ -974,68 +671,47 @@ export default function LibraryPage() {
                               Escolha uma universidade acima e inicie sua jornada de preparação com simulados reais!
                             </p>
                             <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                              {[
-                                { color: 'bg-green-500', text: '100% Gratuito' },
-                                { color: 'bg-blue-500', text: 'Questões Reais' },
-                                { color: 'bg-purple-500', text: 'Resultados Instantâneos' }
-                              ].map((item, i) => (
-                                <motion.div 
-                                  key={i}
-                                  initial={{ opacity: 0, scale: 0.9 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ duration: 0.4, delay: 0.6 + (i * 0.1), ease: appleEase }}
-                                  className="flex items-center gap-2 !bg-white backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200"
-                                >
-                                  <motion.div 
-                                    className={`w-2 h-2 ${item.color} rounded-full`}
-                                    animate={{ opacity: [0.4, 1, 0.4] }}
-                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
-                                  />
-                                  <span className="text-sm font-semibold !text-gray-700">{item.text}</span>
-                                </motion.div>
-                              ))}
+                              <div className="flex items-center gap-2 !bg-white backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span className="text-sm font-semibold !text-gray-700">100% Gratuito</span>
+                              </div>
+                              <div className="flex items-center gap-2 !bg-white backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse delay-300"></div>
+                                <span className="text-sm font-semibold !text-gray-700">Questões Reais</span>
+                              </div>
+                              <div className="flex items-center gap-2 !bg-white backdrop-blur-xl px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-600"></div>
+                                <span className="text-sm font-semibold !text-gray-700">Resultados Instantâneos</span>
+                              </div>
                             </div>
-                          </motion.div>
+                          </div>
                           
                           {/* Mascote motivacional */}
-                          <motion.div 
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.6, delay: 0.6, ease: appleEase }}
-                            className="relative flex-shrink-0"
-                          >
-                            <motion.div 
-                              className="relative w-40 h-40 md:w-48 md:h-48"
-                              whileHover={{ scale: 1.1 }}
-                              transition={{ duration: 0.3, ease: appleEase }}
-                            >
+                          <div className="relative flex-shrink-0">
+                            <div className="relative w-40 h-40 md:w-48 md:h-48">
                               <Image
                                 src="/Mascote/banners/Camaleão_10.png"
                                 alt="Mascote motivacional"
                                 width={192}
                                 height={192}
-                                className="object-contain filter drop-shadow-2xl"
+                                className="object-contain filter drop-shadow-2xl animate-in zoom-in duration-700 hover:scale-110 transition-transform"
                               />
-                            </motion.div>
+                            </div>
                             {/* Elemento decorativo flutuante */}
-                            <motion.div 
-                              className="absolute -top-2 -right-2 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg"
-                              animate={{ y: [-3, 3, -3] }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                            >
+                            <div className="absolute -top-2 -right-2 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-bounce">
                               <span className="text-2xl">⭐</span>
-                            </motion.div>
-                          </motion.div>
+                            </div>
+                          </div>
                         </div>
-                      </motion.div>
+                      </div>
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Modal de Login */}
       <LoginModal

@@ -1,39 +1,175 @@
 import { NextResponse } from 'next/server';
-import { processCutoffResults } from '@/lib/dataNotaCorte'; // Ajuste o caminho se necessário
+import { ApiResponse, CourseResult } from '@/types/nota-corte';
 
-/**
- * Simula um atraso de rede
- */
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export async function GET(request: Request) {
+  const externalApiUrl = process.env.BACKEND_API_URL;
+
+  if (!externalApiUrl) {
+    return NextResponse.json({ error: 'Erro de configuração do servidor.' }, { status: 500 });
+  }
+
+  try {
+    const authHeader = request.headers.get('Authorization');
+    let userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+    if (!userToken) {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      userToken = cookieStore.get('user_data')?.value || null;
+    }
+
+    if (!userToken) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
+    // Endpoint fictício ou real para buscar todos os cursos cadastrados
+    const backendUrl = `${externalApiUrl}/nota-corte/cursos`;
+
+    const apiResponse = await fetch(backendUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!apiResponse.ok) {
+       // Se o endpoint não existir ou falhar, retornamos uma lista vazia ou erro
+       return NextResponse.json({ allResults: [], availableAreas: [] });
+    }
+
+    const data = await apiResponse.json();
+    
+    // Formata a resposta do backend para o que o frontend espera no UserConfig.tsx
+    // Esperado: { allResults: [ { courseName, ... } ], availableAreas: [] }
+    const formattedData = {
+        allResults: Array.isArray(data) ? data.map((item: any) => ({
+            id: item.id || Math.random().toString(),
+            courseName: item.curso || item.nomeCurso || "Curso Desconhecido",
+            institution: item.sigla || item.instituicao || "Instituição",
+            cutoffScore: item.notaCorte || 0,
+            area: item.area || "Geral"
+        })) : [],
+        availableAreas: [] 
+    };
+
+    return NextResponse.json(formattedData);
+
+  } catch (error) {
+    console.error('[API_NOTA_CORTE_GET_ERROR]', error);
+    return NextResponse.json({ allResults: [], availableAreas: [] });
+  }
+}
 
 export async function POST(request: Request) {
+  const externalApiUrl = process.env.BACKEND_API_URL;
+
+  if (!externalApiUrl) {
+    console.error('[API_NOTA_CORTE_ERROR] BACKEND_API_URL não está configurado nas variáveis de ambiente.');
+    return NextResponse.json({ error: 'Erro de configuração do servidor.' }, { status: 500 });
+  }
+
   try {
-    // 1. Ler o corpo da requisição (que vem do frontend)
+    // 1. Lê o token JWT enviado pelo cliente no header Authorization ou via Cookies (para chamadas SWR Client-Side)
+    const authHeader = request.headers.get('Authorization');
+    let userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+    if (!userToken) {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      userToken = cookieStore.get('user_data')?.value || null;
+    }
+
+    if (!userToken) {
+      console.warn('[API_NOTA_CORTE] ❌ Requisição sem token JWT.');
+      return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
+    }
+
+    // 2. Lê e valida o body enviado pelo frontend
     const body = await request.json();
     const { userScore, targetCourse, targetInstitution } = body;
 
-    // 2. Validar os dados recebidos
-    if (userScore === undefined || targetCourse === undefined) {
+    if (userScore === undefined || !targetCourse) {
+      console.warn('[API_NOTA_CORTE] ⚠️ Parâmetros obrigatórios ausentes:', { userScore, targetCourse });
       return NextResponse.json(
         { error: 'Parâmetros "userScore" e "targetCourse" são obrigatórios.' },
         { status: 400 }
       );
     }
 
-    // 3. Simular o atraso da rede (para testar o loading)
-    await delay(1500); // 1.5 segundos
+    // 3. Constrói a URL para o backend baseado na imagem (GET com query params no endpoint /media)
+    const url = new URL(`${externalApiUrl}/nota-corte/media`);
+    url.searchParams.append('curso', targetCourse);
+    
+    // Só adiciona 'sigla' se 'targetInstitution' estiver preenchido
+    if (targetInstitution && targetInstitution.trim() !== '') {
+      url.searchParams.append('sigla', targetInstitution);
+    }
 
-    // 4. Chamar a lógica de processamento
-    const results = processCutoffResults(userScore, targetCourse, targetInstitution);
+    const backendUrl = url.toString();
 
-    // 5. Retornar os resultados como JSON
-    return NextResponse.json(results);
+    console.log('[API_NOTA_CORTE] 📤 Enviando requisição GET ao backend:');
+    console.log('[API_NOTA_CORTE]    URL:', backendUrl);
+    console.log('[API_NOTA_CORTE]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
 
-  } catch (error) {
-    console.error('Erro na API check-approval:', error);
-    return NextResponse.json(
-      { error: 'Ocorreu um erro interno no servidor.' },
-      { status: 500 }
-    );
+    // 4. Faz a requisição ao backend externo com GET
+    const apiResponse = await fetch(backendUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+      },
+      cache: 'no-store',
+    });
+
+    console.log('[API_NOTA_CORTE] 📥 Resposta recebida do backend:');
+    console.log('[API_NOTA_CORTE]    Status:', apiResponse.status, apiResponse.statusText);
+
+    if (!apiResponse.ok) {
+        const errorData = await apiResponse.json().catch(() => ({ message: 'Erro no servidor de destino.' }));
+        return NextResponse.json(
+            { error: errorData.message || 'Falha ao buscar dados no backend.' },
+            { status: apiResponse.status }
+        );
+    }
+
+    const backendData = await apiResponse.json();
+    console.log('[API_NOTA_CORTE]    Dados brutos recebidos:', JSON.stringify(backendData));
+
+    // 5. Mapeamento e Formatação para o contrato do frontend (ApiResponse)
+    // Backend: curso, medianNotaCorte, instituicao
+    // Frontend: courseName, cutoffScore, institution, userScore, difference, status
+    const cutoffScore = backendData.medianNotaCorte || 0;
+    const difference = userScore - cutoffScore;
+    
+    const BORDERLINE_MARGIN = 5;
+    let status: 'approved' | 'borderline' | 'reproved';
+    if (difference >= 0) status = 'approved';
+    else if (difference >= -BORDERLINE_MARGIN) status = 'borderline';
+    else status = 'reproved';
+
+    const formattedResult = {
+        id: `api-result-${Date.now()}`,
+        courseName: backendData.curso || targetCourse,
+        institution: backendData.instituicao || targetInstitution || "Instituição não informada",
+        cutoffScore: cutoffScore,
+        userScore: userScore,
+        difference: difference,
+        status: status,
+        area: "Geral" // Backend /media não retorna área, usamos um padrão
+    };
+
+    // Estrutura ApiResponse esperada pelo frontend
+    const finalResponse = {
+        targetCourseResults: [formattedResult],
+        allResults: [], // O endpoint /media retorna apenas o resultado específico
+        availableAreas: ["Geral"]
+    };
+
+    console.log('[API_NOTA_CORTE] ✅ Sucesso! Retornando dados formatados ao frontend.');
+    return NextResponse.json(finalResponse);
+
+  } catch (error: unknown) {
+    console.error('[API_NOTA_CORTE_ERROR] Erro na rota Nota-corte:', error);
+    return NextResponse.json({ error: 'Não foi possível se conectar ao servidor.' }, { status: 503 });
   }
 }

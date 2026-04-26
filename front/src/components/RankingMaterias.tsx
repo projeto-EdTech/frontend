@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Trophy, TrendingUp } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -14,7 +14,7 @@ type RankingMateriasProps = {
   colors: string[];
 };
 
-export default function RankingMaterias({ data, colors }: RankingMateriasProps) {
+const RankingMaterias = memo(function RankingMaterias({ data, colors }: RankingMateriasProps) {
   const { theme } = useTheme();
   // Pega apenas os top 10 e ordena por percentual decrescente
   // (A filtragem de "Demais Assuntos" já é feita na página antes de passar os dados)
@@ -399,4 +399,6 @@ export default function RankingMaterias({ data, colors }: RankingMateriasProps) 
       </div>
     </div>
   );
-}
+});
+
+export default RankingMaterias;
