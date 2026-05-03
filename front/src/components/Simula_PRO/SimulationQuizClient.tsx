@@ -119,6 +119,17 @@ export default function SimulationQuizClient({
     setIsLoading(false);
   }, [storageKey]);
 
+  // Debug: Log quando universidade não for encontrada em modo dev
+  useEffect(() => {
+    if (!currentUni && !contextLoading && process.env.NODE_ENV === 'development') {
+      console.warn(`[DEBUG] Universidade não encontrada:`, {
+        buscando: universitySlug,
+        disponíveis: universities.map(u => ({ slug: u.slug, name: u.name })),
+        totalUniversidades: universities.length,
+      });
+    }
+  }, [currentUni, contextLoading, universities, universitySlug]);
+
   useEffect(() => {
     if (questions.length > 0 && !isFinishing && !isLoading) {
       const elapsedSeconds = Math.round((Date.now() - startTimestampRef.current) / 1000);
@@ -308,7 +319,25 @@ export default function SimulationQuizClient({
   }
 
   if (error || (!currentUni && !contextLoading)) {
-    return <div className="min-h-[50vh] flex justify-center items-center text-red-500">Erro: {error || "Dados da universidade não encontrados."}</div>;
+    const isDev = process.env.NODE_ENV === 'development';
+    const errorMessage = error || "Dados da universidade não encontrados.";
+    
+    return (
+      <div className="min-h-[50vh] flex flex-col justify-center items-center text-red-500 p-6">
+        <div className="text-lg font-bold mb-3">Erro: {errorMessage}</div>
+        {isDev && (
+          <div className="bg-gray-100 text-gray-700 p-4 rounded text-sm max-w-md">
+            <p className="font-mono">Slug buscado: <strong>{universitySlug}</strong></p>
+            <p className="font-mono">Universidades disponíveis: {universities.length}</p>
+            {universities.length > 0 && (
+              <p className="font-mono text-xs mt-2">
+                Slugs: {universities.map(u => u.slug).join(", ")}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (isFinishing) {

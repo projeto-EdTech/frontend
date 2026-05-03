@@ -441,7 +441,7 @@ export function CronogramaMockup({ isDark }: CronogramaMockupProps) {
             <div className={`p-4 border-t flex gap-3 ${isDark ? "border-gray-800" : "border-gray-100"}`}>
               <button
                 onClick={() => setIsSuggestModalOpen(false)}
-                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   isDark 
                     ? "bg-gray-800 text-gray-300 hover:bg-gray-700" 
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -451,7 +451,7 @@ export function CronogramaMockup({ isDark }: CronogramaMockupProps) {
               </button>
               <button
                 onClick={handleApplySuggestion}
-                className="flex-1 py-3 px-4 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95"
+                className="flex-1 py-3 px-4 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95 cursor-pointer"
               >
                 Aplicar Sugestão
               </button>
