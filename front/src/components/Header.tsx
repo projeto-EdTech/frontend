@@ -76,7 +76,7 @@ export default function Header() {
       } catch (error) {
         console.error(
           "Header: Erro ao carregar configurações do sessionStorage:",
-          error
+          error,
         );
       }
     };
@@ -94,12 +94,12 @@ export default function Header() {
         });
         console.log(
           "Header: Perfil atualizado via evento customizado:",
-          settings
+          settings,
         );
       } catch (error) {
         console.error(
           "Header: Erro ao processar atualização de perfil:",
-          error
+          error,
         );
       }
     };
@@ -122,14 +122,14 @@ export default function Header() {
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener(
       "profileSettingsUpdated",
-      handleProfileUpdate as EventListener
+      handleProfileUpdate as EventListener,
     );
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener(
         "profileSettingsUpdated",
-        handleProfileUpdate as EventListener
+        handleProfileUpdate as EventListener,
       );
     };
   }, []);
@@ -159,7 +159,7 @@ export default function Header() {
 
   const handleNavigation = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
+    href: string,
   ) => {
     e.preventDefault(); // Previne a navegação imediata do <Link>
     setIsNavigating(true); // Ativa a tela de carregamento
@@ -211,7 +211,7 @@ export default function Header() {
   return (
     <>
       <header className="themed-header sticky top-0 z-50 backdrop-blur-md shadow-sm transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient from-background/90 to-white-50 dark:from-background/90 dark:via-blue-950/30 dark:to-sky-950/30"></div>
+        <div className="absolute inset-0 bg-white"></div>
         <div className="container mx-auto px-4 relative">
           <div className="flex items-center justify-between h-16 lg:h-18">
             <div className="flex items-center h-16 lg:h-18 overflow-hidden">
@@ -264,15 +264,9 @@ export default function Header() {
                 }`}
               >
                 {isMobileMenuOpen ? (
-                  <X
-                    className="w-5 h-5 text-gray-700 dark:text-gray-300"
-                    strokeWidth={2}
-                  />
+                  <X className="w-5 h-5 text-gray-700" strokeWidth={2} />
                 ) : (
-                  <Menu
-                    className="w-5 h-5 text-gray-700 dark:text-gray-300"
-                    strokeWidth={2}
-                  />
+                  <Menu className="w-5 h-5 text-gray-700" strokeWidth={2} />
                 )}
               </button>
 
