@@ -30,7 +30,7 @@ const generateRankingSet = (scoreMultiplier: number): RawUserData[] => {
   const currentUserForTest: RawUserData = {
     id: 0,
     usuario: "Felipe Grolla Freitas",
-    pontos: 100000,
+    pontos: 50000,
   };
 
   // 2. Gere 99 usuários aleatórios para completar a lista.

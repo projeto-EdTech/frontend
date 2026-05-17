@@ -1,8 +1,8 @@
-# SimulaVest – Front-End
+# vestibuline – Front-End
 
 Interface web interna focada em preparação para vestibulares: simulados inteligentes, estatísticas e biblioteca de provas.
 
-[Documentação Geral](https://github.com/SimulaVest-organization/SimulaVest-Docs) · [Reportar Bug (Interno)](https://github.com/SimulaVest-organization/SimulaVest-Front/issues) · [Solicitar Melhoria](https://github.com/SimulaVest-organization/SimulaVest-Front/issues)
+[Documentação Geral](https://github.com/vestibuline-organization/vestibuline-Docs) · [Reportar Bug (Interno)](https://github.com/vestibuline-organization/vestibuline-Front/issues) · [Solicitar Melhoria](https://github.com/vestibuline-organization/vestibuline-Front/issues)
 
 ---
 
@@ -29,9 +29,9 @@ Interface web interna focada em preparação para vestibulares: simulados inteli
 
 ## Visao Geral
 
-O front-end do SimulaVest entrega experiência moderna para estudantes que se preparam para vestibulares (ENEM, grandes universidades e provas específicas). Oferece simulados, análise de desempenho e biblioteca de provas históricas. Foco em personalização e feedback orientado por IA (integração em evolução).
+O front-end do vestibuline entrega experiência moderna para estudantes que se preparam para vestibulares (ENEM, grandes universidades e provas específicas). Oferece simulados, análise de desempenho e biblioteca de provas históricas. Foco em personalização e feedback orientado por IA (integração em evolução).
 
-> AVISO: Este repositório é PRIVADO e de uso exclusivo da equipe SimulaVest. Nenhum trecho de código deve ser compartilhado externamente sem aprovação formal.
+> AVISO: Este repositório é PRIVADO e de uso exclusivo da equipe vestibuline. Nenhum trecho de código deve ser compartilhado externamente sem aprovação formal.
 
 Objetivos:
 
@@ -66,7 +66,7 @@ Objetivos:
 ## Estrutura de Pastas
 
 ```text
-front_simulavest/
+front_vestibuline/
   src/
     app/                Rotas (App Router)
       layout.tsx        Root layout + providers globais
@@ -92,8 +92,8 @@ Pré-requisitos:
 Instalação:
 
 ```bash
-git clone https://github.com/SimulaVest-organization/SimulaVest-Front.git
-cd SimulaVest-Front/front_simulavest
+git clone https://github.com/vestibuline-organization/vestibuline-Front.git
+cd vestibuline-Front/front_vestibuline
 npm install --legacy-peer-deps
 npm run dev
 ```
@@ -209,14 +209,14 @@ Labels internas: `bug`, `enhancement`, `performance`, `security`, `design`, `blo
 
 ## Licenca / Direitos de Uso
 
-Código proprietário © SimulaVest. Todos os direitos reservados. Uso estritamente interno. 
+Código proprietário © vestibuline. Todos os direitos reservados. Uso estritamente interno. 
 
 Não distribuir, reproduzir ou derivar sem autorização formal. Caso seja necessária liberação externa (ex: snippet em blog), solicitar aprovação ao responsável técnico e jurídico.
 
 ## Contato
 
-E-mail: <mailto:simulavest.contato@gmail.com>  
-Organização: <https://github.com/SimulaVest-organization>
+E-mail: <mailto:vestibuline.contato@gmail.com>  
+Organização: <https://github.com/vestibuline-organization>
 
 ---
 

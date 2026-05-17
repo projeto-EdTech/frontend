@@ -14,7 +14,7 @@ export interface JWTPayload {
   id?: string;
   nome?: string;
   email?: string;
-  tipo?: string;        // Tier do usuário (ex: FREE, SIMULAPRO, TEACHER, ADMIN)
+  tipo?: string;        // Tier do usuário (ex: FREE, Simula PRO, TEACHER, ADMIN)
   newsletter?: boolean; // Preferência de newsletter
   [key: string]: any;
 }

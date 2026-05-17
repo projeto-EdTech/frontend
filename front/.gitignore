@@ -42,3 +42,6 @@ next-env.d.ts
 
 # installation any modulos for node
 npm install --legacy-peer-deps
+
+# agents and instructions for AIs
+CLAUDE.md

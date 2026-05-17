@@ -1211,7 +1211,7 @@ function createQuestion(data: QuestionInput): Question {
   if (imageNames && imageNames.length > 0) {
     question.images = imageNames.map(imageName => {
       const universityFolderName = rest.university.toUpperCase().replace(/-/g, '');
-      return `https://raw.githubusercontent.com/SimulaVest-organization/SimulaVest-Docs/refs/heads/main/Banco%20de%20Imagens/banco%20de%20Imagens/${universityFolderName}/${rest.year}/questao-${String(rest.id).padStart(2, '0')}/${imageName}`;
+      return `https://raw.githubusercontent.com/vestibuline-organization/vestibuline-Docs/refs/heads/main/Banco%20de%20Imagens/banco%20de%20Imagens/${universityFolderName}/${rest.year}/questao-${String(rest.id).padStart(2, '0')}/${imageName}`;
     });
   }
   return question;

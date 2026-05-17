@@ -920,7 +920,7 @@ export default function Home() {
                     <h2 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight font-sans">
                       {isAuthenticated ? (
                         <>
-                          Com o SimulaPRO, potencialize seus estudos e <br />
+                          Com o Simula PRO, potencialize seus estudos e <br />
                           <span className="text-gray-900">
                             conquiste sua vaga
                           </span>

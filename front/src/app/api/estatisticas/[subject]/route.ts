@@ -1,109 +1,73 @@
 import { NextResponse } from "next/server";
+import { getStatsData } from "@/lib/dataStats";
 
-// Pega a URL do back-end a partir das variáveis de ambiente
-const BACKEND_API_URL = process.env.BACKEND_API_URL;
+// STATIC DATA MODE — real backend call preserved as comment below.
+// To restore live backend: uncomment the fetch block and remove the static return above it.
 
 export async function GET(
   req: Request,
   context: { params: Promise<{ subject: string }> }
 ) {
-  // 1. Validar se a URL do back-end está configurada
+  const { subject: subjectParam } = await context.params;
+  const { searchParams } = new URL(req.url);
+  let vestibular = searchParams.get("vestibular") || "geral";
+
+  // Normalize "geral" / "all" / missing → no vestibular filter
+  if (vestibular === "geral" || vestibular === "all") vestibular = "";
+
+  const metricas = getStatsData(subjectParam.toLowerCase(), vestibular || undefined);
+  return NextResponse.json({ subject: subjectParam, metricas });
+
+  /*
+  REAL BACKEND (restore when Java BFF /api/instituicao/estatisticas is available):
+
+  const BACKEND_API_URL = process.env.BACKEND_API_URL;
   if (!BACKEND_API_URL) {
-    console.error("A variável de ambiente BACKEND_API_URL não está definida.");
-    return NextResponse.json(
-      { message: "Erro de configuração no servidor." },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Erro de configuração no servidor." }, { status: 500 });
   }
 
-  // 2. Extrair parâmetros (materia da URL, universidadeId da Query String)
-  // Mapa para normalizar a escrita conforme o backend espera (com acentos e maiúsculas)
   const mapaMaterias: Record<string, string> = {
-    "matematica": "Matemática",
-    "fisica": "Física",
-    "quimica": "Química",
-    "biologia": "Biologia",
-    "portugues": "Língua Portuguesa",
-    "historia": "História",
-    "geografia": "Geografia",
-    "filosofia": "Filosofia",
-    "sociologia": "Sociologia",
-    "ingles": "Inglês",
+    matematica: "Matemática",
+    fisica: "Física",
+    quimica: "Química",
+    biologia: "Biologia",
+    portugues: "Língua Portuguesa",
+    historia: "História",
+    geografia: "Geografia",
+    filosofia: "Filosofia",
+    sociologia: "Sociologia",
+    ingles: "Inglês",
   };
 
-  const { subject: subjectParam } = await context.params;
-  // Tenta buscar no mapa usando a versão minúscula, senão usa o original
   const materia = mapaMaterias[subjectParam.toLowerCase()] || subjectParam;
-
-  const { searchParams } = new URL(req.url);
-  // Agora esperamos que o parâmetro 'vestibular' contenha o ID da universidade ou 'all'
   let universidadeId = searchParams.get("vestibular");
+  if (!universidadeId || universidadeId === "geral") universidadeId = "all";
 
-  // Tratamento para "geral" ou vazio -> "all"
-  if (!universidadeId || universidadeId === "geral") {
-    universidadeId = "all";
-  }
-
-  // Token de autenticação enviado pelo client via header Authorization (padrão Bearer)
   const authHeader = req.headers.get("Authorization");
   const userToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
-
   if (!userToken) {
-    return NextResponse.json(
-      { error: "Não autorizado: Token do backend não encontrado." },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Não autorizado: Token do backend não encontrado." }, { status: 401 });
   }
 
   try {
-    // 3. Construir a URL final para o back-end externo
-    // Usando string template para manter o acento visível no log (o fetch tratará a codificação necessária)
     const backendApiUrl = `${BACKEND_API_URL}/api/instituicao/estatisticas/${universidadeId}/${materia}`;
-
-    // 4. Fazer a chamada (fetch) para o seu back-end
     const res = await fetch(backendApiUrl, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${userToken}`,
-      },
-      // Configuração de cache (opcional, 'no-store' busca sempre os dados mais recentes)
-      cache: 'no-store',
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${userToken}` },
+      cache: "no-store",
     });
-
-    // 5. Tratar a resposta do back-end
     if (!res.ok) {
       const errorBody = await res.json().catch(() => ({ message: res.statusText }));
-      return NextResponse.json(
-        {
-          message: "Erro ao buscar dados do serviço externo.",
-          backendError: errorBody,
-        },
-        { status: res.status }
-      );
+      return NextResponse.json({ message: "Erro ao buscar dados do serviço externo.", backendError: errorBody }, { status: res.status });
     }
-
-    // 6. Se a resposta foi bem-sucedida, extraia o JSON e envie para o frontend
     const backendData = await res.json();
-    
-    // Mapear o formato do backend (conteudo, percentual) para o frontend (topico, percentual)
-    const metricas = Array.isArray(backendData) 
-      ? backendData.map((item: any) => ({
-          topico: item.conteudo, // Backend "conteudo" -> Frontend "topico"
-          percentual: item.percentual
-        }))
+    const metricas = Array.isArray(backendData)
+      ? backendData.map((item: any) => ({ topico: item.conteudo, percentual: item.percentual }))
       : [];
-
-    return NextResponse.json({
-      subject: subjectParam,
-      metricas: metricas
-    });
-
+    return NextResponse.json({ subject: subjectParam, metricas });
   } catch (error) {
     console.error("Erro de conexão com o back-end:", error);
-    return NextResponse.json(
-      { message: "Não foi possível conectar ao serviço de estatísticas." },
-      { status: 503 }
-    );
+    return NextResponse.json({ message: "Não foi possível conectar ao serviço de estatísticas." }, { status: 503 });
   }
+  */
 }

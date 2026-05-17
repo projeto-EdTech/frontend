@@ -932,7 +932,7 @@ const GameInstance = ({ mode, setMode }: GameInstanceProps) => {
             </button>
 
             {/* Botão de Reset/Novo Jogo */}
-            {session?.user?.tier === "SIMULAPRO" && (
+            {session?.user?.tier === "Simula PRO" && (
               <button
                 onClick={() => {
                   resetGame();

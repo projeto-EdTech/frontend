@@ -12,11 +12,19 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useUniversityStorage } from "@/contexts/UniversityStorage";
 import GeneralStats, { SkeletonCard, type ProfileStats } from "@/components/profile/GeneralStats";
 import StatsUser from "@/components/profile/StatsUser";
-import SimulationHistoric from "@/components/profile/SimulationHistoric";
+
 import NavigationBar from "@/components/profile/NavigationBar";
 import useSWR from 'swr';
 import NotaCorteConsulta from "@/components/Simula_PRO/NotaCorteConsulta";
 import UserConfig from "@/components/profile/UserConfig";
+import Gemini from "@/components/Simula_PRO/Questoes_Gemini";
+import Planner from "@/components/Simula_PRO/Planner/Planner";
+
+import { getRankingData } from "@/app/service/ranking.service";
+import type { UserRankingData } from "@/lib/rankUtils";
+import { mockProfileData } from "@/lib/mockProfileData";
+
+const MOCK_EMAIL = 'fegrolla0210@gmail.com';
 
 const fetcher = async (url: string) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('user_data') : '';
@@ -109,13 +117,34 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     return universityData ? universityData.logo : null;
   }, [groupedQuestions, selectedSubject, currentQuestionIndex]);
 
-  // Busca de dados utilizando SWR
+  const isMockUser = status === 'authenticated' && session?.user?.email === MOCK_EMAIL;
+
+  // Mock user: load static data, skip all API calls
+  useEffect(() => {
+    if (!isMockUser) return;
+    setProfileData(mockProfileData as ProfileData);
+    setIsDataLoading(false);
+    if (mockProfileData.reviewableQuestions.length > 0) {
+      const groups = mockProfileData.reviewableQuestions.reduce(
+        (acc: Map<string, ReviewableQuestion[]>, q: ReviewableQuestion) => {
+          if (!acc.has(q.displaySubject)) acc.set(q.displaySubject, []);
+          acc.get(q.displaySubject)!.push(q);
+          return acc;
+        },
+        new Map<string, ReviewableQuestion[]>()
+      );
+      setGroupedQuestions(groups);
+      setSelectedSubject(Array.from(groups.keys())[0] || '');
+    }
+  }, [isMockUser]);
+
+  // Real user: fetch via SWR
   const { data: profileDataResponse, error: swrError, isLoading: isSwrLoading } = useSWR(
-    status === 'authenticated' ? '/api/user/stats' : null,
+    status === 'authenticated' && !isMockUser ? '/api/user/stats' : null,
     fetcher,
     {
       revalidateOnFocus: true,
-      refreshInterval: 120000, // 2 minutos
+      refreshInterval: 120000,
       fallbackData: initialProfileDataProps || undefined
     }
   );
@@ -124,7 +153,7 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     if (profileDataResponse) {
       setProfileData(profileDataResponse);
       setIsDataLoading(false);
-      
+
       if (profileDataResponse.reviewableQuestions && profileDataResponse.reviewableQuestions.length > 0) {
         const groups = profileDataResponse.reviewableQuestions.reduce((acc: Map<string, ReviewableQuestion[]>, question: ReviewableQuestion) => {
           const subject = question.displaySubject;
@@ -153,6 +182,35 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
   useEffect(() => {
     if (isSwrLoading) setIsDataLoading(true);
   }, [isSwrLoading]);
+
+  const [rankingData, setRankingData] = useState<UserRankingData | null>(null);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+
+    const loadRanking = async () => {
+      try {
+        if (isMockUser) {
+          const data = await getRankingData('geral', 'mensal');
+          const current = data.find(u => u.isCurrentUser) ?? null;
+          setRankingData(current as UserRankingData | null);
+        } else {
+          const token = localStorage.getItem('user_data');
+          const res = await fetch('/api/ranking?universidade=geral&periodo=mensal', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (!res.ok) return;
+          const data: UserRankingData[] = await res.json();
+          const current = data.find(u => u.isCurrentUser) ?? null;
+          setRankingData(current);
+        }
+      } catch {
+        // ranking is non-critical, silently ignore
+      }
+    };
+
+    loadRanking();
+  }, [status, isMockUser]);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -207,6 +265,9 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
       // setIsMetaLoading(false);
       return; // Para a execução
     }
+
+    // Mock user uses static data — skip backend fetch
+    if (isMockUser) return;
 
     // 2. Define o estado de carregamento
     // setIsMetaLoading(true);
@@ -264,7 +325,7 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     return () => {
       clearTimeout(handler);
     };
-  }, [formData]); // Dependências: monitora o objeto formData completo ou os campos específicos se preferir, mas o linter pediu formData
+  }, [formData, isMockUser]); // Dependências: formData + isMockUser para o guard de mock
 
   // Função para salvar o perfil no sessionStorage
   const handleSaveProfile = () => {
@@ -402,7 +463,7 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsContent value="profile" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   {/* Estatísticas Gerais */}
-                  <GeneralStats 
+                  <GeneralStats
                     session={session}
                     status={status}
                     formData={formData}
@@ -410,13 +471,35 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
                     isDataLoading={isDataLoading}
                     error={error}
                     setActiveTab={setActiveTab}
+                    rankingData={rankingData}
+                    recentExams={profileData.recentExams}
                   />
                 </TabsContent>
 
-                {/* Simulados Tab Content */}
-                <TabsContent value="simulados" className="mt-6">
-                  <SimulationHistoric recentExams={profileData.recentExams} />
+                {/* Questões não resolvidas Tab Content */}
+                <TabsContent value="questoesNaoResolvidas" className="mt-6">
+                  <Gemini 
+                    groupedQuestions={groupedQuestions}
+                    selectedSubject={selectedSubject}
+                    setSelectedSubject={setSelectedSubject}
+                    currentQuestionIndex={currentQuestionIndex}
+                    setCurrentQuestionIndex={setCurrentQuestionIndex}
+                    explanation={explanation}
+                    setExplanation={setExplanation}
+                    isGenerating={isGenerating}
+                    handleSubmit={handleSubmit}
+                    universityLogoUrl={currentUniversityLogo}
+                  />
                 </TabsContent>
+
+                {/* Planner de estudos Tab Content */}
+                <TabsContent value="planner" className="mt-6">
+                  <DndProvider backend={HTML5Backend}>
+                    <Planner />
+                  </DndProvider>
+                </TabsContent>
+
+
 
                 {/* Estatisticas Tab Content */}
                 <TabsContent value="estatisticas" className="mt-6">
@@ -427,6 +510,8 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
                     monthlyProgress={profileData.monthlyProgress}
                   />
                 </TabsContent>
+
+
 
                 {/* Configuracoes Tab Content */}
                 <TabsContent value="configuracoes" className="mt-6">

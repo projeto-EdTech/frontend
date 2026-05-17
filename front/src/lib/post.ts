@@ -100,7 +100,7 @@ const mockPosts: Post[] = [
 
     Ao priorizar os conteúdos mais cobrados, praticar com provas antigas e manter uma rotina de qualidade, você estará preparado para encarar a prova com confiança.
 
-    👉 [Monte seu plano de estudos personalizado na plataforma Simulavest](#)
+    👉 [Monte seu plano de estudos personalizado na plataforma vestibuline](#)
 
     ---
 
@@ -113,7 +113,7 @@ const mockPosts: Post[] = [
     * **Popularidade:** 95
     * **Views:** 10.450
     * **Likes:** 120
-    * **Autor:** Equipe Simulavest
+    * **Autor:** Equipe vestibuline
       `,
       popularity: 95,
       category: 'Estratégia',
@@ -217,7 +217,7 @@ const mockPosts: Post[] = [
 
     Ao praticar essas 10 edições, você aumenta suas chances de estar pronto para qualquer desafio que aparecer.
 
-    👉 [Acesse a plataforma Simulavest e monte seu plano de estudos personalizado](#)`,
+    👉 [Acesse a plataforma vestibuline e monte seu plano de estudos personalizado](#)`,
     category: 'Estratégia',
     popularity: 98,
     stats: {

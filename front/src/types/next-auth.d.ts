@@ -5,7 +5,7 @@ declare module "next-auth" {
 	interface Session {
 		accessToken?: string;
 		error?: string;
-		user?: (User & { tier?: "FREE" | "SIMULAPRO" | "TEACHER" | "ADMIN" }) | undefined;
+		user?: (User & { tier?: "FREE" | "Simula PRO" | "TEACHER" | "ADMIN" }) | undefined;
 	}
 }
 
@@ -14,7 +14,7 @@ declare module "next-auth/jwt" {
 		accessToken?: string;
 		refreshToken?: string;
 		expires_at?: number;
-		tier?: "FREE" | "SIMULAPRO" | "TEACHER" | "ADMIN";
+		tier?: "FREE" | "Simula PRO" | "TEACHER" | "ADMIN";
 		user?: User;
 		error?: string;
 	}

@@ -5,6 +5,7 @@ import AccessibilityMenu from "@/components/AccessibilityMenu";
 import Image from "next/image";
 import Link from "next/link";
 import UserAvatar from "./UserAvatar";
+import { getRankIcon } from "@/lib/rankUtils";
 import { useSession, signOut } from "next-auth/react";
 import { useUserTier } from "@/hooks/useUserTier";
 import {
@@ -47,6 +48,10 @@ export default function Header() {
     profileIcon: "Avatar/Camaleão_1.png",
     useInitialAvatar: true,
   });
+
+  const [userRank, setUserRank] = useState<
+    import("@/lib/rankUtils").RankType | null
+  >(null);
 
   // Fechar menu mobile quando a tela for redimensionada
   useEffect(() => {
@@ -134,6 +139,20 @@ export default function Header() {
         handleProfileUpdate as EventListener,
       );
     };
+  }, []);
+
+  // Carrega rank do sessionStorage e ouve atualizações do perfil
+  useEffect(() => {
+    const stored = sessionStorage.getItem("userRank");
+    if (stored) setUserRank(stored as import("@/lib/rankUtils").RankType);
+
+    const handleRankUpdate = () => {
+      const updated = sessionStorage.getItem("userRank");
+      setUserRank((updated as import("@/lib/rankUtils").RankType) ?? null);
+    };
+
+    window.addEventListener("rankUpdated", handleRankUpdate);
+    return () => window.removeEventListener("rankUpdated", handleRankUpdate);
   }, []);
 
   const toggleUserMenu = () => {
@@ -325,15 +344,22 @@ export default function Header() {
                     className="relative group transition-all duration-300 hover:scale-110 cursor-pointer"
                   >
                     {/* Avatar com configurações do sessionStorage */}
-                    <UserAvatar
-                      name={session.user?.name || ""}
-                      className="w-10 h-10 text-lg"
-                      customIcon={
-                        profileSettings.useInitialAvatar
-                          ? undefined
-                          : profileSettings.profileIcon
-                      }
-                    />
+                    <div className="relative inline-block">
+                      <UserAvatar
+                        name={session.user?.name || ""}
+                        className="w-10 h-10 text-lg"
+                        customIcon={
+                          profileSettings.useInitialAvatar
+                            ? undefined
+                            : profileSettings.profileIcon
+                        }
+                      />
+                      {userRank && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200">
+                          {getRankIcon(userRank, 3)}
+                        </div>
+                      )}
+                    </div>
                   </button>
 
                   {isUserMenuOpen && (

@@ -1,11 +1,15 @@
 import React from 'react';
 import Image from 'next/image';
+import RankAvatarFrame from '@/components/ui/RankAvatarFrame';
+import type { RankType } from '@/lib/rankUtils';
 
 // Props que o componente aceitará
 interface UserAvatarProps {
   name: string;
   className?: string; // Para permitir customização de tamanho, etc.
   customIcon?: string; // Caminho para o ícone customizado do mascote
+  rank?: RankType | null; // Rank para exibir frame animado
+  rankSize?: 'sm' | 'md' | 'lg'; // Tamanho do frame (default sm para header)
 }
 
 // Array de cores para variar os avatares
@@ -32,33 +36,31 @@ const getColorForName = (name: string): string => {
   return avatarColors[index];
 };
 
-const UserAvatar: React.FC<UserAvatarProps> = ({ name, className = '', customIcon }) => {
-  // Se houver um ícone customizado, renderiza ele
-  if (customIcon) {
-    return (
-      <div className={`relative group rounded-full overflow-hidden shadow-lg ${className}`}>
-        <Image
-          src={`/Mascote/Logos/${customIcon}`}
-          alt={`Ícone de ${name}`}
-          width={80}
-          height={80}
-          className="object-cover w-full h-full"
-        />
-      </div>
-    );
-  }
+const UserAvatar: React.FC<UserAvatarProps> = ({ name, className = '', customIcon, rank, rankSize = 'sm' }) => {
+  const avatarContent = customIcon ? (
+    <div className={`relative group rounded-full overflow-hidden shadow-lg ${className}`}>
+      <Image
+        src={`/Mascote/Logos/${customIcon}`}
+        alt={`Ícone de ${name}`}
+        width={80}
+        height={80}
+        className="object-cover w-full h-full"
+      />
+    </div>
+  ) : (
+    <div
+      className={`relative group rounded-full bg-gradient-to-br ${getColorForName(name)} flex items-center justify-center text-white font-bold text-sm shadow-lg ${className}`}
+    >
+      <span className="relative z-10">{name ? name.charAt(0).toUpperCase() : '?'}</span>
+    </div>
+  );
 
-  // Caso contrário, usa o avatar padrão com iniciais
-  // Pega a primeira letra do nome, ou '?' se não houver nome.
-  const firstLetter = name ? name.charAt(0).toUpperCase() : '?';
-  const bgColor = getColorForName(name);
+  if (!rank) return avatarContent;
 
   return (
-    <div
-      className={`relative group rounded-full bg-gradient-to-br ${bgColor} flex items-center justify-center text-white font-bold text-sm shadow-lg ${className}`}
-    >
-      <span className="relative z-10">{firstLetter}</span>
-    </div>
+    <RankAvatarFrame rank={rank} size={rankSize} showBadge={true}>
+      {avatarContent}
+    </RankAvatarFrame>
   );
 };
 

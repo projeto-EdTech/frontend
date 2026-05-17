@@ -463,7 +463,7 @@ export const PLAYLISTS_MOCK: Playlist[] = [
             "Cultura e Identidade"
           ],
           "images": [
-            "https://raw.githubusercontent.com/SimulaVest-organization/SimulaVest-Docs/refs/heads/main/Banco%20de%20Imagens/banco%20de%20Imagens/FUVEST/2025/questao-01/image1.png"
+            "https://raw.githubusercontent.com/vestibuline-organization/vestibuline-Docs/refs/heads/main/Banco%20de%20Imagens/banco%20de%20Imagens/FUVEST/2025/questao-01/image1.png"
           ]
         }
       }

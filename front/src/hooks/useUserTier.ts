@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { decodeJWT } from "@/app/service/jwtDecoder";
 
-export type Tier = "FREE" | "SIMULAPRO" | "TEACHER" | "ADMIN";
+export type Tier = "FREE" | "Simula PRO" | "TEACHER" | "ADMIN";
 
 export function useUserTier() {
   const { data: session, status } = useSession();
@@ -13,6 +13,13 @@ export function useUserTier() {
 
   useEffect(() => {
     const checkTier = () => {
+      // Mock user always gets Simula PRO tier without any backend token
+      if (session?.user?.email === 'fegrolla0210@gmail.com') {
+        setTier('Simula PRO');
+        setLoading(false);
+        return;
+      }
+
       // 1. Tente ler do localStorage (prioridade para simulação/dados sincronizados)
       const storedToken = localStorage.getItem("user_data");
       if (storedToken) {
@@ -56,7 +63,8 @@ export function useUserTier() {
     };
   }, [session, status]);
 
-  const isPro = tier === "SIMULAPRO" || tier === "TEACHER" || tier === "ADMIN";
+  const isPro = tier === "Simula PRO" || tier === "TEACHER" || tier === "ADMIN";
+  const isFree = tier === "FREE";
 
-  return { tier, isPro, loading };
+  return { tier, isPro, isFree, loading };
 }
