@@ -186,70 +186,100 @@ export async function POST(
   request: Request,
   { params: paramsPromise }: { params: Promise<{ university: string }> }
 ) {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(2, 10).toUpperCase();
+  const LOG = `[API_QUESTIONS][${requestId}]`;
+
+  console.log(`${LOG} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  console.log(`${LOG} 🚀 Nova requisição recebida`);
+  console.log(`${LOG}    Timestamp: ${new Date().toISOString()}`);
+  console.log(`${LOG}    Método: POST`);
+  console.log(`${LOG}    URL completa: ${request.url}`);
+
   const params = await paramsPromise;
+  console.log(`${LOG}    Param [university]: ${params.university}`);
+
   const backendApiUrl = process.env.BACKEND_API_URL;
+  console.log(`${LOG}    BACKEND_API_URL configurado: ${backendApiUrl ? 'SIM (' + backendApiUrl + ')' : 'NÃO'}`);
 
   if (!backendApiUrl) {
-    console.error('[API_QUESTIONS_ERROR] BACKEND_API_URL não está configurado nas variáveis de ambiente.');
+    console.error(`${LOG} ❌ BACKEND_API_URL não está configurado nas variáveis de ambiente.`);
     return NextResponse.json({ message: 'Erro de configuração no servidor.' }, { status: 500 });
   }
 
-  // Lê o token JWT enviado pelo cliente no header Authorization (Mantendo a barreira de segurança)
+  // Headers da requisição
+  const headersLog: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
+    headersLog[key] = key.toLowerCase() === 'authorization' ? 'Bearer [REDACTED]' : value;
+  });
+  console.log(`${LOG}    Headers recebidos:`, JSON.stringify(headersLog, null, 2));
+
   const authHeader = request.headers.get('Authorization');
   const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
+  console.log(`${LOG}    Token JWT presente: ${userToken ? 'SIM (primeiros 10 chars: ' + userToken.substring(0, 10) + '...)' : 'NÃO'}`);
+
   if (!userToken) {
-    console.warn('[API_QUESTIONS] ❌ Requisição sem token JWT.');
+    console.warn(`${LOG} ❌ Requisição sem token JWT. Retornando 401.`);
     return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
   }
 
   try {
-    // 1. EXTRAINDO DADOS DO CORPO DA REQUISIÇÃO (DO FRONTEND)
+    // 1. EXTRAINDO DADOS DO CORPO DA REQUISIÇÃO
     let body: any = {};
     try {
       body = await request.json();
+      console.log(`${LOG}    Body parseado com sucesso:`, JSON.stringify(body));
     } catch (e) {
-      console.warn('[API_QUESTIONS] ⚠️ Corpo da requisição não é um JSON válido ou está vazio sugerindo uso de parâmetros de URL.');
+      console.warn(`${LOG} ⚠️ Body não é JSON válido ou está vazio. Usando query params como fallback. Erro:`, e instanceof Error ? e.message : e);
     }
-    
-    // Fallback para query params se o body estiver vazio (para compatibilidade ou flexibilidade)
+
     const url = new URL(request.url);
+    const queryParams: Record<string, string> = {};
+    url.searchParams.forEach((value, key) => { queryParams[key] = value; });
+    console.log(`${LOG}    Query params:`, JSON.stringify(queryParams));
+
     const rawYear = body.year || url.searchParams.get('year');
     const year = rawYear ? Number(rawYear) : undefined;
     const universitySlug = params.university.toUpperCase();
 
-    // 2. CONFIGURANDO A CHAMADA AO BACKEND (POST COM BODY)
+    console.log(`${LOG}    Parâmetros extraídos → universitySlug: "${universitySlug}", year: ${year ?? 'não informado'}`);
+
+    // 2. CONFIGURANDO E ENVIANDO CHAMADA AO BACKEND
     const backendUrl = `${backendApiUrl}/api/prova/instituicao`;
+    const backendPayload = { instituicao: universitySlug, ano: year, dia: 1 };
 
-    console.log('[API_QUESTIONS] 📤 Enviando requisição ao backend:');
-    console.log('[API_QUESTIONS]    URL:', backendUrl);
-    console.log('[API_QUESTIONS]    Payload:', { slug: universitySlug, ano: year });
+    console.log(`${LOG} 📤 Enviando requisição ao backend:`);
+    console.log(`${LOG}    URL: ${backendUrl}`);
+    console.log(`${LOG}    Payload:`, JSON.stringify(backendPayload));
 
+    const fetchStart = Date.now();
     const apiRes = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`,
       },
-      body: JSON.stringify({
-        slug: universitySlug,
-        ano: year
-      }),
+      body: JSON.stringify(backendPayload),
       cache: 'no-store',
     });
+    const fetchDuration = Date.now() - fetchStart;
 
-    console.log('[API_QUESTIONS] 📥 Resposta recebida do backend:');
-    console.log('[API_QUESTIONS]    Status:', apiRes.status, apiRes.statusText);
+    console.log(`${LOG} 📥 Resposta recebida do backend (${fetchDuration}ms):`);
+    console.log(`${LOG}    Status: ${apiRes.status} ${apiRes.statusText}`);
+    const responseHeaders: Record<string, string> = {};
+    apiRes.headers.forEach((value, key) => { responseHeaders[key] = value; });
+    console.log(`${LOG}    Headers de resposta:`, JSON.stringify(responseHeaders));
 
     if (!apiRes.ok) {
       const errorData = await apiRes.json().catch(() => ({ message: 'Erro ao decodificar a resposta do back-end.' }));
 
       if (apiRes.status === 404) {
-        console.warn('[API_QUESTIONS] ⚠️  Questões não encontradas para:', universitySlug);
+        console.warn(`${LOG} ⚠️ Questões não encontradas para: "${universitySlug}" (404)`);
         return NextResponse.json({ error: 'Universidade ou questões não encontradas' }, { status: 404 });
       }
 
-      console.error('[API_QUESTIONS] ❌ Erro retornado pelo backend. Status:', apiRes.status, '| Mensagem:', errorData.message);
+      console.error(`${LOG} ❌ Erro retornado pelo backend. Status: ${apiRes.status} | Body:`, JSON.stringify(errorData));
       return NextResponse.json(
         { message: errorData.message || 'Ocorreu um erro ao buscar os dados.' },
         { status: apiRes.status }
@@ -257,42 +287,70 @@ export async function POST(
     }
 
     const universityQuestionsRaw = await apiRes.json();
-    console.log('[API_QUESTIONS]    Dados raw recebidos (questões brutas):', JSON.stringify(universityQuestionsRaw).substring(0, 200) + '...');
-    
-    // Formata os dados do backend para o contrato do frontend
-    const formattedQuestions = formatApiData(universityQuestionsRaw);
-    console.log('[API_QUESTIONS]    Total de questões formatadas:', formattedQuestions.length);
+    const rawJson = JSON.stringify(universityQuestionsRaw);
+    console.log(`${LOG}    Tamanho do payload raw: ${rawJson.length} bytes`);
+    console.log(`${LOG}    Preview do raw (primeiros 300 chars): ${rawJson.substring(0, 300)}...`);
 
-    // Filtros adicionais (como quantidade) podem ser mantidos via Query Params se necessário
+    const provaData = universityQuestionsRaw.prova || universityQuestionsRaw;
+    const totalBruto = Array.isArray(provaData?.questoes) ? provaData.questoes.length : 0;
+    const semResposta = Array.isArray(provaData?.questoes)
+      ? provaData.questoes.filter((q: QuestaoBruta) => q.opcaoCorreta === null).length
+      : 0;
+    console.log(`${LOG}    Questões brutas no payload: ${totalBruto}`);
+    console.log(`${LOG}    Questões filtradas (sem opcaoCorreta): ${semResposta}`);
+    console.log(`${LOG}    Questões válidas para formatação: ${totalBruto - semResposta}`);
+
+    // 3. FORMATANDO DADOS
+    console.log(`${LOG} 🔄 Iniciando formatação dos dados...`);
+    const formatStart = Date.now();
+    const formattedQuestions = formatApiData(universityQuestionsRaw);
+    console.log(`${LOG}    Formatação concluída em ${Date.now() - formatStart}ms → ${formattedQuestions.length} questões`);
+
+    // 4. APLICANDO FILTROS
     const countParam = url.searchParams.get('count');
     const yearParam = url.searchParams.get('year');
-
     let result = formattedQuestions;
 
     if (yearParam) {
       const y = Number(yearParam);
       if (!isNaN(y)) {
+        const antes = result.length;
         result = result.filter(q => q.year === y);
-        console.log('[API_QUESTIONS]    Filtro year=' + y + ' → questões restantes:', result.length);
+        console.log(`${LOG}    Filtro year=${y} → ${antes} → ${result.length} questões`);
+      } else {
+        console.warn(`${LOG} ⚠️ yearParam inválido: "${yearParam}" (NaN). Filtro ignorado.`);
       }
     }
 
-    // Ordena por ID
+    console.log(`${LOG}    Ordenando ${result.length} questões por ID...`);
     result.sort((a, b) => a.id - b.id);
+    console.log(`${LOG}    Ordenação concluída. Primeiro ID: ${result[0]?.id ?? 'N/A'}, Último ID: ${result[result.length - 1]?.id ?? 'N/A'}`);
 
     if (countParam) {
       const c = Number(countParam);
       if (!isNaN(c) && c > 0) {
+        const antes = result.length;
         result = result.slice(0, c);
-        console.log('[API_QUESTIONS]    Filtro count=' + c + ' → questões retornadas:', result.length);
+        console.log(`${LOG}    Filtro count=${c} → ${antes} → ${result.length} questões`);
+      } else {
+        console.warn(`${LOG} ⚠️ countParam inválido: "${countParam}". Filtro ignorado.`);
       }
     }
 
-    console.log('[API_QUESTIONS] ✅ Sucesso! Retornando', result.length, 'questões ao frontend.');
+    const totalDuration = Date.now() - startTime;
+    console.log(`${LOG} ✅ Sucesso! Retornando ${result.length} questões ao frontend.`);
+    console.log(`${LOG}    Tempo total de execução: ${totalDuration}ms`);
+    console.log(`${LOG} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error('[API_QUESTIONS_ERROR] Erro na comunicação com o backend:', error);
+    const totalDuration = Date.now() - startTime;
+    console.error(`${LOG} ❌ Erro inesperado após ${totalDuration}ms:`);
+    console.error(`${LOG}    Tipo:`, error instanceof Error ? error.constructor.name : typeof error);
+    console.error(`${LOG}    Mensagem:`, error instanceof Error ? error.message : String(error));
+    console.error(`${LOG}    Stack:`, error instanceof Error ? error.stack : 'N/A');
+    console.log(`${LOG} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     return NextResponse.json(
       { message: 'Não foi possível buscar as questões. Verifique se o corpo da requisição está correto.' },
       { status: 503 }

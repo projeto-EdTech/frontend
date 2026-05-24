@@ -231,10 +231,10 @@ Abaixo listamos onde cada rota está sendo consumida nos componentes e páginas 
 | :--- | :--- | :--- |
 | ✅ | **`/api/auth/[...nextauth]`** | `src/app/api/auth/[...nextauth]/route.ts` |
 | ✅ | **`/api/sync-user`** | `src/components/SyncUserEffect.tsx` |
-| ‼️ | **`/api/user/stats`** | `src/app/profile/page.tsx` |
+| ✅ | **`/api/user/stats`** | `src/app/profile/page.tsx` |
 | ✅ | **`/api/subscribe`** | `src/components/blog/SubscribeButton.tsx` |
 | ✅ | **`/api/universities`** | `src/components/Sidebar.tsx`<br>`src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/library/page.tsx`<br>`src/app/page.tsx` |
-| 🟠 | **`/api/questions/[university]`** | `src/app/simulation/[university]/page.tsx` |
+| ✅ | **`/api/questions/[university]`** | `src/app/simulation/[university]/page.tsx` |
 | ✅ | **`/api/estatisticas/[subject]`** | `src/app/estatisticas/[subject]/page.tsx` |
 | ✅ | **`/api/Nota-corte`** | `src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/profile/page.tsx` |
 | ✅ | **`/api/games/flash-cards`** | `src/components/games/flash-card_game/Flash-card.tsx` |

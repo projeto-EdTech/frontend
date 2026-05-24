@@ -1771,33 +1771,34 @@ export default function Home() {
         {!hasPaidPlan && (
           <div
             id="planos"
-            className="py-24 relative overflow-hidden"
-            style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, #F5F5F7 100%)' }}
+            className={`py-24 relative overflow-hidden transition-colors duration-300 ${isDark ? "bg-gray-950" : ""}`}
+            style={isDark ? undefined : { background: 'linear-gradient(180deg, #FAFAFA 0%, #F5F5F7 100%)' }}
           >
             {/* Background decorativo - Pattern sutil de pontos */}
-            <div 
-              className="absolute inset-0 opacity-[0.02] pointer-events-none" 
-              style={{ 
-                backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', 
-                backgroundSize: '32px 32px' 
+            <div
+              className={`absolute inset-0 opacity-[0.02] pointer-events-none`}
+              style={{
+                backgroundImage: `radial-gradient(${isDark ? '#fff' : '#000'} 1px, transparent 1px)`,
+                backgroundSize: '32px 32px'
               }}
             ></div>
 
             <div className="container mx-auto px-6 relative z-10">
               {/* Header com urgência */}
               <div className="text-center mb-12 relative">
-                <h2 className="text-[40px] font-bold text-[#1d1d1f] mb-3 leading-tight tracking-tight">
+                <h2 className={`text-[40px] font-bold mb-3 leading-tight tracking-tight ${isDark ? "text-white" : "text-[#1d1d1f]"}`}>
                   Escolha Seu Plano
                 </h2>
-                <p className="text-[18px] text-black/60 font-normal leading-relaxed max-w-[600px] mx-auto">
+                <p className={`text-[18px] font-normal leading-relaxed max-w-[600px] mx-auto ${isDark ? "text-gray-400" : "text-black/60"}`}>
                   Escolha o plano ideal para sua jornada
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start justify-center max-w-[1120px] mx-auto px-4">
-                <PricingPlans 
-                  loading={loading} 
-                  onPlanClick={handlePlanClick} 
+                <PricingPlans
+                  loading={loading}
+                  onPlanClick={handlePlanClick}
+                  isDark={isDark}
                 />
               </div>
 
@@ -1809,15 +1810,15 @@ export default function Home() {
                 transition={{ delay: 0.5, duration: 0.5 }}
                 className="mt-16 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12"
               >
-                <div className="flex items-center gap-2 text-black/40">
+                <div className={`flex items-center gap-2 ${isDark ? "text-gray-500" : "text-black/40"}`}>
                   <ShieldCheck className="w-5 h-5" />
                   <span className="text-[13px] font-medium" style={{ fontFamily: 'SF Pro Text, sans-serif' }}>Pagamento 100% Seguro</span>
                 </div>
-                <div className="flex items-center gap-2 text-black/40">
+                <div className={`flex items-center gap-2 ${isDark ? "text-gray-500" : "text-black/40"}`}>
                   <CalendarX className="w-5 h-5" />
                   <span className="text-[13px] font-medium" style={{ fontFamily: 'SF Pro Text, sans-serif' }}>Cancele a qualquer momento</span>
                 </div>
-                <div className="flex items-center gap-2 text-black/40">
+                <div className={`flex items-center gap-2 ${isDark ? "text-gray-500" : "text-black/40"}`}>
                   <Lock className="w-5 h-5" />
                   <span className="text-[13px] font-medium" style={{ fontFamily: 'SF Pro Text, sans-serif' }}>Privacidade Protegida</span>
                 </div>

@@ -36,8 +36,20 @@ export const UniversityStorage: React.FC<UniversityStorageProps> = ({ children }
         if (!response.ok) {
           throw new Error('Falha ao buscar universidades');
         }
+        const contentType = response.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          throw new Error('Resposta inesperada do servidor (não-JSON)');
+        }
         const data = await response.json();
-        setUniversities(data);
+        const normalized = Array.isArray(data)
+          ? data.map((u: University) => ({
+              ...u,
+              logo: u.logo && !u.logo.startsWith('/') && !u.logo.startsWith('http')
+                ? `/${u.logo}`
+                : u.logo,
+            }))
+          : data;
+        setUniversities(normalized);
       } catch (err) {
         console.error('Erro ao carregar universidades:', err);
         setError('Não foi possível carregar as universidades.');
