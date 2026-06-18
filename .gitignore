@@ -45,4 +45,5 @@ npm install --legacy-peer-deps
 
 # agents and instructions for AIs
 CLAUDE.md
+GEMINI.md
 .claude/
