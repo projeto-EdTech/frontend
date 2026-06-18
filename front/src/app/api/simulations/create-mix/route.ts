@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { allQuestions, Question } from '@/lib/dataUniversity';
-import { saveSimulation } from '@/lib/simulationStore'; // <-- 1. Importar a função de salvar
+import { allQuestions, Question } from '@/lib/data/universities';
+import { saveSimulation } from '@/lib/store/simulationStore'; // <-- 1. Importar a função de salvar
 
 /**
  * Função para embaralhar um array (continua a mesma)

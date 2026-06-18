@@ -11,13 +11,13 @@ Real backend fetch blocks are preserved as comments — uncomment to restore whe
 
 | File | Domain | Exported By |
 |---|---|---|
-| `dataNotaCorte.ts` | Cutoff scores (100+ courses/institutions) | `mockApiData`, `processCutoffResults`, `ApiResponse` |
-| `dataStats.ts` | Subject distribution by vestibular | `dataStats`, `getStatsData(subject, vestibular?)` |
-| `dataUniversity.ts` | University catalog (logos, slugs, exams) | `universities` |
-| `DataRanking.ts` | Leaderboard by period | `getRankingData(university, period)` |
-| `Playlist_data.ts` | Community playlists + questions | `PLAYLISTS_MOCK`, `Playlist`, `Question` |
-| `Data_games.ts` | Minigame metadata | `minigamesData`, `MinigameData` |
-| `mockProfileData.ts` | Profile stats for mock user | `mockProfileData`, `MockProfileData` |
+| `data/notaCorte.ts` | Cutoff scores (100+ courses/institutions) | `mockApiData`, `processCutoffResults`, `ApiResponse` |
+| `data/stats.ts` | Subject distribution by vestibular | `dataStats`, `getStatsData(subject, vestibular?)` |
+| `data/universities.ts` | University catalog (logos, slugs, exams) | `universities` |
+| `data/ranking.ts` | Leaderboard by period | `getRankingData(university, period)` |
+| `data/playlists.ts` | Community playlists + questions | `PLAYLISTS_MOCK`, `Playlist`, `Question` |
+| `data/games.ts` | Minigame metadata | `minigamesData`, `MinigameData` |
+| `data/profile.ts` | Profile stats for mock user | `mockProfileData`, `MockProfileData` |
 
 ---
 
@@ -25,12 +25,12 @@ Real backend fetch blocks are preserved as comments — uncomment to restore whe
 
 | Route | Method | Static Source | Status |
 |---|---|---|---|
-| `/api/Nota-corte` | GET | `mockApiData` from `dataNotaCorte.ts` | **Static (backend commented out)** |
-| `/api/Nota-corte` | POST | `processCutoffResults()` from `dataNotaCorte.ts` | **Static (backend commented out)** |
-| `/api/estatisticas/[subject]` | GET | `getStatsData()` from `dataStats.ts` | **Static (backend commented out)** |
-| `/api/playlist` | GET | `PLAYLISTS_MOCK` from `Playlist_data.ts` | **Static (always was)** |
-| `/api/universities` | GET | `universities` from `dataUniversity.ts` | **Static fallback in `university.service.ts`** |
-| `/api/ranking` | GET | `getRankingData()` from `DataRanking.ts` | **Static (always was via `ranking.service.ts`)** |
+| `/api/Nota-corte` | GET | `mockApiData` from `data/notaCorte.ts` | **Static (backend commented out)** |
+| `/api/Nota-corte` | POST | `processCutoffResults()` from `data/notaCorte.ts` | **Static (backend commented out)** |
+| `/api/estatisticas/[subject]` | GET | `getStatsData()` from `data/stats.ts` | **Static (backend commented out)** |
+| `/api/playlist` | GET | `PLAYLISTS_MOCK` from `data/playlists.ts` | **Static (always was)** |
+| `/api/universities` | GET | `universities` from `data/universities.ts` | **Static fallback in `university.service.ts`** |
+| `/api/ranking` | GET | `getRankingData()` from `data/ranking.ts` | **Static (always was via `ranking.service.ts`)** |
 | `/api/games/flash-cards` | GET | No equivalent static data | Live backend required |
 | `/api/simulations/*` | POST | No equivalent static data | Live backend required |
 | `/api/ai/*` | POST | No equivalent static data | Live backend required |
@@ -90,10 +90,10 @@ These service files in `src/app/service/` already use lib statics — no changes
 | Service | Static Source |
 |---|---|
 | `statistics.service.ts` | `getStatsData()` + `processCutoffResults()` |
-| `university.service.ts` | `universities` from `dataUniversity.ts` (with env guard for production) |
-| `playlist.service.ts` | `PLAYLISTS_MOCK` from `Playlist_data.ts` |
-| `game.service.ts` | `minigamesData` from `Data_games.ts` |
-| `ranking.service.ts` | `DataRanking.ts` generated data |
+| `university.service.ts` | `universities` from `data/universities.ts` (with env guard for production) |
+| `playlist.service.ts` | `PLAYLISTS_MOCK` from `data/playlists.ts` |
+| `game.service.ts` | `minigamesData` from `data/games.ts` |
+| `ranking.service.ts` | `data/ranking.ts` generated data |
 
 ---
 

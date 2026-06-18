@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSimulation } from '@/lib/simulationStore';
+import { getSimulation } from '@/lib/store/simulationStore';
 
 export async function GET(
   request: Request,

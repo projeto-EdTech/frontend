@@ -12,7 +12,7 @@ import {
 import SimulationHistoric from "@/components/profile/SimulationHistoric";
 import ProfileHeroCard from "@/components/profile/ProfileHeroCard";
 import AchievementCarousel from "@/components/profile/AchievementCarousel";
-import type { UserRankingData } from "@/lib/rankUtils";
+import type { UserRankingData } from "@/lib/utils/rankUtils";
 
 // --- TIPAGENS ---
 export interface RecentExam {
@@ -52,6 +52,14 @@ interface GeneralStatsProps {
   setActiveTab: (tab: string) => void;
   rankingData?: UserRankingData | null;
   recentExams: RecentExam[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 // Componente Card Estatística
@@ -183,6 +191,7 @@ const GeneralStats: React.FC<GeneralStatsProps> = ({
   setActiveTab,
   rankingData,
   recentExams,
+  pagination,
 }) => {
   return (
     <div
@@ -301,7 +310,11 @@ const GeneralStats: React.FC<GeneralStatsProps> = ({
 
             {/* Histórico de Simulados */}
             <div className="bg-white backdrop-blur-xl border border-gray-200 rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] animate-in fade-in slide-in-from-bottom-6 duration-700">
-              <SimulationHistoric recentExams={recentExams} />
+              <SimulationHistoric
+                initialExams={recentExams}
+                totalPages={pagination?.totalPages ?? 1}
+                total={pagination?.total ?? recentExams.length}
+              />
             </div>
           </>
         )}

@@ -1,12 +1,14 @@
 export type PostPreview = {
-  id: string;
+  id?: string;
   slug: string;
   title: string;
   publishedAt: string;
+  readingTime?: number;
+  popularity?: number;
   excerpt: string;
   category: string;
   stats: {
-    readingTime: number;
+    readingTime?: number;
     views: number;
     likes: number;
   };

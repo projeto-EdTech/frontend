@@ -1,4 +1,4 @@
-import { PLAYLISTS_MOCK, type Playlist } from "@/lib/Playlist_data";
+import { PLAYLISTS_MOCK, type Playlist } from "@/lib/data/playlists";
 
 /**
  * CACHE STRATEGY: ISR - revalidate 60s

@@ -5,7 +5,7 @@ import { PostPreview } from "@/types";
 
 async function fetchBlogPosts(): Promise<PostPreview[]> {
   try {
-    const externalApiUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
+    const externalApiUrl = process.env.BACKEND_API_URL;
     const session = await getServerSession(authOptions);
     const userToken = session?.accessToken || "";
 

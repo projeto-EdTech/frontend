@@ -43,6 +43,9 @@ interface StudyEvent {
   color: string;
   description?: string;
   isScheduled: boolean;
+  conteudoId?: string;
+  conteudo?: string;
+  materia?: string;
 }
 
 interface StudyCardState {
@@ -51,6 +54,9 @@ interface StudyCardState {
   color: string;
   priority: Priority;
   title?: string;
+  conteudoId?: string;
+  conteudo?: string;
+  materia?: string;
 }
 
 interface WeeklyStats {
@@ -62,6 +68,19 @@ interface WeeklyStats {
 
 type Priority = "alta" | "media" | "baixa";
 type CompletedFilter = "" | "completed" | "pending";
+
+interface StudyMaterial {
+  materiaId: string;
+  materia: string;
+  conteudoId: string;
+  conteudo: string;
+  subject: string;
+  title: string;
+  priority: Priority;
+  color: string;
+  taxaErro: number;
+}
+
 interface Filters {
   subject: string;
   priority: "" | Priority;
@@ -108,6 +127,7 @@ const Planner: React.FC = () => {
     "full" | "morning" | "afternoon" | "evening"
   >("full");
   const [isEditing, setIsEditing] = useState(false);
+  const [isEnteringEditMode, setIsEnteringEditMode] = useState(false);
   const [isFetchingSchedule, setIsFetchingSchedule] = useState(true);
   const timeConfig = { startHour: 8, endHour: 22 };
 
@@ -115,15 +135,15 @@ const Planner: React.FC = () => {
     () => ({
       baixa: 1,
       media: 2,
-      alta: 4,
+      alta: 3,
     }),
     [],
   );
 
-  const handleDecrementCardCount = useCallback((subject: string) => {
+  const handleDecrementCardCount = useCallback((key: string) => {
     setStudyCards((prevCards) =>
       prevCards.map((card) =>
-        card.subject === subject
+        (card.conteudoId ?? card.subject) === key
           ? { ...card, count: Math.max(0, card.count - 1) }
           : card,
       ),
@@ -131,11 +151,11 @@ const Planner: React.FC = () => {
   }, []);
 
   const handleIncrementCardCount = useCallback(
-    (subject: string) => {
+    (key: string) => {
       setStudyCards((prevCards) => {
         let cardToMove: StudyCardState | undefined;
         const otherCards = prevCards.filter((card) => {
-          if (card.subject === subject) {
+          if ((card.conteudoId ?? card.subject) === key) {
             cardToMove = { ...card, count: card.count + 1 };
             return false;
           }
@@ -146,7 +166,7 @@ const Planner: React.FC = () => {
           return [cardToMove, ...otherCards];
         } else {
           const originalEvent = initialEvents.find(
-            (e) => e.subject === subject,
+            (e) => (e.conteudoId ?? e.subject) === key,
           );
           if (originalEvent) {
             const newCard: StudyCardState = {
@@ -154,6 +174,10 @@ const Planner: React.FC = () => {
               color: originalEvent.color,
               priority: originalEvent.priority,
               count: 1,
+              conteudoId: originalEvent.conteudoId,
+              conteudo: originalEvent.conteudo,
+              materia: originalEvent.materia,
+              title: originalEvent.title,
             };
             return [newCard, ...otherCards];
           }
@@ -307,6 +331,11 @@ const Planner: React.FC = () => {
       (_, i) => startHour + i,
     );
 
+    // Se estiver editando ou visualizando sugestão, mostra o Planner aberto por inteiro (todas as horas)
+    if (isEditing || isPreviewingSuggestion) {
+      return fullSlots;
+    }
+
     if (events.length > 0) {
       const hours = events.map((ev) => ev.start.getHours());
       const minH = Math.max(startHour, Math.min(...hours));
@@ -396,15 +425,10 @@ const Planner: React.FC = () => {
         if (!response.ok) {
           throw new Error("Falha ao carregar materiais para sugestão");
         }
-        const subjectMaterials: {
-          subject: string;
-          color: string;
-          priority: Priority;
-          title: string;
-        }[] = await response.json();
+        const subjectMaterials: StudyMaterial[] = await response.json();
 
         // 2. CRIA UMA LISTA "CRUA" DE EVENTOS PARA EMBARALHAR, BASEADO NA PRIORIDADE
-        // Ex: prioridade 'alta' (count 4) adiciona a matéria 4x na lista.
+        // Criamos múltiplos eventos por conteúdo com base na prioridade (alta=3, media=2, baixa=1)
         const eventsToShuffle: Omit<
           StudyEvent,
           "id" | "start" | "end" | "isScheduled"
@@ -418,6 +442,9 @@ const Planner: React.FC = () => {
               color: material.color,
               priority: material.priority,
               completed: false,
+              conteudoId: material.conteudoId,
+              conteudo: material.conteudo,
+              materia: material.materia,
             });
           }
         });
@@ -491,6 +518,7 @@ const Planner: React.FC = () => {
   const handleEnterEditMode = async () => {
     // 1. Mantém o backup para caso o usuário cancele
     setPreEditEvents(allEvents);
+    setIsEnteringEditMode(true);
 
     try {
       // 2. Busca as definições de matéria (metas) da API
@@ -500,12 +528,7 @@ const Planner: React.FC = () => {
       }
 
       // Tipagem do retorno da API
-      const subjectMaterials: {
-        subject: string;
-        color: string;
-        priority: Priority;
-        title: string;
-      }[] = await response.json();
+      const subjectMaterials: StudyMaterial[] = await response.json();
 
       // 3. Lógica de Reconciliação: Conta o que JÁ está no Google Agenda
       // Isso evita que o planner peça para você agendar algo que já está lá
@@ -514,17 +537,18 @@ const Planner: React.FC = () => {
       allEvents.forEach((event) => {
         // Consideramos apenas eventos ativos/agendados para a contagem
         if (event.isScheduled) {
-          const key = event.subject;
+          const key = event.conteudoId ?? event.subject;
           currentCounts[key] = (currentCounts[key] || 0) + 1;
         }
       });
 
       // 4. Gera os Cards da Sidebar (Apenas o que falta agendar)
       const newStudyCards = subjectMaterials.map((material) => {
-        const totalNeeded = priorityCardCount[material.priority]; // Ex: Alta = 4
-        const alreadyScheduled = currentCounts[material.subject] || 0; // Ex: Já tem 3 no Google
+        const key = material.conteudoId ?? material.subject;
+        const alreadyScheduled = currentCounts[key] || 0;
+        const totalNeeded = priorityCardCount[material.priority];
 
-        // Calcula o restante (Ex: 4 - 3 = 1 card restante na sidebar)
+        // Calcula o restante (Ex: 3 - 1 = 2 cards restantes na sidebar)
         const remaining = Math.max(0, totalNeeded - alreadyScheduled);
 
         return {
@@ -533,6 +557,9 @@ const Planner: React.FC = () => {
           priority: material.priority,
           title: material.title,
           count: remaining, // Usa o saldo restante
+          conteudoId: material.conteudoId,
+          conteudo: material.conteudo,
+          materia: material.materia,
         };
       });
 
@@ -545,6 +572,8 @@ const Planner: React.FC = () => {
     } catch (error) {
       console.error("Erro ao entrar no modo de edição:", error);
       setError("Não foi possível carregar as matérias. Tente novamente.");
+    } finally {
+      setIsEnteringEditMode(false);
     }
   };
 
@@ -654,35 +683,63 @@ const Planner: React.FC = () => {
     priority: Priority;
     count: number;
     title?: string;
+    conteudoId?: string;
+    conteudo?: string;
+    materia?: string;
     onClick: () => void;
-  }> = ({ subject, color, priority, count, title, onClick }) => {
+  }> = ({
+    subject,
+    color,
+    priority,
+    count,
+    title,
+    conteudoId,
+    conteudo,
+    materia,
+    onClick,
+  }) => {
     const [{ isDragging }, drag] = useDrag(
       () => ({
         type: "study-card",
-        item: { subject, color, priority, title },
+        item: {
+          subject,
+          color,
+          priority,
+          title,
+          conteudoId,
+          conteudo,
+          materia,
+        },
         collect: (monitor) => ({
           isDragging: monitor.isDragging(),
         }),
       }),
-      [subject, color, priority, title],
+      [subject, color, priority, title, conteudoId, conteudo, materia],
     );
 
     return (
       <div
         ref={drag as unknown as React.LegacyRef<HTMLDivElement>}
         onClick={onClick}
-        className={`p-2.5 rounded-[10px] cursor-grab active:cursor-grabbing transition-all duration-150 flex items-center justify-between shadow-sm hover:shadow-md ${isDragging ? "opacity-40 scale-95" : "opacity-100"}`}
+        className={`p-3 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200 flex items-center justify-between shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)] active:scale-[0.97] hover:scale-[1.02] border border-white/10 ${isDragging ? "opacity-40 scale-95" : "opacity-100"}`}
         style={{ backgroundColor: color }}
       >
-        <span className="text-white font-medium text-[13px] truncate drop-shadow-sm">
-          {subject}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center text-[11px] font-bold text-white bg-black/20 w-5 h-5 rounded-full">
+        <div className="flex flex-col min-w-0 pr-2">
+          <span className="text-white font-semibold text-[13px] tracking-[-0.01em] leading-tight truncate drop-shadow-sm">
+            {conteudo || subject}
+          </span>
+          {conteudo && (
+            <span className="text-white/75 font-medium text-[11px] tracking-tight mt-0.5 uppercase">
+              {subject}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="flex items-center justify-center text-[11px] font-bold text-white bg-black/20 w-5 h-5 rounded-full ring-1 ring-white/10">
             {count}
           </span>
           <div
-            className={`w-2 h-2 rounded-full flex-shrink-0 border-[1.5px] border-white/60 ${priorityColors[priority]}`}
+            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 border-[1.5px] border-white/70 shadow-sm ${priorityColors[priority]}`}
           />
         </div>
       </div>
@@ -755,16 +812,26 @@ const Planner: React.FC = () => {
           newStart.setHours(hour, 0, 0, 0);
 
           if (type === "study-card") {
-            // 1. Extraia também o 'title' do item arrastado
-            const { subject, color, priority, title } = item as {
+            const {
+              subject,
+              color,
+              priority,
+              title,
+              conteudoId,
+              conteudo,
+              materia,
+            } = item as {
               subject: string;
               color: string;
               priority: Priority;
               title?: string;
+              conteudoId?: string;
+              conteudo?: string;
+              materia?: string;
             };
             const newEnd = new Date(newStart.getTime() + oneHour);
             const newEvent: StudyEvent = {
-              id: `event-${Date.now()}-${subject}`,
+              id: `event-${Date.now()}-${conteudoId ?? subject}-${Math.random()}`,
               title: title || subject,
               subject,
               color,
@@ -773,12 +840,15 @@ const Planner: React.FC = () => {
               end: newEnd,
               completed: false,
               isScheduled: true,
+              conteudoId,
+              conteudo,
+              materia,
             };
             setAllEvents((prev) => {
               const updated = [...prev, newEvent];
               return updated;
             });
-            handleDecrementCardCount(subject);
+            handleDecrementCardCount(conteudoId ?? subject);
           } else if (type === "planner-card") {
             const { id } = item as { id: string };
             setAllEvents((prev) => {
@@ -841,7 +911,9 @@ const Planner: React.FC = () => {
           const eventToUnschedule = allEvents.find((e) => e.id === item.id);
           if (eventToUnschedule) {
             handleUnscheduleEvent(item.id);
-            handleIncrementCardCount(eventToUnschedule.subject);
+            handleIncrementCardCount(
+              eventToUnschedule.conteudoId ?? eventToUnschedule.subject,
+            );
           }
         }
       },
@@ -1008,10 +1080,17 @@ const Planner: React.FC = () => {
                       </button>
                       <button
                         onClick={handleEnterEditMode}
-                        className="bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2 rounded-[10px] flex items-center gap-2 shadow-lg hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] transition-all duration-150 cursor-pointer font-medium text-[13px]"
+                        disabled={isEnteringEditMode}
+                        className="bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2 rounded-[10px] flex items-center gap-2 shadow-lg hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] transition-all duration-150 cursor-pointer font-medium text-[13px] disabled:opacity-75 disabled:cursor-not-allowed"
                       >
-                        <Edit3 size={15} />
-                        <span className="hidden sm:inline">Editar</span>
+                        {isEnteringEditMode ? (
+                          <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-transparent border-t-white border-r-white" />
+                        ) : (
+                          <Edit3 size={15} />
+                        )}
+                        <span className="hidden sm:inline">
+                          {isEnteringEditMode ? "Carregando..." : "Editar"}
+                        </span>
                       </button>
                     </>
                   )}
@@ -1113,12 +1192,15 @@ const Planner: React.FC = () => {
                         .filter((card) => card.count > 0)
                         .map((card) => (
                           <StudyCard
-                            key={card.subject}
+                            key={card.conteudoId ?? card.subject}
                             subject={card.subject}
                             color={card.color}
                             priority={card.priority}
                             count={card.count}
                             title={card.title}
+                            conteudoId={card.conteudoId}
+                            conteudo={card.conteudo}
+                            materia={card.materia}
                             onClick={() => {}}
                           />
                         ))}

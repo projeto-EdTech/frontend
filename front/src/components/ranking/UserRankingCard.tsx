@@ -20,63 +20,7 @@ interface UserRankingCardProps {
   isLoading: boolean;
 }
 
-// --- CONSTANTES ---
-const RANK_THRESHOLDS: { name: UserRanking['rank'], minScore: number }[] = [
-  { name: 'Bronze', minScore: 0 },
-  { name: 'Prata', minScore: 10000 },
-  { name: 'Ouro', minScore: 25000 },
-  { name: 'Diamante', minScore: 50000 },
-];
-
-// --- FUNÇÕES AUXILIARES ---
-const getRankProgress = (user: UserRanking) => {
-  const currentRankIndex = RANK_THRESHOLDS.findIndex(r => r.name === user.rank);
-  
-  // Se o usuário já está no rank máximo
-  if (currentRankIndex === RANK_THRESHOLDS.length - 1) {
-    return {
-      progress: 100,
-      pointsToNext: 0,
-      nextRankName: 'Máximo',
-    };
-  }
-
-  const currentRank = RANK_THRESHOLDS[currentRankIndex];
-  const nextRank = RANK_THRESHOLDS[currentRankIndex + 1];
-  
-  const scoreInCurrentTier = user.score - currentRank.minScore;
-  const tierTotalScore = nextRank.minScore - currentRank.minScore;
-
-  // Garante que o progresso não passe de 100% ou seja negativo
-  const progress = Math.max(0, Math.min(100, Math.floor((scoreInCurrentTier / tierTotalScore) * 100)));
-  const pointsToNext = nextRank.minScore - user.score;
-
-  return {
-    progress,
-    pointsToNext: pointsToNext > 0 ? pointsToNext : 0,
-    nextRankName: nextRank.name,
-  };
-};
-
-const getRankIcon = (rank: string) => {
-  switch (rank) {
-    case 'Diamante': return <Crown className="w-5 h-5 text-cyan-500" />;
-    case 'Ouro': return <Trophy className="w-5 h-5 text-yellow-500" />;
-    case 'Prata': return <Medal className="w-5 h-5 text-gray-400" />;
-    case 'Bronze': return <Award className="w-5 h-5 text-orange-600" />;
-    default: return null;
-  }
-};
-
-const getRankBadgeColor = (rank: string) => {
-  switch (rank) {
-    case 'Diamante': return 'bg-gradient-to-r from-cyan-100 to-blue-100 text-cyan-700 border-cyan-200';
-    case 'Ouro': return 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border-yellow-200';
-    case 'Prata': return 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border-gray-200';
-    case 'Bronze': return 'bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 border-orange-200';
-    default: return 'bg-gray-100 text-gray-700';
-  }
-};
+import { getRankIcon, getRankBadgeColor, getRankProgress } from "@/lib/utils/rankUtils";
 
 const getPositionBadge = (position: number) => {
   if (position === 1) return <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full shadow-lg"><span className="text-white font-bold text-lg">🥇</span></div>;
@@ -230,7 +174,7 @@ export default function UserRankingCard({ currentUser, isLoading }: UserRankingC
   }
 
   // User with ranking - show position card
-  const rankProgress = getRankProgress(currentUser);
+  const rankProgress = getRankProgress(currentUser.score);
 
   return (
     <div className={`relative overflow-hidden rounded-[28px] p-10 md:p-12 shadow-lg border ${
@@ -341,7 +285,7 @@ export default function UserRankingCard({ currentUser, isLoading }: UserRankingC
               }`}>Próximo Rank</p>
               <p className={`text-sm font-semibold ${
                 theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-              }`}>{rankProgress.nextRankName}</p>
+              }`}>{rankProgress.nextRank ?? 'Máximo'}</p>
             </div>
           </div>
           
@@ -352,13 +296,17 @@ export default function UserRankingCard({ currentUser, isLoading }: UserRankingC
             }`}>
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000 ease-out" 
-                style={{ width: `${rankProgress.progress}%` }}
+                style={{ width: `${rankProgress.percent}%` }}
               />
             </div>
             <div className="flex justify-between items-center mt-2 text-xs">
               <span className={`font-medium ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}>{rankProgress.progress}% completo</span>
+              }`}>
+                {rankProgress.nextRank 
+                  ? `${currentUser.score.toLocaleString()} / ${rankProgress.nextThreshold.toLocaleString()} pts`
+                  : `${currentUser.score.toLocaleString()} pts`}
+              </span>
               <span className={`font-semibold ${
                 theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
               }`}>

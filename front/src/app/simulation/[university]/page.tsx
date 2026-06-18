@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import SimulacaoLoader from "@/components/Simula_PRO/SimulacaoLoader";
+import SimulacaoLoader from "@/components/Simulation/SimulacaoLoader";
 import SimulacaoSkeleton from "@/components/Skeletons/SimulacaoSkeleton";
 
 const Footer = dynamic(() => import("@/components/Footer"));

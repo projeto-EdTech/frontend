@@ -1,5 +1,5 @@
 import { type University } from '@/types/university';
-import { universities as localUniversities } from '@/lib/dataUniversity';
+import { universities as localUniversities } from '@/lib/data/universities';
 
 const BACKEND_API_URL = process.env.BACKEND_API_URL;
 

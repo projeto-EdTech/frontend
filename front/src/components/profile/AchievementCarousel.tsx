@@ -2,9 +2,9 @@
 
 import React, { useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { computeBadges } from "@/lib/badgeUtils";
+import { computeBadges } from "@/lib/utils/badgeUtils";
 import type { ProfileStats } from "@/components/profile/GeneralStats";
-import type { UserRankingData } from "@/lib/rankUtils";
+import type { UserRankingData } from "@/lib/utils/rankUtils";
 import {
   Lock,
   ChevronRight,
@@ -24,7 +24,7 @@ const IconMap: Record<string, React.ElementType> = {
 };
 
 import useSWR from "swr";
-import type { BadgeConfig } from "@/lib/badgeUtils";
+import type { BadgeConfig } from "@/lib/utils/badgeUtils";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -136,7 +136,7 @@ export default function AchievementCarousel({
     <div className="w-full">
       <div className="flex items-center justify-between mb-8 px-4">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-[var(--border-color)]">
+          <div className="w-10 h-10 flex items-center justify-center bg-transparent rounded-xl shadow-sm border border-[var(--border-color)]">
             <Trophy size={20} className="text-amber-500" strokeWidth={1.5} />
           </div>
           <div>
@@ -193,9 +193,13 @@ export default function AchievementCarousel({
               style={{ scrollSnapAlign: "start" }}
             >
               <div className="flex flex-col gap-7 relative z-10 h-full">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center gap-2 w-full">
+                  <h5 className="text-[16px] font-bold text-[var(--text-primary)] leading-tight tracking-tight truncate w-full text-center">
+                    {badge.name}
+                  </h5>
+
                   <div
-                    className={`relative w-12 h-12 flex items-center justify-center rounded-xl flex-shrink-0 transition-all duration-500 ${getIconContainerStyles(badge.currentTier)}`}
+                    className={`relative w-22 h-22 flex items-center justify-center rounded-xl flex-shrink-0 transition-all duration-500 ${getIconContainerStyles(badge.currentTier)}`}
                   >
                     {isUnlocked && (
                       <div
@@ -214,7 +218,7 @@ export default function AchievementCarousel({
                     )}
 
                     <span
-                      className={`flex items-center justify-center [&>svg]:w-6 [&>svg]:h-6 transition-all duration-500 relative z-10 ${
+                      className={`flex items-center justify-center [&>svg]:w-12 [&>svg]:h-12 transition-all duration-500 relative z-10 ${
                         isUnlocked
                           ? `group-hover:scale-110 ${getIconColorClass(badge.currentTier)}`
                           : "grayscale opacity-30 text-[var(--text-secondary)]"
@@ -226,7 +230,7 @@ export default function AchievementCarousel({
                     {!isUnlocked && (
                       <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-secondary)]/50 backdrop-blur-[2px] rounded-xl z-20">
                         <Lock
-                          size={16}
+                          size={18}
                           className="text-[var(--text-secondary)]/60"
                           strokeWidth={1.5}
                         />
@@ -234,20 +238,17 @@ export default function AchievementCarousel({
                     )}
                   </div>
 
-                  <div className="flex flex-col items-start justify-center flex-1 min-w-0">
-                    <h5 className="text-[14px] font-bold text-[var(--text-primary)] leading-tight tracking-tight truncate w-full text-left">
-                      {badge.name}
-                    </h5>
-                    {isUnlocked ? (
-                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] text-[9px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">
-                        {getTierName(badge.currentTier)}
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-[11px] text-[var(--text-secondary)] font-medium tracking-tight">
-                        Bloqueado
-                      </p>
-                    )}
-                  </div>
+                  {isUnlocked ? (
+                    <div
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] text-[9px] font-bold tracking-widest uppercase ${getIconColorClass(badge.currentTier)}`}
+                    >
+                      {getTierName(badge.currentTier)}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-[var(--text-secondary)] font-medium tracking-tight">
+                      Bloqueado
+                    </p>
+                  )}
                 </div>
 
                 <div className="w-full mt-auto">

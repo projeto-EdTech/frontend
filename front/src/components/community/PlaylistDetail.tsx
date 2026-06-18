@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
-import { type Playlist } from "@/lib/Playlist_data";
+import { type Playlist } from "@/lib/data/playlists";
 
 interface PlaylistDetailProps {
   playlist: Playlist;

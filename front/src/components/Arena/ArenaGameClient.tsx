@@ -5,8 +5,8 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import LoadingScreen from "@/components/LoadingScreen";
 import LoginModal from "@/components/Login-modal";
-import { type MinigameData } from "@/lib/Data_games";
-import { getGameComponent } from "@/lib/Games/Games";
+import { type MinigameData } from "@/lib/data/games";
+import { getGameComponent } from "@/lib/games/config";
 import { ArrowLeft } from "lucide-react";
 
 interface ArenaGameClientProps {

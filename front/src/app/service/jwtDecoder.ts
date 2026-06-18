@@ -16,6 +16,15 @@ export interface JWTPayload {
   email?: string;
   tipo?: string;        // Tier do usuário (ex: FREE, Simula PRO, TEACHER, ADMIN)
   newsletter?: boolean; // Preferência de newsletter
+  
+  // Custom target settings claims
+  prova_alvo?: string;
+  curso_alvo?: string;
+  instituicao?: string;
+  targetExam?: string;
+  targetCourse?: string;
+  institution?: string;
+  
   [key: string]: any;
 }
 

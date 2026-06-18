@@ -1,5 +1,5 @@
-import { universities } from "@/lib/dataUniversity";
-import { mockRankingsByUniversity, type RawUserData } from "@/lib/DataRanking";
+import { universities } from "@/lib/data/universities";
+import { mockRankingsByUniversity, type RawUserData } from "@/lib/data/ranking";
 
 export interface FilterOption {
   id: string;

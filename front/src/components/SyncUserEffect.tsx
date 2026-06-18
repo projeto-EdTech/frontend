@@ -91,6 +91,24 @@ export default function SyncUserEffect() {
                         setUserId(decoded.id, decoded.tipo);
                         trackLogin('oauth');
                     }
+
+                    // Sincroniza dados de destino com sessionStorage do perfil
+                    const targetExam = decoded?.prova_alvo || decoded?.targetExam || data?.prova_alvo || data?.targetExam || "";
+                    const targetCourse = decoded?.curso_alvo || decoded?.targetCourse || data?.curso_alvo || data?.targetCourse || "";
+                    const institution = decoded?.instituicao || decoded?.institution || data?.instituicao || data?.institution || "";
+
+                    if (targetExam || targetCourse || institution) {
+                      const profileSettings = {
+                        profileIcon: decoded?.profileIcon || "Avatar/Camaleão_1.png",
+                        useInitialAvatar: decoded?.useInitialAvatar ?? true,
+                        institution,
+                        targetExam,
+                        targetCourse,
+                      };
+                      sessionStorage.setItem("userProfileSettings", JSON.stringify(profileSettings));
+                      sessionStorage.setItem("user_profile_data", JSON.stringify(profileSettings));
+                      console.log("[SyncUserEffect] 🔄 Configurações de destino do usuário sincronizadas do backend:", profileSettings);
+                    }
                 } else {
                     console.warn("[SyncUserEffect] Token não encontrado na resposta");
                 }

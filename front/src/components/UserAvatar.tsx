@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import RankAvatarFrame from '@/components/ui/RankAvatarFrame';
-import type { RankType } from '@/lib/rankUtils';
+import type { RankType } from '@/lib/utils/rankUtils';
 
 // Props que o componente aceitará
 interface UserAvatarProps {

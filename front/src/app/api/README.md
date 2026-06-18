@@ -42,6 +42,23 @@ Abaixo está a explicação detalhada de cada rota, seu método HTTP suportado e
 - **📄 Origem dos Dados:** Dados mockados (fictícios) definidos estaticamente dentro da própria função da rota (`mockData` em `route.ts`).
 - **Por que é utilizada:** Alimenta o **Dashboard do Aluno**, exibindo gráficos de progresso e métricas de estudo.
 
+### `/api/user/profile`
+
+- **Método:** `POST`
+- **Descrição:** Atualiza no backend externo os dados de destino do usuário (`targetExam`, `targetCourse` e `institution`).
+- **📥 Payload Esperado (JSON):**
+
+  ```json
+  {
+    "targetExam": "FUVEST",     // string
+    "targetCourse": "Medicina", // string
+    "institution": "USP"        // string
+  }
+  ```
+
+- **📄 Origem dos Dados:** Repassa para o Backend Externo (URL definida em `BACKEND_API_URL`).
+- **Por que é utilizada:** Permite salvar de forma persistente no banco de dados do backend as preferências de vestibular, curso alvo e instituição de ensino do aluno.
+
 ### `/api/subscribe`
 
 - **Método:** `POST`
@@ -232,6 +249,7 @@ Abaixo listamos onde cada rota está sendo consumida nos componentes e páginas 
 | ✅ | **`/api/auth/[...nextauth]`** | `src/app/api/auth/[...nextauth]/route.ts` |
 | ✅ | **`/api/sync-user`** | `src/components/SyncUserEffect.tsx` |
 | ‼️ | **`/api/user/stats`** | `src/app/profile/page.tsx` |
+| ✅ | **`/api/user/profile`** | `src/components/profile/ProfileClient.tsx` |
 | ✅ | **`/api/subscribe`** | `src/components/blog/SubscribeButton.tsx` |
 | ✅ | **`/api/universities`** | `src/components/Sidebar.tsx`<br>`src/components/Simula_PRO/NotaCorteConsulta.tsx`<br>`src/components/profile/UserConfig.tsx`<br>`src/app/library/page.tsx`<br>`src/app/page.tsx` |
 | 🟠 | **`/api/questions/[university]`** | `src/app/simulation/[university]/page.tsx` |

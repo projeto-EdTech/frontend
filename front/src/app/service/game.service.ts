@@ -1,4 +1,4 @@
-import { minigamesData, type MinigameData } from "@/lib/Data_games";
+import { minigamesData, type MinigameData } from "@/lib/data/games";
 
 /**
  * CACHE STRATEGY: ISR - revalidate 3600s

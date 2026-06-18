@@ -12,6 +12,8 @@ import RankingTable, { type UserRanking, type FilterOption } from "@/components/
 import UserRankingCard from "@/components/ranking/UserRankingCard";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { DEV_CONFIG } from "@/lib/data/profile";
+import { getRankFromScore } from "@/lib/utils/rankUtils";
 
 type PeriodFilter = 'mensal' | 'semanal' | 'anual';
 
@@ -26,6 +28,25 @@ interface RankingClientProps {
   initialRankingData: UserRanking[];
 }
 
+const getProcessedInitialData = (data: UserRanking[]) => {
+  if (DEV_CONFIG.enabled && Array.isArray(data)) {
+    const dataCopy = JSON.parse(JSON.stringify(data)) as UserRanking[];
+    const currentUser = dataCopy.find((u: any) => u.isCurrentUser);
+    if (currentUser) {
+      currentUser.score = DEV_CONFIG.devScore;
+      currentUser.rank = getRankFromScore(DEV_CONFIG.devScore);
+      
+      // Re-ordena o array para que a posição fique correta
+      dataCopy.sort((a: any, b: any) => b.score - a.score);
+      dataCopy.forEach((u: any, index: number) => {
+        u.position = index + 1;
+      });
+    }
+    return dataCopy;
+  }
+  return data;
+};
+
 export default function RankingClient({ initialUniversities, initialRankingData }: RankingClientProps) {
   const router = useRouter();
   const { theme } = useTheme();
@@ -39,10 +60,12 @@ export default function RankingClient({ initialUniversities, initialRankingData 
   const [periodDropdownOpen, setPeriodDropdownOpen] = useState(false);
 
   const [isFetchingRanking, setIsFetchingRanking] = useState(false); 
-  const [cachedData, setCachedData] = useState<Record<string, UserRanking[]>>({
-    'geral-mensal': initialRankingData
-  });
-  const [rankingData, setRankingData] = useState<UserRanking[]>(initialRankingData);
+  const [cachedData, setCachedData] = useState<Record<string, UserRanking[]>>(() => ({
+    'geral-mensal': getProcessedInitialData(initialRankingData)
+  }));
+  const [rankingData, setRankingData] = useState<UserRanking[]>(() =>
+    getProcessedInitialData(initialRankingData)
+  );
   const [currentUser, setCurrentUser] = useState<UserRanking | null>(null);
   
   const universityOptions = useMemo(() => [
@@ -74,6 +97,21 @@ export default function RankingClient({ initialUniversities, initialRankingData 
         const response = await fetch(`/api/ranking?universidade=${activeUniversityFilter}&periodo=${activePeriodFilter}`);
         if (!response.ok) throw new Error("Falha ao buscar ranking");
         const data = await response.json();
+        
+        // ━━ DEV MODE: Substitui o score e rank do currentUser se ativado ━━
+        if (DEV_CONFIG.enabled && Array.isArray(data)) {
+          const currentUser = data.find((u: any) => u.isCurrentUser);
+          if (currentUser) {
+            currentUser.score = DEV_CONFIG.devScore;
+            currentUser.rank = getRankFromScore(DEV_CONFIG.devScore);
+            
+            // Re-ordena o array para que a posição fique correta
+            data.sort((a: any, b: any) => b.score - a.score);
+            data.forEach((u: any, index: number) => {
+              u.position = index + 1;
+            });
+          }
+        }
         
         setCachedData(prevCache => ({ ...prevCache, [cacheKey]: data }));
         setRankingData(data);

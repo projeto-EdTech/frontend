@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStatsData } from "@/lib/dataStats";
+import { getStatsData } from "@/lib/data/stats";
 
 // STATIC DATA MODE — real backend call preserved as comment below.
 // To restore live backend: uncomment the fetch block and remove the static return above it.

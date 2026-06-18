@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { mockApiData, processCutoffResults } from '@/lib/dataNotaCorte';
+import { mockApiData, processCutoffResults } from '@/lib/data/notaCorte';
 
 // STATIC DATA MODE — real backend calls are preserved as comments below.
 // To restore live backend: uncomment the fetch blocks and remove the static returns above them.

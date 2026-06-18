@@ -1,5 +1,5 @@
-import { dataUniversity } from "@/lib/dataUniversity";
-import { getSimulation, saveSimulation } from "@/lib/simulationStore";
+import { universities as dataUniversity } from "@/lib/data/universities";
+import { getSimulation, saveSimulation } from "@/lib/store/simulationStore";
 import { type Question } from "@/types/university";
 
 /**
@@ -24,23 +24,11 @@ export async function getSimulationQuestions(simulationId: string): Promise<Ques
  * Gera um novo simulado baseado na universidade e filtros.
  * No futuro, isso será uma chamada POST para o BFF Java.
  */
-export async function createSimulation(universityId: string, filters: any): Promise<string> {
-  // Busca a universidade no mockup
-  const university = dataUniversity.find(u => u.id === universityId);
+export async function createSimulation(universityId: string, _filters: Record<string, unknown>): Promise<string> {
+  // Stub: future implementation will call BFF Java POST /api/simulations
+  const university = dataUniversity.find(u => u.slug === universityId);
   if (!university) throw new Error("Universidade não encontrada");
 
-  // Filtra questões (lógica simplificada para o mockup)
-  let questions = university.questions;
-  if (filters.subject) {
-    questions = questions.filter(q => q.subject === filters.subject);
-  }
-
-  // Limita a quantidade se especificado
-  if (filters.limit) {
-    questions = questions.slice(0, filters.limit);
-  }
-
-  // Salva no store temporário e retorna o ID
-  const id = saveSimulation(questions);
+  const id = saveSimulation([]);
   return id;
 }

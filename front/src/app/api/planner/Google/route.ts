@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
 import Holidays from 'date-holidays';
+import { colorForSubject } from "@/lib/utils/planner";
 
 // Paleta oficial de cores de eventos do Google Calendar (Graph API)
 const googlePalette = [
@@ -84,29 +85,32 @@ interface StudyEvent {
   color: string;
   description?: string;
   isScheduled: boolean;
+  conteudoId?: string;
+  conteudo?: string;
+  materia?: string;
 }
 
 // --- ROTA GET: BUSCAR EVENTOS ---
 export async function GET() {
-  // Mapa de fallback caso o evento não tenha colorId ou seja antigo
-  const subjectColorMap: { [key: string]: string } = {
-    'Estudar Matemática': '#ef4444',
-    'Revisão de Física': '#3b82f6',
-    'Química Orgânica': '#10b981',
-    'História do Brasil': '#f59e0b',
-    'Literatura Brasileira': '#8b5cf6',
-    'Geografia Política': '#f97316',
-    'Revisão de Biologia': '#06b6d4',
-  };
+  console.log("\n--- [GET /api/planner/Google] INÍCIO DA REQUISIÇÃO ---");
   const defaultColor = '#64748b';
 
   try {
+    console.log("[GET /api/planner/Google] Buscando sessão NextAuth...");
     const session = await getServerSession(authOptions);
+    console.log("[GET /api/planner/Google] Sessão recuperada:", session ? JSON.stringify({
+      user: session.user,
+      expires: session.expires,
+      hasAccessToken: !!(session as any).accessToken
+    }, null, 2) : "Nenhuma sessão ativa encontrada.");
+
     const typedSession = session as (import("next-auth").Session & { accessToken?: string });
     if (!typedSession?.accessToken) {
+      console.warn("[GET /api/planner/Google] Erro: accessToken não encontrado na sessão. Retornando 401...");
       return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
+    console.log("[GET /api/planner/Google] Token de acesso disponível. Configurando cliente OAuth2...");
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: typedSession.accessToken });
     const calendar = google.calendar({ version: "v3", auth });
@@ -120,6 +124,8 @@ export async function GET() {
     endOfWeek.setDate(startOfWeek.getDate() + 6); // Sábado
     endOfWeek.setHours(23, 59, 59, 999);
 
+    console.log(`[GET /api/planner/Google] Buscando eventos de ${startOfWeek.toISOString()} até ${endOfWeek.toISOString()}...`);
+
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: startOfWeek.toISOString(),
@@ -129,6 +135,8 @@ export async function GET() {
     });
 
     const items = response.data.items;
+    console.log(`[GET /api/planner/Google] Google Calendar respondeu. Total de eventos encontrados: ${items?.length || 0}`);
+
     if (!items || items.length === 0) {
       return NextResponse.json([], { status: 200 });
     }
@@ -140,14 +148,14 @@ export async function GET() {
 
       // LÓGICA DE COR INTELIGENTE
       // Tenta usar a cor que veio do Google (Sincronia real)
-      // Tenta usar o mapa hardcoded (Legado)
+      // Tenta usar o helper de cores unificado
       // Usa cinza padrão
       let eventColor = defaultColor;
       
       if (item.colorId && googleIdToHexMap[item.colorId]) {
         eventColor = googleIdToHexMap[item.colorId];
-      } else if (subjectColorMap[title]) {
-        eventColor = subjectColorMap[title];
+      } else {
+        eventColor = colorForSubject(title);
       }
 
       return {
@@ -163,13 +171,18 @@ export async function GET() {
       };
     });
 
+    console.log("[GET /api/planner/Google] Eventos formatados com sucesso. Enviando resposta.");
     return NextResponse.json(formattedEvents, { status: 200 });
 
   } catch (error: any) {
-    console.error("[GET] ERRO GOOGLE CALENDAR:", error?.response?.data || error);
+    console.error("[GET /api/planner/Google] ERRO CAPTURADO:", error);
+    if (error?.response?.data) {
+      console.error("[GET /api/planner/Google] Detalhes da resposta de erro do Google:", JSON.stringify(error.response.data, null, 2));
+    }
 
     // Se for um erro de credenciais inválidas ou escopo insuficiente
     if (error?.code === 401 || error?.response?.status === 401 || error?.response?.status === 403) {
+       console.warn("[GET /api/planner/Google] Credenciais inválidas ou escopo incorreto. Retornando 401...");
        return NextResponse.json({ 
          error: "Conexão com o Google Agenda expirada ou permissão negada. Por favor, faça login novamente e certifique-se de autorizar o acesso à agenda." 
        }, { status: 401 });
@@ -184,21 +197,33 @@ export async function GET() {
 
 // --- ROTA POST: SALVAR EVENTOS ---
 export async function POST(request: Request) {
+  console.log("\n--- [POST /api/planner/Google] INÍCIO DA REQUISIÇÃO ---");
   try {
+    console.log("[POST /api/planner/Google] Buscando sessão NextAuth...");
     const session = await getServerSession(authOptions);
+    console.log("[POST /api/planner/Google] Sessão recuperada:", session ? JSON.stringify({
+      user: session.user,
+      expires: session.expires,
+      hasAccessToken: !!(session as any).accessToken
+    }, null, 2) : "Nenhuma sessão ativa encontrada.");
+
     const typedSessionPost = session as (import("next-auth").Session & { accessToken?: string });
     if (!typedSessionPost?.accessToken) {
+      console.warn("[POST /api/planner/Google] Erro: accessToken não encontrado na sessão. Retornando 401...");
       return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
     const eventsToCreate: StudyEvent[] = await request.json();
+    console.log(`[POST /api/planner/Google] Recebidos ${eventsToCreate?.length || 0} eventos para criação.`);
     if (!eventsToCreate || eventsToCreate.length === 0) {
       return NextResponse.json({ message: "Nenhum evento para criar." }, { status: 200 });
     }
 
     // Inicializa feriados do Brasil
+    console.log("[POST /api/planner/Google] Inicializando base de feriados (BR)...");
     const hd = new Holidays('BR'); 
     
+    console.log("[POST /api/planner/Google] Configurando cliente OAuth2...");
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: typedSessionPost.accessToken });
     const calendar = google.calendar({ version: "v3", auth });
@@ -206,6 +231,7 @@ export async function POST(request: Request) {
     for (const event of eventsToCreate) {
       // Calcula o ID da cor do Google mais próxima da cor Hex do front-end
       const targetColorId = findClosestColorId(event.color);
+      console.log(`[POST /api/planner/Google] Evento "${event.title}": cor original=${event.color}, Google colorId=${targetColorId}`);
 
       // Loop de repetição por 4 semanas
       for (let week = 0; week < 4; week++) {
@@ -218,13 +244,13 @@ export async function POST(request: Request) {
 
         // Pula se for feriado
         if (hd.isHoliday(newStart)) {
-          console.log(`Pulando feriado: ${newStart.toLocaleDateString()}`);
+          console.log(`[POST /api/planner/Google] Pulando data pois é feriado: ${newStart.toLocaleDateString()}`);
           continue; 
         }
 
         const requestBody = {
           summary: event.title,
-          description: `Matéria: ${event.subject}\nPrioridade: ${event.priority}`,
+          description: `Matéria: ${event.materia ?? event.subject}\nConteúdo: ${event.conteudo ?? '-'}\nPrioridade: ${event.priority}`,
           start: { 
             dateTime: newStart.toISOString(), 
             timeZone: 'America/Sao_Paulo' 
@@ -236,6 +262,7 @@ export async function POST(request: Request) {
           colorId: targetColorId 
         };
         
+        console.log(`[POST /api/planner/Google] Inserindo no Google Calendar (Semana ${week + 1}): ${event.title} - ${newStart.toISOString()}`);
         await calendar.events.insert({
           calendarId: 'primary',
           requestBody: requestBody,
@@ -243,10 +270,14 @@ export async function POST(request: Request) {
       }
     }
 
+    console.log("[POST /api/planner/Google] Todos os eventos foram criados com sucesso.");
     return NextResponse.json({ message: "Cronograma salvo e sincronizado!" }, { status: 201 });
 
-  } catch (error) {
-    console.error("[POST] ERRO CRÍTICO:", error);
+  } catch (error: any) {
+    console.error("[POST /api/planner/Google] ERRO CRÍTICO NO POST:", error);
+    if (error?.response?.data) {
+      console.error("[POST /api/planner/Google] Detalhes do erro da API do Google:", JSON.stringify(error.response.data, null, 2));
+    }
     return NextResponse.json({ error: "Falha ao salvar eventos" }, { status: 500 });
   }
 }

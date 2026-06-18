@@ -1,37 +1,42 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react"; // 1. Importa o hook para gerenciar a sessão
-import Header from "@/components/Header"
+import Header from "@/components/Header";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { useUniversityStorage } from "@/contexts/UniversityStorage";
-import GeneralStats, { SkeletonCard, type ProfileStats } from "@/components/profile/GeneralStats";
+import GeneralStats, {
+  SkeletonCard,
+  type ProfileStats,
+} from "@/components/profile/GeneralStats";
 import StatsUser from "@/components/profile/StatsUser";
 
 import NavigationBar from "@/components/profile/NavigationBar";
-import useSWR from 'swr';
+import useSWR from "swr";
 import NotaCorteConsulta from "@/components/Simula_PRO/NotaCorteConsulta";
 import UserConfig from "@/components/profile/UserConfig";
 import Gemini from "@/components/Simula_PRO/Questoes_Gemini";
 import Planner from "@/components/Simula_PRO/Planner/Planner";
 
 import { getRankingData } from "@/app/service/ranking.service";
-import type { UserRankingData } from "@/lib/rankUtils";
-import { mockProfileData } from "@/lib/mockProfileData";
+import { type UserRankingData, getRankFromScore } from "@/lib/utils/rankUtils";
+import { mockProfileData, DEV_CONFIG } from "@/lib/data/profile";
+import { decodeJWT } from "@/app/service/jwtDecoder";
 
-const MOCK_EMAIL = 'fegrolla0210@gmail.com';
+const MOCK_EMAIL = "fegrolla0210@gmail.com";
 
 const fetcher = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('user_data') : '';
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("user_data") : "";
   const res = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error('Falha ao carregar os dados do perfil.');
+  if (!res.ok) throw new Error("Falha ao carregar os dados do perfil.");
   return res.json();
 };
 
@@ -64,6 +69,15 @@ interface ReviewableQuestion {
   displaySubject: string;
 }
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 // Interface principal que une todas as outras
 interface ProfileData {
   stats: ProfileStats;
@@ -71,53 +85,71 @@ interface ProfileData {
   subjectPerformance: SubjectPerformance[];
   monthlyProgress: MonthlyProgressPoint[];
   reviewableQuestions: ReviewableQuestion[];
+  pagination?: Pagination;
 }
 
 const initialProfileData: ProfileData = {
-    stats: { 
-      simulados: 0, 
-      questoes: 0, 
-      acertos: 0, 
-      percentagem: 0,
-      trend_simulados: { value: 0, type: 'up'},
-      trend_questoes: { value: 0, type: 'up'},
-      trend_acertos: { value: 0, type: 'up'},
-      trend_percentagem: { value: 0, type: 'up'},
-    },
-    recentExams: [],
-    subjectPerformance: [],
-    monthlyProgress: [],
-    reviewableQuestions: [],
+  stats: {
+    simulados: 0,
+    questoes: 0,
+    acertos: 0,
+    percentagem: 0,
+    trend_simulados: { value: 0, type: "up" },
+    trend_questoes: { value: 0, type: "up" },
+    trend_acertos: { value: 0, type: "up" },
+    trend_percentagem: { value: 0, type: "up" },
+  },
+  recentExams: [],
+  subjectPerformance: [],
+  monthlyProgress: [],
+  reviewableQuestions: [],
 };
 
-export default function ProfileClient({ initialProfileDataProps }: { initialProfileDataProps: ProfileData | null }) {
+export default function ProfileClient({
+  initialProfileDataProps,
+}: {
+  initialProfileDataProps: ProfileData | null;
+}) {
   // 2. Chama o hook para obter os dados da sessão e o status de autenticação
   const { data: session, status } = useSession();
   const { universities } = useUniversityStorage();
   const [activeTab, setActiveTab] = useState("profile");
   const [explanation, setExplanation] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [profileData, setProfileData] = useState<ProfileData>(initialProfileDataProps || initialProfileData); // <- Sem <any>
+  const [profileData, setProfileData] = useState<ProfileData>(
+    initialProfileDataProps || initialProfileData,
+  ); // <- Sem <any>
   const [isDataLoading, setIsDataLoading] = useState(!initialProfileDataProps); // se tiver prop, n carrega
   const [error, setError] = useState<string | null>(null);
-  const [groupedQuestions, setGroupedQuestions] = useState<Map<string, ReviewableQuestion[]>>(new Map());
-  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [groupedQuestions, setGroupedQuestions] = useState<
+    Map<string, ReviewableQuestion[]>
+  >(new Map());
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const currentUniversityLogo = useMemo(() => {
     const currentGroup = groupedQuestions.get(selectedSubject);
-    const currentQuestion = currentGroup ? currentGroup[currentQuestionIndex] : null;
+    const currentQuestion = currentGroup
+      ? currentGroup[currentQuestionIndex]
+      : null;
 
     if (!currentQuestion) {
       return null;
     }
 
-    const universityName = currentQuestion.displayLabel.split(' ')[0].toLowerCase();
-    const universityData = universities.find(u => u.slug.toLowerCase() === universityName);
-    
+    const universityName = currentQuestion.displayLabel
+      .split(" ")[0]
+      .toLowerCase();
+    const universityData = universities.find(
+      (u) => u.slug.toLowerCase() === universityName,
+    );
+
     return universityData ? universityData.logo : null;
   }, [groupedQuestions, selectedSubject, currentQuestionIndex]);
 
-  const isMockUser = status === 'authenticated' && session?.user?.email === MOCK_EMAIL;
+  const isMockUser =
+    status === "authenticated" &&
+    (session?.user?.email === MOCK_EMAIL ||
+      session?.user?.email === "fegrolla0210@gmail.com");
 
   // Mock user: load static data, skip all API calls
   useEffect(() => {
@@ -131,22 +163,28 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
           acc.get(q.displaySubject)!.push(q);
           return acc;
         },
-        new Map<string, ReviewableQuestion[]>()
+        new Map<string, ReviewableQuestion[]>(),
       );
       setGroupedQuestions(groups);
-      setSelectedSubject(Array.from(groups.keys())[0] || '');
+      setSelectedSubject(Array.from(groups.keys())[0] || "");
     }
   }, [isMockUser]);
 
   // Real user: fetch via SWR
-  const { data: profileDataResponse, error: swrError, isLoading: isSwrLoading } = useSWR(
-    status === 'authenticated' && !isMockUser ? '/api/user/stats' : null,
+  const {
+    data: profileDataResponse,
+    error: swrError,
+    isLoading: isSwrLoading,
+  } = useSWR(
+    status === "authenticated" && !isMockUser
+      ? "/api/user/stats?page=1&limit=3"
+      : null,
     fetcher,
     {
       revalidateOnFocus: true,
       refreshInterval: 120000,
-      fallbackData: initialProfileDataProps || undefined
-    }
+      fallbackData: initialProfileDataProps || undefined,
+    },
   );
 
   useEffect(() => {
@@ -154,15 +192,24 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
       setProfileData(profileDataResponse);
       setIsDataLoading(false);
 
-      if (profileDataResponse.reviewableQuestions && profileDataResponse.reviewableQuestions.length > 0) {
-        const groups = profileDataResponse.reviewableQuestions.reduce((acc: Map<string, ReviewableQuestion[]>, question: ReviewableQuestion) => {
-          const subject = question.displaySubject;
-          if (!acc.has(subject)) {
-            acc.set(subject, []);
-          }
-          acc.get(subject)!.push(question);
-          return acc;
-        }, new Map<string, ReviewableQuestion[]>());
+      if (
+        profileDataResponse.reviewableQuestions &&
+        profileDataResponse.reviewableQuestions.length > 0
+      ) {
+        const groups = profileDataResponse.reviewableQuestions.reduce(
+          (
+            acc: Map<string, ReviewableQuestion[]>,
+            question: ReviewableQuestion,
+          ) => {
+            const subject = question.displaySubject;
+            if (!acc.has(subject)) {
+              acc.set(subject, []);
+            }
+            acc.get(subject)!.push(question);
+            return acc;
+          },
+          new Map<string, ReviewableQuestion[]>(),
+        );
 
         setGroupedQuestions(groups);
         const firstSubject = Array.from(groups.keys())[0] || "";
@@ -186,22 +233,36 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
   const [rankingData, setRankingData] = useState<UserRankingData | null>(null);
 
   useEffect(() => {
-    if (status !== 'authenticated') return;
+    if (status !== "authenticated") return;
 
     const loadRanking = async () => {
+      if (DEV_CONFIG.enabled) {
+        setRankingData({
+          position: 1,
+          name: session?.user?.name || "Usuário",
+          score: DEV_CONFIG.devScore,
+          rank: getRankFromScore(DEV_CONFIG.devScore),
+          isCurrentUser: true,
+        });
+        return;
+      }
+
       try {
         if (isMockUser) {
-          const data = await getRankingData('geral', 'mensal');
-          const current = data.find(u => u.isCurrentUser) ?? null;
+          const data = await getRankingData("geral", "mensal");
+          const current = data.find((u) => u.isCurrentUser) ?? null;
           setRankingData(current as UserRankingData | null);
         } else {
-          const token = localStorage.getItem('user_data');
-          const res = await fetch('/api/ranking?universidade=geral&periodo=mensal', {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const token = localStorage.getItem("user_data");
+          const res = await fetch(
+            "/api/ranking?universidade=geral&periodo=mensal",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
           if (!res.ok) return;
           const data: UserRankingData[] = await res.json();
-          const current = data.find(u => u.isCurrentUser) ?? null;
+          const current = data.find((u) => u.isCurrentUser) ?? null;
           setRankingData(current);
         }
       } catch {
@@ -221,37 +282,63 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     profileIcon: "Avatar/Camaleão_1.png",
     useInitialAvatar: true, // true = usa inicial (PADRÃO), false = usa mascote
   });
-  
+
   useEffect(() => {
     if (session?.user) {
-      setFormData(prev => ({
-          ...prev,
-          fullName: session.user?.name ?? '',
-          email: session.user?.email ?? '',
+      setFormData((prev) => ({
+        ...prev,
+        fullName: session.user?.name ?? "",
+        email: session.user?.email ?? "",
       }));
     }
   }, [session]);
 
-  // useEffect para carregar configurações salvas do sessionStorage
+  // useEffect para carregar configurações salvas do sessionStorage ou do JWT no localStorage
   useEffect(() => {
     try {
-      const savedSettings = sessionStorage.getItem('userProfileSettings');
-      
+      let settingsObj: any = null;
+      const savedSettings = sessionStorage.getItem("userProfileSettings");
+
       if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        setFormData(prev => ({
+        settingsObj = JSON.parse(savedSettings);
+        console.log("Configurações carregadas do sessionStorage:", settingsObj);
+      } else {
+        // Se não houver dados no sessionStorage, tenta obter do JWT salvo no localStorage
+        const token = localStorage.getItem("user_data");
+        if (token) {
+          const decoded = decodeJWT(token);
+          if (decoded) {
+            // --- OBSERVAÇÃO SOBRE MAPEAMENTO DO JWT / RETORNO DO BACKEND ---
+            // Se o backend enviar os dados de destino com outras chaves no payload do JWT,
+            // certifique-se de ajustar este mapeamento abaixo.
+            // Suporta chaves snake_case (prova_alvo, curso_alvo, instituicao) ou camelCase.
+            settingsObj = {
+              profileIcon: decoded.profileIcon || "Avatar/Camaleão_1.png",
+              useInitialAvatar: decoded.useInitialAvatar ?? true,
+              institution: decoded.instituicao || decoded.institution || "",
+              targetExam: decoded.prova_alvo || decoded.targetExam || "",
+              targetCourse: decoded.curso_alvo || decoded.targetCourse || "",
+            };
+            // Salva no sessionStorage para manter o cache local atualizado
+            sessionStorage.setItem("userProfileSettings", JSON.stringify(settingsObj));
+            sessionStorage.setItem("user_profile_data", JSON.stringify(settingsObj));
+            console.log("Configurações iniciais carregadas a partir do JWT decodificado:", settingsObj);
+          }
+        }
+      }
+
+      if (settingsObj) {
+        setFormData((prev) => ({
           ...prev,
-          profileIcon: settings.profileIcon || "Avatar/Camaleão_1.png",
-          useInitialAvatar: settings.useInitialAvatar ?? true,
-          institution: settings.institution || prev.institution,
-          targetExam: settings.targetExam || prev.targetExam,
-          targetCourse: settings.targetCourse || prev.targetCourse,
+          profileIcon: settingsObj.profileIcon || "Avatar/Camaleão_1.png",
+          useInitialAvatar: settingsObj.useInitialAvatar ?? true,
+          institution: settingsObj.institution || prev.institution,
+          targetExam: settingsObj.targetExam || prev.targetExam,
+          targetCourse: settingsObj.targetCourse || prev.targetCourse,
         }));
-        
-        console.log('Configurações carregadas do sessionStorage:', settings);
       }
     } catch (error) {
-      console.error('Erro ao carregar configurações do sessionStorage:', error);
+      console.error("Erro ao carregar configurações do perfil:", error);
     }
   }, []); // Executa apenas uma vez ao montar o componente
 
@@ -275,37 +362,35 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     // 3. Lógica de "Debounce":
     // Espera 1 segundo (1000ms) após o usuário parar de digitar
     const handler = setTimeout(() => {
-      
       const fetchCutoff = async () => {
         try {
-          const storedToken = localStorage.getItem('user_data');
-          const response = await fetch('/api/Nota-corte', {
-            method: 'POST',
+          const storedToken = localStorage.getItem("user_data");
+          const response = await fetch("/api/Nota-corte", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${storedToken}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${storedToken}`,
             },
-            body: JSON.stringify({ 
-              userScore: profileData.stats.percentagem, 
-              targetCourse, 
-              targetInstitution: targetExam 
+            body: JSON.stringify({
+              userScore: profileData.stats.percentagem,
+              targetCourse,
+              targetInstitution: targetExam,
             }),
           });
 
           if (!response.ok) {
-            throw new Error('Falha ao buscar nota de corte');
+            throw new Error("Falha ao buscar nota de corte");
           }
 
           // Espera-se { cutoffScore: 82 | null }
-          // const data = await response.json(); 
+          // const data = await response.json();
           await response.json(); // Consumindo a resposta para evitar erro de variável não usada, se necessário futuramente descomentar
-          
+
           // 4. Atualiza o estado com o resultado da API
           // setMetaAlvo(data.cutoffScore); // Será um número (ex: 82) ou null
-          
+
           // Cria um rótulo amigável (ex: "FUVEST - Medicina")
           // setMetaLabel(`${targetExam.trim()} - ${targetCourse.trim()}`);
-          
         } catch (error) {
           console.error("Erro ao buscar meta de corte:", error);
           // setMetaAlvo(null); // Reseta em caso de erro
@@ -317,7 +402,6 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
       };
 
       fetchCutoff();
-
     }, 1000); // 1000ms = 1 segundo de espera
 
     // Função de "limpeza":
@@ -327,8 +411,8 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     };
   }, [formData, isMockUser]); // Dependências: formData + isMockUser para o guard de mock
 
-  // Função para salvar o perfil no sessionStorage
-  const handleSaveProfile = () => {
+  // Função para salvar o perfil no sessionStorage e no backend via BFF
+  const handleSaveProfile = async () => {
     try {
       // Salva os dados do perfil no sessionStorage
       const profileSettings = {
@@ -338,22 +422,56 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
         targetExam: formData.targetExam,
         targetCourse: formData.targetCourse,
       };
-      
-      sessionStorage.setItem('userProfileSettings', JSON.stringify(profileSettings));
-      
+
+      sessionStorage.setItem(
+        "userProfileSettings",
+        JSON.stringify(profileSettings),
+      );
+      sessionStorage.setItem(
+        "user_profile_data",
+        JSON.stringify(profileSettings),
+      );
+
       // Dispara evento customizado para notificar outros componentes (como o Header)
-      const event = new CustomEvent('profileSettingsUpdated', { 
-        detail: profileSettings 
+      const event = new CustomEvent("profileSettingsUpdated", {
+        detail: profileSettings,
       });
       window.dispatchEvent(event);
-      
+
+      // Envia os dados para o backend se não for usuário Mock
+      if (!isMockUser) {
+        const token = localStorage.getItem("user_data") || "";
+        
+        // --- OBSERVAÇÃO SOBRE RETORNO DO BACKEND ---
+        // A rota /api/user/profile envia o payload no formato:
+        // { targetExam, targetCourse, institution }
+        // Se o backend esperar chaves diferentes no JSON, altere no arquivo
+        // src/app/api/user/profile/route.ts.
+        const res = await fetch("/api/user/profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            targetExam: formData.targetExam,
+            targetCourse: formData.targetCourse,
+            institution: formData.institution,
+          }),
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Erro ao salvar perfil no servidor.");
+        }
+      }
+
       // Feedback visual de sucesso (você pode adicionar um toast/notificação aqui)
-      alert('Configurações salvas com sucesso!');
-      
-      console.log('Perfil salvo no sessionStorage:', profileSettings);
-    } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
-      alert('Erro ao salvar configurações. Tente novamente.');
+      alert("Configurações salvas com sucesso!");
+      console.log("Perfil salvo no sessionStorage e backend:", profileSettings);
+    } catch (error: any) {
+      console.error("Erro ao salvar configurações:", error);
+      alert(error.message || "Erro ao salvar configurações. Tente novamente.");
     }
   };
 
@@ -361,11 +479,11 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
   const handleCancelProfile = () => {
     try {
       // Restaura os dados do sessionStorage ou volta aos valores iniciais
-      const savedSettings = sessionStorage.getItem('userProfileSettings');
-      
+      const savedSettings = sessionStorage.getItem("userProfileSettings");
+
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           profileIcon: settings.profileIcon || "Avatar/Camaleão_1.png",
           useInitialAvatar: settings.useInitialAvatar ?? true,
@@ -375,7 +493,7 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
         }));
       } else {
         // Se não houver dados salvos, volta aos valores padrão
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           institution: "",
           targetExam: "",
@@ -384,58 +502,61 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
           useInitialAvatar: true,
         }));
       }
-      
-      console.log('Alterações canceladas');
+
+      console.log("Alterações canceladas");
     } catch (error) {
-      console.error('Erro ao cancelar alterações:', error);
+      console.error("Erro ao cancelar alterações:", error);
     }
   };
 
   const handleSubmit = async () => {
     const currentGroup = groupedQuestions.get(selectedSubject);
-    const questionToSubmit = currentGroup ? currentGroup[currentQuestionIndex] : null;
+    const questionToSubmit = currentGroup
+      ? currentGroup[currentQuestionIndex]
+      : null;
 
     if (!questionToSubmit) {
-        console.error("Nenhuma questão selecionada para gerar explicação.");
-        return;
+      console.error("Nenhuma questão selecionada para gerar explicação.");
+      return;
     }
 
     setIsGenerating(true);
-    setExplanation('');
+    setExplanation("");
 
     try {
-        const response = await fetch('/api/generate-explanation', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ 
-                enunciado: questionToSubmit.enunciado, 
-                gabarito: questionToSubmit.gabarito 
-            }) 
-        });
+      const response = await fetch("/api/generate-explanation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enunciado: questionToSubmit.enunciado,
+          gabarito: questionToSubmit.gabarito,
+        }),
+      });
 
-    if (!response.ok || !response.body) {
-      throw new Error('A resposta da rede não foi bem-sucedida ou não continha um corpo.');
-    }
-    
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) {
-        break;
+      if (!response.ok || !response.body) {
+        throw new Error(
+          "A resposta da rede não foi bem-sucedida ou não continha um corpo.",
+        );
       }
 
-      const chunk = decoder.decode(value, { stream: true });
-      setExplanation((prev) => prev + chunk);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        setExplanation((prev) => prev + chunk);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar explicação:", error);
+      setExplanation("Ocorreu um erro ao gerar a explicação. Tente novamente.");
+    } finally {
+      setIsGenerating(false);
     }
-    
-  } catch (error) {
-    console.error('Erro ao buscar explicação:', error);
-    setExplanation('Ocorreu um erro ao gerar a explicação. Tente novamente.');
-  } finally {
-    setIsGenerating(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
@@ -456,12 +577,15 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
                 </div>
               </div>
             </div>
-            
+
             <NavigationBar activeTab={activeTab} setActiveTab={setActiveTab} />
 
             <div className="mb-8">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsContent value="profile" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent
+                  value="profile"
+                  className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                >
                   {/* Estatísticas Gerais */}
                   <GeneralStats
                     session={session}
@@ -473,12 +597,13 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
                     setActiveTab={setActiveTab}
                     rankingData={rankingData}
                     recentExams={profileData.recentExams}
+                    pagination={profileData.pagination}
                   />
                 </TabsContent>
 
                 {/* Questões não resolvidas Tab Content */}
                 <TabsContent value="questoesNaoResolvidas" className="mt-6">
-                  <Gemini 
+                  <Gemini
                     groupedQuestions={groupedQuestions}
                     selectedSubject={selectedSubject}
                     setSelectedSubject={setSelectedSubject}
@@ -499,23 +624,19 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
                   </DndProvider>
                 </TabsContent>
 
-
-
                 {/* Estatisticas Tab Content */}
                 <TabsContent value="estatisticas" className="mt-6">
                   {/* Estatisticas Tab Content - AGORA USANDO O NOVO COMPONENTE */}
-                  <StatsUser 
+                  <StatsUser
                     stats={profileData.stats}
                     subjectPerformance={profileData.subjectPerformance}
                     monthlyProgress={profileData.monthlyProgress}
                   />
                 </TabsContent>
 
-
-
                 {/* Configuracoes Tab Content */}
                 <TabsContent value="configuracoes" className="mt-6">
-                  <UserConfig 
+                  <UserConfig
                     formData={formData}
                     setFormData={setFormData}
                     onSave={handleSaveProfile}
@@ -533,14 +654,19 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
                     // Exibe erro se os dados do perfil falharem
                     <div className="p-8 text-center text-red-500 bg-red-50/50 rounded-2xl border border-red-200/20">
                       <AlertCircle className="h-10 w-10 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold">Erro ao carregar dados</h3>
-                      <p className="text-sm">Não foi possível carregar seu desempenho. Tente atualizar a página.</p>
+                      <h3 className="text-lg font-semibold">
+                        Erro ao carregar dados
+                      </h3>
+                      <p className="text-sm">
+                        Não foi possível carregar seu desempenho. Tente
+                        atualizar a página.
+                      </p>
                     </div>
                   ) : (
                     // Passa os dados necessários para o novo componente
                     <NotaCorteConsulta
                       // Usamos a porcentagem de acertos como 'nota geral'
-                      userScore={profileData.stats.percentagem} 
+                      userScore={profileData.stats.percentagem}
                       // Pré-enche o curso alvo com o que está salvo nas configurações
                       defaultTargetCourse={formData.targetCourse}
                     />
@@ -551,8 +677,8 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
           </div>
         </div>
       </div>
-      
-    <Footer />
-  </div>
-);
-};
+
+      <Footer />
+    </div>
+  );
+}

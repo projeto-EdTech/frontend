@@ -1,102 +1,42 @@
 import { NextResponse } from 'next/server';
+import { getCachedStats, setCachedStats, type TransformedStats } from '@/lib/store/userStatsCache';
 
-// ============================================================
-// DADOS ESTÁTICOS DE REFERÊNCIA (mock anterior)
-// Manter como referência para validar o contrato de dados
-// com o backend antes de remover.
-// ============================================================
-/*
-const mockData = {
-  stats: {
-    simulados: 12,
-    questoes: 540,
-    acertos: 378,
-    percentagem: 70,
-    trend_simulados: { value: 15, type: 'up' as const },
-    trend_questoes: { value: 8, type: 'up' as const },
-    trend_acertos: { value: 12, type: 'up' as const },
-    trend_percentagem: { value: 5, type: 'up' as const },
-  },
-  recentExams: [
-    { name: "ENEM Simulado (Exemplo)", date: "10/07/2025", score: 82 },
-    { name: "FUVEST (Exemplo)", date: "22/06/2025", score: 68 },
-    { name: "Simulado Personalizado (Exemplo)", date: "15/06/2025", score: 75 }
-  ],
-  subjectPerformance: [
-    { subject: "Matemática", percentage: 80 },
-    { subject: "Física", percentage: 75 },
-    { subject: "Química", percentage: 65 },
-    { subject: "Biologia", percentage: 88 },
-    { subject: "Inglês", percentage: 72 },
-    { subject: "História", percentage: 68 },
-    { subject: "Geografia", percentage: 75 },
-    { subject: "Filosofia", percentage: 60 },
-    { subject: "Sociologia", percentage: 65 },
-    { subject: "Língua Portuguesa", percentage: 90 },
-    { subject: "Literatura", percentage: 85 },
-  ],
-  monthlyProgress: [
-    { label: 'Jan', value: 600 },
-    { label: 'Fev', value: 750 },
-    { label: 'Mar', value: 700 },
-    { label: 'Abr', value: 805 },
-    { label: 'Mai', value: 905 },
-    { label: 'Jun', value: 570 },
-    { label: 'Jul', value: 880 },
-    { label: 'Ago', value: 900 },
-    { label: 'Set', value: 800 },
-    { label: 'Out', value: 700 },
-    { label: 'Nov', value: 650 },
-    { label: 'Dez', value: 800 },
-  ],
-  reviewableQuestions: [
-    {
-      id: 'q1',
-      enunciado: "Um fio condutor é percorrido por cerca de 2x10⁻¹⁴ C a cada microssegundo (10⁻⁶ s). Determine a intensidade da corrente.",
-      suaResposta: "1 A",
-      gabarito: "2x10⁻⁸ A",
-      displayLabel: "FUVEST 2025",
-      displaySubject: "Física — Életrica e Eletromagnetismo",
-    },
-    {
-      id: 'q2',
-      enunciado: "Qual o resultado da equação de segundo grau x² - 5x + 6 = 0?",
-      suaResposta: "x=1, x=5",
-      gabarito: "x=2, x=3",
-      displayLabel: "ENEM 2024",
-      displaySubject: "Matemática — Funções",
-    },
-    {
-      id: 'q3',
-      enunciado: "Quem foi o primeiro presidente do Brasil?",
-      suaResposta: "Dom Pedro I",
-      gabarito: "Marechal Deodoro da Fonseca",
-      displayLabel: "UNICAMP 2023",
-      displaySubject: "História — República",
-    },
-    {
-      id: 'q4',
-      enunciado: "Qual a fórmula da Lei de Ohm?",
-      suaResposta: "R = IV",
-      gabarito: "V = IR",
-      displayLabel: "ENEM 2024",
-      displaySubject: "Física — Életrica e Eletromagnetismo",
-    }
-  ]
-};
-*/
+// CACHE STRATEGY: in-memory TTL 5min — user-specific, key=userId from JWT sub/email
 
-// ============================================================
-// FUNÇÃO ADAPTADORA — mapeia os campos do backend para o
-// contrato de dados esperado pelo frontend.
-// TODO: Revisar com o backend os nomes exatos dos campos.
-// ============================================================
+function extractUserId(token: string): string | null {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    return payload.sub ?? payload.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function paginate(data: TransformedStats, page: number, limit: number) {
+  const total = data.recentExams.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const start = (page - 1) * limit;
+  const slice = data.recentExams.slice(start, start + limit);
+  return NextResponse.json({
+    ...data,
+    recentExams: slice,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  });
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const transformExternalData = (apiData: any) => {
+const transformExternalData = (apiData: any): TransformedStats => {
   const createTrendObject = (value: number) => ({
     value: Math.abs(value),
     type: value >= 0 ? 'up' : 'down',
-  });
+  }) as { value: number; type: 'up' | 'down' };
 
   return {
     stats: {
@@ -104,16 +44,21 @@ const transformExternalData = (apiData: any) => {
       questoes: apiData.user_statistics?.questions_answered || 0,
       acertos: apiData.user_statistics?.correct_answers || 0,
       percentagem: apiData.user_statistics?.hit_percentage || 0,
-      trend_simulados: createTrendObject(apiData.user_statistics?.simulations_trend || 0),   // % em relação ao período anterior
-      trend_questoes: createTrendObject(apiData.user_statistics?.questions_trend || 0),      // % em relação ao período anterior
-      trend_acertos: createTrendObject(apiData.user_statistics?.answers_trend || 0),         // % em relação ao período anterior
-      trend_percentagem: createTrendObject(apiData.user_statistics?.percentage_trend || 0),  // % em relação ao período anterior
+      trend_simulados: createTrendObject(apiData.user_statistics?.simulations_trend || 0),
+      trend_questoes: createTrendObject(apiData.user_statistics?.questions_trend || 0),
+      trend_acertos: createTrendObject(apiData.user_statistics?.answers_trend || 0),
+      trend_percentagem: createTrendObject(apiData.user_statistics?.percentage_trend || 0),
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recentExams: (apiData.last_exams || []).map((exam: any) => ({
       name: exam.exam_name || 'Simulado',
       date: exam.completed_at || 'Data não informada',
       score: exam.final_score || 0,
+      totalQuestions: exam.total_questions ?? undefined,
+      correctAnswers: exam.correct_answers ?? undefined,
+      incorrectAnswers: exam.wrong_answers ?? exam.incorrect_answers ?? undefined,
+      timeUsed: exam.time_spent ?? exam.time_used ?? undefined,
+      accuracy: exam.hit_percentage ?? exam.accuracy ?? undefined,
     })),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subjectPerformance: (apiData.performance_by_subject || []).map((subject: any) => ({
@@ -155,13 +100,26 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Lê o token JWT enviado pelo cliente no header Authorization
     const authHeader = request.headers.get('Authorization');
     const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
     if (!userToken) {
       console.warn('[API_USER_STATS] ❌ Requisição sem token JWT.');
       return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page  = Math.max(1, Number(searchParams.get('page')  ?? 1));
+    const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit') ?? 3)));
+
+    const userId = extractUserId(userToken);
+
+    if (userId) {
+      const cached = getCachedStats(userId);
+      if (cached) {
+        console.log('[API_USER_STATS] ✅ Cache hit para userId:', userId.substring(0, 8) + '...');
+        return paginate(cached, page, limit);
+      }
     }
 
     const backendUrl = `${externalApiUrl}/user-data`;
@@ -205,11 +163,15 @@ export async function GET(request: Request) {
       );
     }
 
-    // Adapta os dados do backend para o contrato esperado pelo frontend
     const formattedData = transformExternalData(rawData);
+
+    if (userId) {
+      setCachedStats(userId, formattedData);
+    }
+
     console.log('[API_USER_STATS] ✅ Sucesso! Dados adaptados e retornando ao frontend.');
 
-    return NextResponse.json(formattedData);
+    return paginate(formattedData, page, limit);
 
   } catch (error) {
     console.error('[API_USER_STATS_ERROR] Erro de comunicação com o back-end:', error);

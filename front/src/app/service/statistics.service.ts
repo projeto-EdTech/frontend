@@ -1,5 +1,5 @@
-import { dataStats, getStatsData, type Metrica } from "@/lib/dataStats";
-import { mockApiData, processCutoffResults, type ApiResponse } from "@/lib/dataNotaCorte";
+import { dataStats, getStatsData, type Metrica } from "@/lib/data/stats";
+import { mockApiData, processCutoffResults, type ApiResponse } from "@/lib/data/notaCorte";
 
 /**
  * CACHE STRATEGY: ISR - revalidate 3600s

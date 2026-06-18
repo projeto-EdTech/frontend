@@ -53,6 +53,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/react-virtualized-auto-sizer": "^1.0.4",
     "@types/react-window": "^1.8.8",
+    "animejs": "^4.4.1",
     "autoprefixer": "^10.4.21",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

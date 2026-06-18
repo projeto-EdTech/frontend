@@ -7,7 +7,7 @@ export default async function ProfileDataServer() {
     const session = await getServerSession(authOptions);
     const userToken = session?.accessToken || "";
 
-    const externalApiUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
+    const externalApiUrl = process.env.BACKEND_API_URL;
     const backendUrl = `${externalApiUrl}/api/user/stats`;
     
     // Se o usuário tem token, puxamos os stats no sevidor

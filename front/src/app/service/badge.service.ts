@@ -1,7 +1,7 @@
-import badgesConfig from '@/lib/badges.json';
-import { computeBadges } from '@/lib/badgeUtils';
+import badgesConfig from '@/lib/data/badges.json';
+import { computeBadges } from '@/lib/utils/badgeUtils';
 import type { ProfileStats } from '@/components/profile/GeneralStats';
-import type { UserRankingData } from '@/lib/rankUtils';
+import type { UserRankingData } from '@/lib/utils/rankUtils';
 
 /**
  * CACHE STRATEGY: ISR - revalidate 3600s

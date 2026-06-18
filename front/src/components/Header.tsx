@@ -5,7 +5,7 @@ import AccessibilityMenu from "@/components/AccessibilityMenu";
 import Image from "next/image";
 import Link from "next/link";
 import UserAvatar from "./UserAvatar";
-import { getRankIcon } from "@/lib/rankUtils";
+import { getRankIcon } from "@/lib/utils/rankUtils";
 import { useSession, signOut } from "next-auth/react";
 import { useUserTier } from "@/hooks/useUserTier";
 import {
@@ -50,8 +50,22 @@ export default function Header() {
   });
 
   const [userRank, setUserRank] = useState<
-    import("@/lib/rankUtils").RankType | null
+    import("@/lib/utils/rankUtils").RankType | null
   >(null);
+
+  // Blur do header quando o pop-up de ranking estiver ativo
+  const [isRankModalOpen, setIsRankModalOpen] = useState(false);
+
+  useEffect(() => {
+    const onOpen = () => setIsRankModalOpen(true);
+    const onClose = () => setIsRankModalOpen(false);
+    window.addEventListener("rankingModalOpen", onOpen);
+    window.addEventListener("rankingModalClose", onClose);
+    return () => {
+      window.removeEventListener("rankingModalOpen", onOpen);
+      window.removeEventListener("rankingModalClose", onClose);
+    };
+  }, []);
 
   // Fechar menu mobile quando a tela for redimensionada
   useEffect(() => {
@@ -144,11 +158,13 @@ export default function Header() {
   // Carrega rank do sessionStorage e ouve atualizações do perfil
   useEffect(() => {
     const stored = sessionStorage.getItem("userRank");
-    if (stored) setUserRank(stored as import("@/lib/rankUtils").RankType);
+    if (stored) setUserRank(stored as import("@/lib/utils/rankUtils").RankType);
 
     const handleRankUpdate = () => {
       const updated = sessionStorage.getItem("userRank");
-      setUserRank((updated as import("@/lib/rankUtils").RankType) ?? null);
+      setUserRank(
+        (updated as import("@/lib/utils/rankUtils").RankType) ?? null,
+      );
     };
 
     window.addEventListener("rankUpdated", handleRankUpdate);
@@ -250,7 +266,11 @@ export default function Header() {
 
   return (
     <>
-      <header className="themed-header sticky top-0 z-50 backdrop-blur-md transition-all duration-300">
+      <header
+        className={`themed-header sticky top-0 z-50 backdrop-blur-md transition-all duration-300 ${
+          isRankModalOpen ? "blur-md brightness-75 pointer-events-none" : ""
+        }`}
+      >
         <div className="absolute inset-0 bg-white"></div>
         <div className="container mx-auto px-4 relative">
           <div className="flex items-center justify-between h-16 lg:h-18">
@@ -355,7 +375,7 @@ export default function Header() {
                         }
                       />
                       {userRank && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200">
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-transparent ">
                           {getRankIcon(userRank, 3)}
                         </div>
                       )}

@@ -14,7 +14,7 @@ export function useUserTier() {
   useEffect(() => {
     const checkTier = () => {
       // Mock user always gets Simula PRO tier without any backend token
-      if (session?.user?.email === 'fegrolla0210@gmail.com') {
+      if (session?.user?.email === 'fegrolla0210@gmail.com' || session?.user?.email === 'fegrolla0210@gmail.com') {
         setTier('Simula PRO');
         setLoading(false);
         return;

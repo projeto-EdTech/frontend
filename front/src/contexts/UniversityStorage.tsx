@@ -46,7 +46,7 @@ export const UniversityStorage: React.FC<UniversityStorageProps> = ({ children }
         
         // Fallback para dados locais em caso de falha
         try {
-          const { universities: localUniversities } = await import('@/lib/dataUniversity');
+          const { universities: localUniversities } = await import('@/lib/data/universities');
           setUniversities(localUniversities);
           setIsUsingLocalFallback(true);
           

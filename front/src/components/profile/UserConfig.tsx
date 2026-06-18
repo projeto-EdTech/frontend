@@ -34,6 +34,7 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
   const { data: session } = useSession();
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [universitiesList, setUniversitiesList] = useState<{ name: string; slug: string }[]>([]);
+  const [isLoadingUniversities, setIsLoadingUniversities] = useState(true);
   const [coursesList, setCoursesList] = useState<string[]>([]);
   const [filteredExams, setFilteredExams] = useState<string[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<string[]>([]);
@@ -52,6 +53,8 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
         }
       } catch (error) {
         console.error("Erro ao buscar universidades:", error);
+      } finally {
+        setIsLoadingUniversities(false);
       }
     };
     fetchUniversities();
@@ -102,16 +105,19 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
   const handleSaveInternal = () => {
     // Validação antes de salvar
     const errors: { targetExam?: string; targetCourse?: string } = {};
-    
-    const isValidExam = universitiesList.some(uni => uni.name.toLowerCase() === formData.targetExam.toLowerCase());
-    const isValidCourse = coursesList.some(course => course.toLowerCase() === formData.targetCourse.toLowerCase());
 
-    if (formData.targetExam && !isValidExam) {
-      errors.targetExam = "Por favor, selecione uma universidade válida.";
+    if (formData.targetExam && !isLoadingUniversities && universitiesList.length > 0) {
+      const isValidExam = universitiesList.some(uni => uni.name.toLowerCase() === formData.targetExam.toLowerCase());
+      if (!isValidExam) {
+        errors.targetExam = "Por favor, selecione uma universidade válida.";
+      }
     }
 
-    if (formData.targetCourse && !isValidCourse) {
-      errors.targetCourse = "Por favor, selecione um curso válido.";
+    if (formData.targetCourse && coursesList.length > 0) {
+      const isValidCourse = coursesList.some(course => course.toLowerCase() === formData.targetCourse.toLowerCase());
+      if (!isValidCourse) {
+        errors.targetCourse = "Por favor, selecione um curso válido.";
+      }
     }
 
     if (Object.keys(errors).length > 0) {
@@ -146,7 +152,11 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Converte para maiúsculo se for o campo Prova Alvo
+    const finalValue = name === 'targetExam' ? value.toUpperCase() : value;
+    
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
     
     // Limpar o erro do campo quando o usuário digita
     if (validationErrors[name as keyof typeof validationErrors]) {
@@ -155,9 +165,9 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
 
     // Lógica específica para o autocomplete da Prova Alvo
     if (name === 'targetExam') {
-      if (value.length > 0) {
+      if (finalValue.length > 0) {
         const filtered = universitiesList
-          .filter(uni => uni.name.toLowerCase().includes(value.toLowerCase()))
+          .filter(uni => uni.name.toLowerCase().includes(finalValue.toLowerCase()))
           .map(uni => uni.name);
         setFilteredExams(filtered);
         setShowExamAutocomplete(true);
@@ -169,9 +179,9 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
 
     // Lógica específica para o autocomplete do Curso Alvo
     if (name === 'targetCourse') {
-      if (value.length > 0) {
+      if (finalValue.length > 0) {
         const filtered = coursesList
-          .filter(course => course.toLowerCase().includes(value.toLowerCase()));
+          .filter(course => course.toLowerCase().includes(finalValue.toLowerCase()));
         setFilteredCourses(filtered);
         setShowCourseAutocomplete(true);
       } else {
@@ -182,7 +192,7 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
   };
 
   const selectExam = (examName: string) => {
-    setFormData(prev => ({ ...prev, targetExam: examName }));
+    setFormData(prev => ({ ...prev, targetExam: examName.toUpperCase() }));
     setShowExamAutocomplete(false);
     setValidationErrors(prev => ({ ...prev, targetExam: undefined }));
   };

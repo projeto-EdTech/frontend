@@ -2,7 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { minigamesData } from "@/lib/Data_games";
+import { minigamesData } from "@/lib/data/games";
 import ArenaGameClient from './ArenaGameClient';
 
 interface GameDataServerProps {

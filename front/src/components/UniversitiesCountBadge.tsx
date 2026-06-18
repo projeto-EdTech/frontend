@@ -8,7 +8,7 @@ export default async function UniversitiesCountBadge() {
   let hasError = false;
 
   try {
-    const externalApiUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
+    const externalApiUrl = process.env.BACKEND_API_URL;
     
     // Tentamos buscar do backend diretamente se as variaveis e a sessao existirem
     if (session?.accessToken) {

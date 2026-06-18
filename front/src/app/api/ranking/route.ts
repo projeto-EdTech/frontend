@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {mockRankingsByUniversity, RawUserData
-} from "@/lib/DataRanking";
+} from "@/lib/data/ranking";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 

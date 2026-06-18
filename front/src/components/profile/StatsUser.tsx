@@ -14,7 +14,7 @@ import {
   AlignmentType,
   BorderStyle,
 } from "docx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { TabsContent } from "@/components/ui/tabs";
 import TopicBarChart from "@/components/Simula_PRO/graficos_stats/TopicBarChart";
@@ -33,7 +33,6 @@ import {
   Lightbulb,
   Rocket,
   ChevronRight,
-  Users,
   Check,
   Library,
   Activity,
@@ -42,6 +41,7 @@ import {
   Headset,
 } from "lucide-react";
 import { useUserTier } from "@/hooks/useUserTier";
+import { motion } from "framer-motion";
 
 // --- Tipagens (sem alterações) ---
 interface ProfileStatsForTab {
@@ -335,8 +335,23 @@ const StatsUser: React.FC<StatsUserProps> = ({
 }) => {
   const { theme } = useTheme();
   const { isPro } = useUserTier();
-  // Mantém o prop isPremiumUser como fallback/override para compatibilidade.
   const canAccessPremium = isPro || !!isPremiumUser;
+
+  const targetExam = useMemo<string | undefined>(() => {
+    try {
+      const raw =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("user_profile_data")
+          : null;
+      if (!raw) return undefined;
+      return (
+        (JSON.parse(raw) as { targetExam?: string }).targetExam || undefined
+      );
+    } catch {
+      return undefined;
+    }
+  }, []);
+
   const [reportType, setReportType] = useState<"simples" | "completo">(
     "simples",
   );
@@ -378,6 +393,41 @@ const StatsUser: React.FC<StatsUserProps> = ({
     }
     return mappedData;
   })();
+
+  const statCards = [
+    {
+      label: "Simulados",
+      value: stats.simulados,
+      unit: "",
+      color: "#007AFF",
+      Icon: BarChart3,
+      shadow: "rgba(0,122,255,0.20)",
+    },
+    {
+      label: "Questões",
+      value: stats.questoes,
+      unit: "",
+      color: "#34C759",
+      Icon: Target,
+      shadow: "rgba(52,199,89,0.20)",
+    },
+    {
+      label: "Acertos",
+      value: stats.acertos,
+      unit: "",
+      color: "#30D158",
+      Icon: Check,
+      shadow: "rgba(48,209,88,0.20)",
+    },
+    {
+      label: "% de Acertos",
+      value: stats.percentagem,
+      unit: "%",
+      color: "#AF52DE",
+      Icon: Zap,
+      shadow: "rgba(175,82,222,0.20)",
+    },
+  ];
 
   useEffect(() => {
     // Só executa se:
@@ -626,8 +676,16 @@ const StatsUser: React.FC<StatsUserProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card de estatísticas gerais */}
               <div
-                className={`rounded-2xl p-8 shadow-[0_6px_24px_rgba(0,0,0,0.06)] relative overflow-hidden border
-            ${theme === "dark" ? "bg-[#1c1c1e]/70 border-white/10" : "bg-white/80 border-black/10"}`}
+                className={`rounded-3xl p-7 relative overflow-hidden border backdrop-blur-2xl
+                  ${
+                    theme === "dark"
+                      ? "bg-[#1c1c1e]/60 border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+                      : "bg-white/60 border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)]"
+                  }`}
+                style={{
+                  fontFamily:
+                    '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
+                }}
               >
                 <div className="absolute bottom-0 right-0 opacity-70 pointer-events-none">
                   <Image
@@ -638,70 +696,80 @@ const StatsUser: React.FC<StatsUserProps> = ({
                     className="object-contain"
                   />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-700 mb-6 relative z-10">
+                <h3
+                  className={`text-xl font-semibold mb-5 relative z-10 tracking-tight
+                    ${theme === "dark" ? "text-white" : "text-[#1d1d1f]"}`}
+                  style={{
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
+                  }}
+                >
                   Estatísticas Gerais
                 </h3>
-                <div className="grid grid-cols-2 gap-6 relative z-10">
-                  <div
-                    className={`text-center p-4 rounded-xl border hover:shadow-lg transition-shadow hover:scale-[1.02] transform hover:shadow-blue-500/30 hover:border-blue-500/20
-                ${theme === "dark" ? "bg-[#2c2c2e]/70 border-white/10" : "bg-white/90 border-black/10"}`}
-                  >
-                    <p
-                      className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"} mb-2`}
+                <div className="grid grid-cols-2 gap-3 relative z-10">
+                  {statCards.map((card) => (
+                    <motion.div
+                      key={card.label}
+                      whileHover={{
+                        scale: 1.02,
+                        boxShadow: `0 14px 32px ${card.shadow}`,
+                        borderColor: card.color,
+                      }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                      }}
+                      className={`relative flex flex-col items-center justify-center gap-2.5 p-5 rounded-2xl border backdrop-blur-xl cursor-default select-none overflow-hidden
+                        ${
+                          theme === "dark"
+                            ? "bg-white/[0.04] border-white/[0.08] shadow-[0_2px_10px_rgba(0,0,0,0.3)]"
+                            : "bg-white/80 border-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)]"
+                        }`}
                     >
-                      Simulados
-                    </p>
-                    <p
-                      className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-700"}`}
-                    >
-                      {stats.simulados}
-                    </p>
-                  </div>
-                  <div
-                    className={`text-center p-4 rounded-xl border hover:shadow-lg transition-shadow hover:scale-[1.02] transform hover:shadow-green-500/30 hover:border-green-500/20
-                ${theme === "dark" ? "bg-[#2c2c2e]/70 border-white/10" : "bg-white/90 border-black/10"}`}
-                  >
-                    <p
-                      className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"} mb-2`}
-                    >
-                      Questões
-                    </p>
-                    <p
-                      className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-700"}`}
-                    >
-                      {stats.questoes}
-                    </p>
-                  </div>
-                  <div
-                    className={`text-center p-4 rounded-xl border hover:shadow-lg transition-shadow hover:scale-[1.02] transform hover:shadow-green-600/30 hover:border-green-600/20
-                ${theme === "dark" ? "bg-[#2c2c2e]/70 border-white/10" : "bg-white/90 border-black/10"}`}
-                  >
-                    <p
-                      className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"} mb-2`}
-                    >
-                      Acertos
-                    </p>
-                    <p
-                      className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-700"}`}
-                    >
-                      {stats.acertos}
-                    </p>
-                  </div>
-                  <div
-                    className={`text-center p-4 rounded-xl border hover:shadow-lg transition-shadow hover:scale-[1.02] transform hover:shadow-purple-500/30 hover:border-purple-500/20
-                ${theme === "dark" ? "bg-[#2c2c2e]/70 border-white/10" : "bg-white/90 border-black/10"}`}
-                  >
-                    <p
-                      className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"} mb-2`}
-                    >
-                      % de Acertos
-                    </p>
-                    <p
-                      className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-700"}`}
-                    >
-                      {stats.percentagem}%
-                    </p>
-                  </div>
+                      {/* Glow radial sutil */}
+                      <div
+                        className="absolute inset-0 opacity-[0.07] pointer-events-none rounded-2xl"
+                        style={{
+                          background: `radial-gradient(circle at 50% 0%, ${card.color}, transparent 70%)`,
+                        }}
+                      />
+                      {/* Ícone colorido */}
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: `${card.color}1A`,
+                          color: card.color,
+                        }}
+                      >
+                        <card.Icon className="w-5 h-5" strokeWidth={2} />
+                      </div>
+                      {/* Label */}
+                      <p
+                        className={`text-[10px] font-semibold uppercase tracking-[0.12em] leading-none
+                          ${theme === "dark" ? "text-white/40" : "text-black/40"}`}
+                        style={{
+                          fontFamily:
+                            '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                        }}
+                      >
+                        {card.label}
+                      </p>
+                      {/* Valor */}
+                      <p
+                        className={`text-[30px] font-bold leading-none tracking-tight
+                          ${theme === "dark" ? "text-white" : "text-[#1d1d1f]"}`}
+                        style={{
+                          fontFamily:
+                            '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
+                        }}
+                      >
+                        {card.value}
+                        {card.unit}
+                      </p>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
 
@@ -872,6 +940,7 @@ const StatsUser: React.FC<StatsUserProps> = ({
                   <MonthlyProgressChart
                     data={monthlyProgress}
                     isPremiumUser={canAccessPremium}
+                    targetExam={targetExam}
                   />
                 ) : (
                   <div

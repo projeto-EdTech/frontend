@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { allQuestions } from '@/lib/dataUniversity';
-import { saveSimulation } from '@/lib/simulationStore';
+import { allQuestions } from '@/lib/data/universities';
+import { saveSimulation } from '@/lib/store/simulationStore';
 
 export async function POST(request: Request) {
   try {

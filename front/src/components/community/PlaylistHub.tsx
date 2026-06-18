@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PlaylistFilters } from "./PlaylistFilters";
-import { type Playlist } from "@/lib/Playlist_data";
+import { type Playlist } from "@/lib/data/playlists";
 import { CreatePlaylistModal } from "./CreatePlaylistModal";
 
 interface PlaylistHubProps {
