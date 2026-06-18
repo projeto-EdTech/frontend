@@ -591,7 +591,7 @@ export const flashCardsData: FlashCardSubject[] = [
         ]
       },
       {
-        name: "Idade Média",
+        name: "Idade Média Europeia",
         cards: [
           { id: 206, question: "Como se definia a base da economia no **Feudalismo**?", answer: "Subsistência, centrada no feudo e baseada no trabalho servil.", difficulty: "easy" },
           { id: 207, question: "Qual o principal objetivo das **Cruzadas**?", answer: "Retomar a Terra Santa (Jerusalém) do domínio muçulmano.", difficulty: "easy" },

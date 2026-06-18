@@ -10,7 +10,7 @@ import {
   COMBO_COLORS,
   SUBJECT_COLORS,
   DEFAULT_SUBJECT_COLOR,
-  flashCardsData,
+  flashCardsData // Importando os dados locais
 } from '../lib/flash-cardData';
 
 /**
@@ -39,29 +39,55 @@ export class FlashCardGameLogic {
   }
 
   /**
-   * Busca as matérias e prepara os dados iniciais
+   * Busca as matérias e prepara os dados iniciais com base nas recomendações do backend
    */
   async fetchCards(): Promise<{ cards: FlashCard[]; subjects: string[] }> {
-    const subjects = flashCardsData.map(s => s.subject);
-    const allCards: FlashCard[] = [];
-    
-    // Achata todos os cards injetando metadados de matéria e tópico
-    flashCardsData.forEach(subjectEntry => {
-      subjectEntry.topics.forEach(topic => {
-        const cardsWithMetadata = topic.cards.map(card => ({
-          ...card,
-          subject: subjectEntry.subject,
-          topic: topic.name
-        }));
-        allCards.push(...cardsWithMetadata);
-      });
+    const storedToken = localStorage.getItem('user_data');
+
+    const response = await fetch('/api/games/flash-cards', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${storedToken}`,
+      },
+      cache: 'no-store',
     });
 
-    const availableCards = allCards.filter(card => card.available ?? true);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido.' }));
+      throw new Error(errorData.error || `Falha ao buscar recomendações (${response.status})`);
+    }
+
+    const data = await response.json();
+    const recommendedMaterias = data.materias || [];
+
+    const filteredCards: FlashCard[] = [];
+    const subjectsSet = new Set<string>();
+
+    // Filtra o banco de dados local baseado no que o backend recomendou
+    recommendedMaterias.forEach((recMateria: any) => {
+      const actualSubject = flashCardsData.find(s => s.subject.toLowerCase() === recMateria.nome.toLowerCase());
+      
+      if (actualSubject) {
+        recMateria.topicos.forEach((recTopic: any) => {
+          const actualTopic = actualSubject.topics.find(t => t.name.toLowerCase() === recTopic.nome.toLowerCase());
+          
+          if (actualTopic) {
+            subjectsSet.add(actualSubject.subject);
+            actualTopic.cards.forEach(card => {
+              filteredCards.push({
+                ...card,
+                subject: actualSubject.subject,
+                topic: actualTopic.name
+              });
+            });
+          }
+        });
+      }
+    });
 
     return {
-      cards: availableCards,
-      subjects,
+      cards: filteredCards,
+      subjects: Array.from(subjectsSet),
     };
   }
 
@@ -74,13 +100,11 @@ export class FlashCardGameLogic {
     if (selectedSubject === 'Todas') {
       filteredCards = [...cards];
     } else {
-      // Busca a matéria específica na estrutura original para garantir que pegamos os tópicos corretos
-      const subjectData = flashCardsData.find(s => s.subject === selectedSubject);
-      if (subjectData) {
-        subjectData.topics.forEach(topic => {
-          filteredCards.push(...topic.cards);
-        });
-      }
+      // Filtra diretamente no array de cards recebido do backend (já contém metadata de subject)
+      // Lógica anterior usava flashCardsData (dado local) — mantida abaixo como referência:
+      // const subjectData = flashCardsData.find(s => s.subject === selectedSubject);
+      // if (subjectData) { subjectData.topics.forEach(topic => { filteredCards.push(...topic.cards); }); }
+      filteredCards = cards.filter(card => card.subject === selectedSubject);
     }
 
     // Filtra apenas cards marcados como disponíveis
@@ -98,11 +122,18 @@ export class FlashCardGameLogic {
   }
 
   /**
-   * Retorna os tópicos de uma matéria específica
+   * Retorna os tópicos de uma matéria específica.
+   * @param allCards Array completo de cards recebidos do backend (contém metadata de subject/topic)
    */
-  getTopicsBySubject(subjectName: string): string[] {
-    const subject = flashCardsData.find(s => s.subject === subjectName);
-    return subject ? subject.topics.map(t => t.name) : [];
+  getTopicsBySubject(subjectName: string, allCards: FlashCard[] = []): string[] {
+    // Extrai tópicos únicos a partir dos cards recebidos do backend
+    // Lógica anterior usava flashCardsData (dado local):
+    // const subject = flashCardsData.find(s => s.subject === subjectName);
+    // return subject ? subject.topics.map(t => t.name) : [];
+    const topics = allCards
+      .filter(card => card.subject === subjectName && card.topic)
+      .map(card => card.topic as string);
+    return Array.from(new Set(topics));
   }
 
   /**
@@ -281,18 +312,32 @@ export class FlashCardGameLogic {
    */
   async submitResults(correctIds: number[]): Promise<void> {
     try {
-      console.log('[Flash-card][CONCLUIDO] CorrectIds:', correctIds);
-      
-      const response = await fetch('/api/games/Flash-cards', {
+      const storedToken = localStorage.getItem('user_data');
+
+      console.log('[FlashCardLogic] 📤 submitResults — Enviando resultados ao backend:');
+      console.log('[FlashCardLogic]    CorrectIds:', correctIds);
+      console.log('[FlashCardLogic]    Token (primeiros 20 chars):', storedToken ? storedToken.substring(0, 20) + '...' : 'não encontrado');
+
+      const response = await fetch('/api/games/flash-cards', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`,
+        },
         body: JSON.stringify({ correctIds }),
       });
-      
+
+      console.log('[FlashCardLogic] 📥 submitResults — Status:', response.status, response.statusText);
+
       const json = await response.json();
-      console.log('[Flash-card][POST] correctIds enviados:', correctIds, 'resposta:', json);
+
+      if (response.ok) {
+        console.log('[FlashCardLogic] ✅ Resultados enviados com sucesso:', json);
+      } else {
+        console.error('[FlashCardLogic] ❌ Erro ao salvar resultados:', json.error || json);
+      }
     } catch (e) {
-      console.error('[Flash-card][POST] erro ao enviar correctIds:', e);
+      console.error('[FlashCardLogic] ❌ Erro de comunicação ao enviar resultados:', e);
     }
   }
 

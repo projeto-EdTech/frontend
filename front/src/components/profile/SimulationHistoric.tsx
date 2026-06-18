@@ -1,59 +1,301 @@
-import React from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-
-interface RecentExam {
-  name: string;
-  date: string;
-  score: number;
-}
+import React, { useState, useCallback } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { motion, type Variants, AnimatePresence } from "framer-motion";
+import {
+  Calendar,
+  ChevronRight,
+  ChevronLeft,
+  Trophy,
+  Loader2,
+} from "lucide-react";
+import {
+  SimulationModalWrapper,
+  type RecentExam,
+} from "@/components/profile/SimulationModal";
 
 interface SimulationHistoricProps {
-  recentExams: RecentExam[];
+  initialExams: RecentExam[];
+  totalPages: number;
+  total: number;
+  limit?: number;
 }
 
-const SimulationHistoric: React.FC<SimulationHistoricProps> = ({ recentExams }) => {
+const SimulationHistoric: React.FC<SimulationHistoricProps> = ({
+  initialExams,
+  totalPages,
+  total,
+  limit = 3,
+}) => {
   const router = useRouter();
+  const [pageCache, setPageCache] = useState<Map<number, RecentExam[]>>(
+    new Map([[1, initialExams]]),
+  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [selectedExam, setSelectedExam] = useState<RecentExam | null>(null);
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 20,
+      },
+    },
+  };
+
+  const currentExams = pageCache.get(currentPage) ?? [];
+
+  const goToPage = useCallback(
+    async (page: number) => {
+      if (pageCache.has(page)) {
+        setCurrentPage(page);
+        return;
+      }
+      setLoading(true);
+      try {
+        const token =
+          typeof window !== "undefined"
+            ? (localStorage.getItem("user_data") ?? "")
+            : "";
+        const res = await fetch(`/api/user/stats?page=${page}&limit=${limit}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Falha ao carregar página");
+        const data = await res.json();
+        setPageCache((prev) => new Map(prev).set(page, data.recentExams ?? []));
+        setCurrentPage(page);
+      } catch (err) {
+        console.error("[SimulationHistoric] Erro ao carregar página:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pageCache, limit],
+  );
 
   return (
-    <div className="bg-white backdrop-blur-2xl border border-gray-200 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
-      <h3 className="text-2xl font-bold text-gray-900 mb-6 tracking-tight">Histórico de Simulados</h3>
-      {recentExams.length === 0 ? (
-        <div className="text-center py-12">
-          <Image 
-            src="/Mascote/banners/Camaleão_10.png" 
-            alt="Sem simulados" 
-            width={150}
-            height={150}
-            className="mx-auto mb-4 object-contain drop-shadow-md"
-          />
-          <p className="text-gray-500 font-medium mb-6">Você ainda não fez nenhum simulado</p>
-          <button 
-            onClick={() => router.push('/library')}
-            className="bg-gray-900 text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 font-medium"
-          >
-            Começar Agora
-          </button>
+    <>
+      <div className="w-full">
+        <div className="flex items-center gap-3 mb-6 px-2">
+          <div className="p-2 bg-blue-500/10 rounded-xl">
+            <Calendar size={20} className="text-blue-600" />
+          </div>
+          <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+            Histórico de Simulados
+          </h3>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {recentExams.map((exam, index) => (
-            <div key={index} className="p-6 bg-white backdrop-blur-sm rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-lg font-bold text-gray-900 group-hover:!text-blue-600 transition-colors">{exam.name}</p>
-                  <p className="text-sm text-gray-500 font-medium">{exam.date}</p>
+
+        {total === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[var(--card-bg)]/60 backdrop-blur-md border border-[var(--border-color)] rounded-3xl p-12 text-center shadow-sm"
+          >
+            <div className="relative w-32 h-32 mx-auto mb-6">
+              <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
+              <Image
+                src="/Mascote/banners/Camaleão_10.png"
+                alt="Sem simulados"
+                width={128}
+                height={128}
+                className="relative mx-auto object-contain drop-shadow-xl"
+              />
+            </div>
+            <p className="text-[var(--text-secondary)] font-medium text-lg mb-8">
+              Você ainda não desbravou nenhum simulado
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push("/library")}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl shadow-lg shadow-blue-500/25 font-semibold text-base transition-all hover:shadow-xl hover:shadow-blue-500/30 active:shadow-inner"
+            >
+              Começar Minha Jornada
+            </motion.button>
+          </motion.div>
+        ) : (
+          <div className="flex flex-col gap-8">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              key={currentPage}
+              className="space-y-4"
+            >
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 size={28} className="animate-spin text-blue-500" />
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Pontuação</p>
-                  <p className="text-2xl font-bold !text-green-600">{exam.score}</p>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  {currentExams.map((exam, index) => (
+                    <motion.div
+                      key={`${exam.name}-${index}`}
+                      variants={itemVariants}
+                      layout
+                      initial="hidden"
+                      animate="visible"
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      whileHover={{ scale: 1.01, x: 5 }}
+                      onClick={() => setSelectedExam(exam)}
+                      className="group p-5 bg-[var(--card-bg)]/80 backdrop-blur-xl border border-[var(--border-color)] shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_var(--shadow-hover)] hover:border-blue-500/30 transition-all duration-300 cursor-pointer overflow-hidden relative"
+                    >
+                      <div className="absolute inset-y-0 left-0 w-1 bg-transparent group-hover:bg-blue-500 transition-colors" />
+
+                      <div className="flex justify-between items-center relative z-10">
+                        <div className="flex items-center gap-4">
+                          <div className="relative w-12 h-12 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)] flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300 overflow-hidden">
+                            {exam.logo ? (
+                              <Image
+                                src={`/Logo_universidades/${exam.logo}`}
+                                alt={exam.name}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <Trophy
+                                size={22}
+                                className="text-[var(--text-secondary)] opacity-60 group-hover:text-blue-500 transition-colors"
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-[var(--text-primary)] group-hover:text-blue-500 transition-colors tracking-tight">
+                              {exam.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Calendar
+                                size={14}
+                                className="text-[var(--text-secondary)] opacity-60"
+                              />
+                              <p className="text-sm text-[var(--text-secondary)] font-medium">
+                                {exam.date}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <p className="text-[10px] text-[var(--text-secondary)] opacity-70 font-bold uppercase tracking-[0.1em] mb-0.5">
+                              Score
+                            </p>
+                            <div className="flex items-baseline gap-1">
+                              <p className="text-2xl font-black text-green-500 tabular-nums">
+                                {exam.score}
+                              </p>
+                              <p className="text-xs text-[var(--text-secondary)] opacity-80 font-semibold">
+                                pts
+                              </p>
+                            </div>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                            <ChevronRight size={18} className="text-blue-500" />
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              )}
+            </motion.div>
+
+            {totalPages > 1 && (
+              <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-600">
+                <div className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">
+                  Página {currentPage} de {totalPages}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
+                    className="px-4 py-2 rounded-xl bg-[var(--card-bg)]/80 backdrop-blur-md border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-sm transition-all hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/10 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <ChevronLeft size={16} />
+                    Anterior
+                  </motion.button>
+
+                  <div className="hidden sm:flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => {
+                        const showPage =
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1);
+                        if (!showPage) {
+                          if (page === 2 || page === totalPages - 1) {
+                            return (
+                              <span
+                                key={page}
+                                className="text-[var(--text-secondary)]"
+                              >
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <motion.button
+                            key={page}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => goToPage(page)}
+                            disabled={loading}
+                            className={`min-w-[40px] h-10 rounded-xl font-bold transition-all duration-300 text-sm disabled:opacity-60 ${
+                              currentPage === page
+                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20"
+                                : "bg-[var(--card-bg)]/80 backdrop-blur-md border border-[var(--border-color)] text-[var(--text-secondary)] hover:border-blue-500"
+                            }`}
+                          >
+                            {page}
+                          </motion.button>
+                        );
+                      },
+                    )}
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages || loading}
+                    className="px-4 py-2 rounded-xl bg-[var(--card-bg)]/80 backdrop-blur-md border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-sm transition-all hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/10 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    Próximo
+                    <ChevronRight size={16} />
+                  </motion.button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <SimulationModalWrapper
+        exam={selectedExam}
+        onClose={() => setSelectedExam(null)}
+      />
+    </>
   );
 };
 

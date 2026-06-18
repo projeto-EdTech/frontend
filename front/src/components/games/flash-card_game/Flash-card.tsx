@@ -667,7 +667,7 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
             <p className={`text-sm sm:text-base md:text-lg font-normal ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>
-              Escolha uma matéria para começar
+              Flashcards recomendados com base nos seus erros recentes
             </p>
             {!isPro && (
               <p className={`text-xs sm:text-sm mt-2 font-medium ${
@@ -717,24 +717,21 @@ const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
                     )}
                     
                     <div className="relative z-10 flex flex-col items-center justify-center min-h-[60px] sm:min-h-[80px]">
-                      <span className="font-semibold mb-1 sm:mb-1.5">{subject}</span>
-                      {subject !== 'Todas' ? (
-                        <span className={`text-[10px] sm:text-xs font-normal ${
-                          selectedSubject === subject 
-                            ? 'text-white/75' 
-                            : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          {cards.filter(c => c.subject === subject).length} cards
-                        </span>
-                      ) : (
-                        <span className={`text-[10px] sm:text-xs font-normal ${
-                          selectedSubject === subject 
-                            ? 'text-white/75' 
-                            : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          {cards.length} cards
-                        </span>
-                      )}
+                      <span className="font-semibold mb-1">{subject}</span>
+                      <span className={`text-[10px] sm:text-xs font-medium mb-1.5 px-2 py-0.5 rounded-full ${
+                        selectedSubject === subject 
+                          ? 'bg-white/20 text-white' 
+                          : theme === 'dark' ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                      }`}>
+                        {gameLogic.getTopicsBySubject(subject, cards).join(', ')}
+                      </span>
+                      <span className={`text-[10px] sm:text-xs font-normal ${
+                        selectedSubject === subject 
+                          ? 'text-white/75' 
+                          : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {cards.filter(c => c.subject === subject).length} cards
+                      </span>
                     </div>
                   </button>
                 ))}

@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { CheckSquare, Square } from "lucide-react";
 import Footer from "@/components/Footer";
-import { universities,  allQuestions } from "@/lib/dataUniversity";
+import { universities,  allQuestions } from "@/lib/data/universities";
 import { useRouter } from 'next/navigation';
 import LoadingScreen from "@/components/LoadingScreen";
 import { motion, AnimatePresence, type Transition } from "framer-motion";

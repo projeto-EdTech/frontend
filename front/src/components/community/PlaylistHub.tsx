@@ -14,13 +14,15 @@ import {
   Beaker,
   Globe,
   Languages,
-  GraduationCap
+  GraduationCap,
+  Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PlaylistFilters } from "./PlaylistFilters";
-import { type Playlist } from "@/lib/Playlist_data";
+import { type Playlist } from "@/lib/data/playlists";
+import { CreatePlaylistModal } from "./CreatePlaylistModal";
 
 interface PlaylistHubProps {
   searchQuery?: string;
@@ -40,6 +42,7 @@ export function PlaylistHub({ searchQuery = "" }: PlaylistHubProps) {
   const router = useRouter();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
 
   // Filter States
   const [showFilters, setShowFilters] = useState(false);
@@ -103,23 +106,23 @@ export function PlaylistHub({ searchQuery = "" }: PlaylistHubProps) {
     const normalizedSearch = searchQuery?.trim().toLowerCase();
     if (normalizedSearch) {
       result = result.filter(p => 
-        p.title.toLowerCase().includes(normalizedSearch) || 
-        p.tags.some(tag => tag.toLowerCase().includes(normalizedSearch)) ||
-        p.creatorName.toLowerCase().includes(normalizedSearch)
+        (p.title && p.title.toLowerCase().includes(normalizedSearch)) || 
+        (p.tags && p.tags.some(tag => tag.toLowerCase().includes(normalizedSearch))) ||
+        (p.creatorName && p.creatorName.toLowerCase().includes(normalizedSearch))
       );
     }
 
     // Specific Filters
     if (titleFilter.trim()) {
-      result = result.filter(p => p.title.toLowerCase().includes(titleFilter.toLowerCase().trim()));
+      result = result.filter(p => p.title && p.title.toLowerCase().includes(titleFilter.toLowerCase().trim()));
     }
 
     if (creatorFilter.trim()) {
-      result = result.filter(p => p.creatorName.toLowerCase().includes(creatorFilter.toLowerCase().trim()));
+      result = result.filter(p => p.creatorName && p.creatorName.toLowerCase().includes(creatorFilter.toLowerCase().trim()));
     }
 
     if (minQuestions[0] > 0) {
-      result = result.filter(p => p.questionCount >= minQuestions[0]);
+      result = result.filter(p => (p.questionCount || 0) >= minQuestions[0]);
     }
 
     if (selectedCategory && selectedCategory !== "all") {
@@ -127,13 +130,13 @@ export function PlaylistHub({ searchQuery = "" }: PlaylistHubProps) {
     }
 
     if (tagFilter.trim()) {
-      result = result.filter(p => p.tags.some(t => t.toLowerCase().includes(tagFilter.toLowerCase().trim())));
+      result = result.filter(p => p.tags && p.tags.some(t => t.toLowerCase().includes(tagFilter.toLowerCase().trim())));
     }
 
     return result;
   }, [searchQuery, titleFilter, creatorFilter, minQuestions, selectedCategory, tagFilter, playlists, isLoading]);
   
-  const trendingPlaylists = useMemo(() => filteredPlaylists.filter(p => p.likesCount > 100), [filteredPlaylists]);
+  const trendingPlaylists = useMemo(() => filteredPlaylists.filter(p => p.likesCount >= 0), [filteredPlaylists]);
   const subjectPlaylists = filteredPlaylists; 
 
   const handleNavigation = (id: string) => {
@@ -171,21 +174,42 @@ export function PlaylistHub({ searchQuery = "" }: PlaylistHubProps) {
                 <p className="text-xs text-gray-500 font-medium">Encontre a playlist ideal para você</p>
              </div>
           </div>
-          
-          <Button 
-            variant={showFilters ? "secondary" : "outline"}
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2 relative cursor-pointer hover:text-blue-500 hover:bg-blue-50"
-          >
-            {showFilters ? <X className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
-            {showFilters ? "Ocultar" : "Filtrar"}
-            {activeFiltersCount > 0 && !showFilters && (
-               <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
-                 {activeFiltersCount}
-               </span>
-            )}
-          </Button>
+
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => setIsPlaylistModalOpen(true)}
+              className="gap-2 relative cursor-pointer hover:bg-gray-100/50 h-[42px] px-5 rounded-xl font-bold border-gray-200 text-gray-700 bg-white shadow-sm transition-all"
+            >
+              <div className="bg-transparent border border-gray-500 rounded-lg p-1 mr-1 flex items-center justify-center">
+                <Plus className="w-3.5 h-3.5 text-gray-700" />
+              </div>
+              Nova Playlist
+            </Button>
+
+            <Button 
+              variant={showFilters ? "secondary" : "outline"}
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2 relative cursor-pointer hover:bg-gray-100/50 h-[42px] px-5 rounded-xl font-bold border-gray-200 text-gray-700 bg-white shadow-sm transition-all"
+            >
+              {showFilters ? <X className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
+              {showFilters ? "Ocultar" : "Filtrar"}
+              {activeFiltersCount > 0 && !showFilters && (
+                <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
+
+        {/* Modal de Criação de Playlist */}
+        <CreatePlaylistModal 
+          isOpen={isPlaylistModalOpen} 
+          onClose={() => setIsPlaylistModalOpen(false)}
+          existingTags={uniqueTags}
+          existingCategories={categories.filter(c => c !== "all")}
+        />
 
         {/* Filter Section */}
         <AnimatePresence>

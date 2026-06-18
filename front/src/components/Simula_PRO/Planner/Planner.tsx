@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useSession, signIn } from "next-auth/react";
+import { useUserTier } from "@/hooks/useUserTier";
 import { useDrag, useDrop } from "react-dnd";
 import Image from "next/image";
 import {
@@ -28,7 +29,7 @@ import {
   Cpu,
   GraduationCap,
   Headset,
-  Lightbulb
+  Lightbulb,
 } from "lucide-react";
 
 interface StudyEvent {
@@ -42,6 +43,9 @@ interface StudyEvent {
   color: string;
   description?: string;
   isScheduled: boolean;
+  conteudoId?: string;
+  conteudo?: string;
+  materia?: string;
 }
 
 interface StudyCardState {
@@ -50,6 +54,9 @@ interface StudyCardState {
   color: string;
   priority: Priority;
   title?: string;
+  conteudoId?: string;
+  conteudo?: string;
+  materia?: string;
 }
 
 interface WeeklyStats {
@@ -61,6 +68,19 @@ interface WeeklyStats {
 
 type Priority = "alta" | "media" | "baixa";
 type CompletedFilter = "" | "completed" | "pending";
+
+interface StudyMaterial {
+  materiaId: string;
+  materia: string;
+  conteudoId: string;
+  conteudo: string;
+  subject: string;
+  title: string;
+  priority: Priority;
+  color: string;
+  taxaErro: number;
+}
+
 interface Filters {
   subject: string;
   priority: "" | Priority;
@@ -70,6 +90,7 @@ interface Filters {
 
 const Planner: React.FC = () => {
   const { status, data: session } = useSession();
+  const { isFree, loading: tierLoading } = useUserTier();
   const [events, setEvents] = useState<StudyEvent[]>([]);
   const [allEvents, setAllEvents] = useState<StudyEvent[]>([]); // Para manter todos os eventos
   const [initialEvents, setInitialEvents] = useState<StudyEvent[]>([]); // Cópia original para restaurar
@@ -77,7 +98,7 @@ const Planner: React.FC = () => {
   const [preEditEvents, setPreEditEvents] = useState<StudyEvent[]>([]);
   const [isPreviewingSuggestion, setIsPreviewingSuggestion] = useState(false);
   const [preSuggestionEvents, setPreSuggestionEvents] = useState<StudyEvent[]>(
-    []
+    [],
   );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -90,7 +111,7 @@ const Planner: React.FC = () => {
     const eventsToCount = events;
     const totalDurationMs = eventsToCount.reduce(
       (sum, event) => sum + (event.end.getTime() - event.start.getTime()),
-      0
+      0,
     );
     const hoursStudied = Math.round(totalDurationMs / (1000 * 60 * 60));
     const goalsCompleted = eventsToCount.filter((e) => e.completed).length;
@@ -106,6 +127,7 @@ const Planner: React.FC = () => {
     "full" | "morning" | "afternoon" | "evening"
   >("full");
   const [isEditing, setIsEditing] = useState(false);
+  const [isEnteringEditMode, setIsEnteringEditMode] = useState(false);
   const [isFetchingSchedule, setIsFetchingSchedule] = useState(true);
   const timeConfig = { startHour: 8, endHour: 22 };
 
@@ -113,27 +135,27 @@ const Planner: React.FC = () => {
     () => ({
       baixa: 1,
       media: 2,
-      alta: 4,
+      alta: 3,
     }),
-    []
+    [],
   );
 
-  const handleDecrementCardCount = useCallback((subject: string) => {
+  const handleDecrementCardCount = useCallback((key: string) => {
     setStudyCards((prevCards) =>
       prevCards.map((card) =>
-        card.subject === subject
+        (card.conteudoId ?? card.subject) === key
           ? { ...card, count: Math.max(0, card.count - 1) }
-          : card
-      )
+          : card,
+      ),
     );
   }, []);
 
   const handleIncrementCardCount = useCallback(
-    (subject: string) => {
+    (key: string) => {
       setStudyCards((prevCards) => {
         let cardToMove: StudyCardState | undefined;
         const otherCards = prevCards.filter((card) => {
-          if (card.subject === subject) {
+          if ((card.conteudoId ?? card.subject) === key) {
             cardToMove = { ...card, count: card.count + 1 };
             return false;
           }
@@ -144,7 +166,7 @@ const Planner: React.FC = () => {
           return [cardToMove, ...otherCards];
         } else {
           const originalEvent = initialEvents.find(
-            (e) => e.subject === subject
+            (e) => (e.conteudoId ?? e.subject) === key,
           );
           if (originalEvent) {
             const newCard: StudyCardState = {
@@ -152,6 +174,10 @@ const Planner: React.FC = () => {
               color: originalEvent.color,
               priority: originalEvent.priority,
               count: 1,
+              conteudoId: originalEvent.conteudoId,
+              conteudo: originalEvent.conteudo,
+              materia: originalEvent.materia,
+              title: originalEvent.title,
             };
             return [newCard, ...otherCards];
           }
@@ -159,7 +185,7 @@ const Planner: React.FC = () => {
         return prevCards;
       });
     },
-    [initialEvents]
+    [initialEvents],
   );
 
   const [filters, setFilters] = useState<Filters>({
@@ -180,7 +206,14 @@ const Planner: React.FC = () => {
         const response = await fetch("/api/planner/Google");
 
         if (!response.ok) {
-          throw new Error("Falha ao carregar o cronograma do Google Agenda");
+          const errorData = await response.json().catch(() => null);
+          const errorMessage =
+            errorData?.error ||
+            errorData?.details ||
+            "Falha ao carregar o cronograma do Google Agenda";
+          setError(errorMessage);
+          setIsFetchingSchedule(false);
+          return;
         }
 
         const googleEvents: StudyEvent[] = await response.json();
@@ -203,7 +236,7 @@ const Planner: React.FC = () => {
         setError(
           err instanceof Error
             ? err.message
-            : "Um erro desconhecido ocorreu ao buscar a agenda."
+            : "Um erro desconhecido ocorreu ao buscar a agenda.",
         );
       } finally {
         setIsFetchingSchedule(false); // Desativa o indicador de carregamento, mesmo se der erro
@@ -220,25 +253,19 @@ const Planner: React.FC = () => {
 
   // Mostrar o modal de upgrade quando usuário FREE tentar acessar
   useEffect(() => {
-    if (status === "authenticated" && session) {
-      interface ExtendedSession {
-        user?: {
-          tier?: "FREE" | "Simula PRO";
-        };
-      }
-      const userTier = (session as ExtendedSession)?.user?.tier;
-      if (userTier === "FREE") {
-        setShowUpgradeModal(true);
-      }
+    if (!tierLoading && isFree) {
+      setShowUpgradeModal(true);
+    } else {
+      setShowUpgradeModal(false);
     }
-  }, [status, session]);
+  }, [isFree, tierLoading]);
 
   const hasActiveFilters = React.useMemo(() => {
     return Boolean(
       filters.subject ||
         filters.priority ||
         filters.completed ||
-        (filters.dateRange.start && filters.dateRange.end)
+        (filters.dateRange.start && filters.dateRange.end),
     );
   }, [filters]);
 
@@ -248,7 +275,7 @@ const Planner: React.FC = () => {
 
       if (filters.subject) {
         filtered = filtered.filter((e) =>
-          e.subject.toLowerCase().includes(filters.subject.toLowerCase())
+          e.subject.toLowerCase().includes(filters.subject.toLowerCase()),
         );
       }
 
@@ -267,14 +294,14 @@ const Planner: React.FC = () => {
         const endDate = new Date(filters.dateRange.end);
         endDate.setHours(23, 59, 59, 999);
         filtered = filtered.filter(
-          (e) => e.start >= startDate && e.start <= endDate
+          (e) => e.start >= startDate && e.start <= endDate,
         );
       }
 
       filtered.sort((a, b) => a.start.getTime() - b.start.getTime());
       return filtered;
     },
-    [filters]
+    [filters],
   );
 
   const nextSubjects = React.useMemo(() => {
@@ -284,13 +311,13 @@ const Planner: React.FC = () => {
         events
           .filter((e) => !e.completed && e.start.toDateString() === today)
           .sort((a, b) => a.start.getTime() - b.start.getTime())
-          .map((e) => e.subject)
-      )
+          .map((e) => e.subject),
+      ),
     );
   }, [events]);
   const todayDateString = new Date().toDateString();
   const todayEvents = events.filter(
-    (e) => e.start.toDateString() === todayDateString
+    (e) => e.start.toDateString() === todayDateString,
   );
   const allTodayCompleted =
     todayEvents.length > 0 && todayEvents.every((e) => e.completed);
@@ -301,8 +328,13 @@ const Planner: React.FC = () => {
     const { startHour, endHour } = timeConfig;
     const fullSlots = Array.from(
       { length: endHour - startHour },
-      (_, i) => startHour + i
+      (_, i) => startHour + i,
     );
+
+    // Se estiver editando ou visualizando sugestão, mostra o Planner aberto por inteiro (todas as horas)
+    if (isEditing || isPreviewingSuggestion) {
+      return fullSlots;
+    }
 
     if (events.length > 0) {
       const hours = events.map((ev) => ev.start.getHours());
@@ -339,7 +371,7 @@ const Planner: React.FC = () => {
       }
       setSelectedEvent(null);
     },
-    [allEvents, hasActiveFilters, filterEvents]
+    [allEvents, hasActiveFilters, filterEvents],
   );
 
   const handleCompleteEvent = (eventId: string, completed: boolean) => {
@@ -348,7 +380,7 @@ const Planner: React.FC = () => {
     const updatedAllEvents = allEvents.map((event) =>
       event.id === eventId
         ? { ...event, completed: completed } // Encontra o evento pelo ID e altera seu status 'completed'
-        : event
+        : event,
     );
 
     // Atualiza a "fonte da verdade" com o novo array de eventos.
@@ -378,7 +410,7 @@ const Planner: React.FC = () => {
       },
     });
     const restored = [...allEvents].sort(
-      (a, b) => a.start.getTime() - b.start.getTime()
+      (a, b) => a.start.getTime() - b.start.getTime(),
     );
     setEvents(restored);
     setShowFilterModal(false);
@@ -393,15 +425,10 @@ const Planner: React.FC = () => {
         if (!response.ok) {
           throw new Error("Falha ao carregar materiais para sugestão");
         }
-        const subjectMaterials: {
-          subject: string;
-          color: string;
-          priority: Priority;
-          title: string;
-        }[] = await response.json();
+        const subjectMaterials: StudyMaterial[] = await response.json();
 
         // 2. CRIA UMA LISTA "CRUA" DE EVENTOS PARA EMBARALHAR, BASEADO NA PRIORIDADE
-        // Ex: prioridade 'alta' (count 4) adiciona a matéria 4x na lista.
+        // Criamos múltiplos eventos por conteúdo com base na prioridade (alta=3, media=2, baixa=1)
         const eventsToShuffle: Omit<
           StudyEvent,
           "id" | "start" | "end" | "isScheduled"
@@ -415,6 +442,9 @@ const Planner: React.FC = () => {
               color: material.color,
               priority: material.priority,
               completed: false,
+              conteudoId: material.conteudoId,
+              conteudo: material.conteudo,
+              materia: material.materia,
             });
           }
         });
@@ -482,12 +512,13 @@ const Planner: React.FC = () => {
         setError("Não foi possível gerar a sugestão. Tente novamente.");
       }
     },
-    [clearFilters, filterEvents, hasActiveFilters, priorityCardCount]
+    [clearFilters, filterEvents, hasActiveFilters, priorityCardCount],
   ); // Remova 'initialEvents' das dependências
 
   const handleEnterEditMode = async () => {
     // 1. Mantém o backup para caso o usuário cancele
     setPreEditEvents(allEvents);
+    setIsEnteringEditMode(true);
 
     try {
       // 2. Busca as definições de matéria (metas) da API
@@ -495,33 +526,29 @@ const Planner: React.FC = () => {
       if (!response.ok) {
         throw new Error("Falha ao carregar as matérias para edição");
       }
-      
+
       // Tipagem do retorno da API
-      const subjectMaterials: {
-        subject: string;
-        color: string;
-        priority: Priority;
-        title: string;
-      }[] = await response.json();
+      const subjectMaterials: StudyMaterial[] = await response.json();
 
       // 3. Lógica de Reconciliação: Conta o que JÁ está no Google Agenda
       // Isso evita que o planner peça para você agendar algo que já está lá
       const currentCounts: Record<string, number> = {};
-      
-      allEvents.forEach(event => {
+
+      allEvents.forEach((event) => {
         // Consideramos apenas eventos ativos/agendados para a contagem
         if (event.isScheduled) {
-           const key = event.subject; 
-           currentCounts[key] = (currentCounts[key] || 0) + 1;
+          const key = event.conteudoId ?? event.subject;
+          currentCounts[key] = (currentCounts[key] || 0) + 1;
         }
       });
 
       // 4. Gera os Cards da Sidebar (Apenas o que falta agendar)
       const newStudyCards = subjectMaterials.map((material) => {
-        const totalNeeded = priorityCardCount[material.priority]; // Ex: Alta = 4
-        const alreadyScheduled = currentCounts[material.subject] || 0; // Ex: Já tem 3 no Google
-        
-        // Calcula o restante (Ex: 4 - 3 = 1 card restante na sidebar)
+        const key = material.conteudoId ?? material.subject;
+        const alreadyScheduled = currentCounts[key] || 0;
+        const totalNeeded = priorityCardCount[material.priority];
+
+        // Calcula o restante (Ex: 3 - 1 = 2 cards restantes na sidebar)
         const remaining = Math.max(0, totalNeeded - alreadyScheduled);
 
         return {
@@ -530,6 +557,9 @@ const Planner: React.FC = () => {
           priority: material.priority,
           title: material.title,
           count: remaining, // Usa o saldo restante
+          conteudoId: material.conteudoId,
+          conteudo: material.conteudo,
+          materia: material.materia,
         };
       });
 
@@ -539,10 +569,11 @@ const Planner: React.FC = () => {
       // Mantemos o 'allEvents' como está e apenas ativamos a flag de edição.
       // Isso torna os eventos atuais "arrastáveis" imediatamente.
       setIsEditing(true);
-
     } catch (error) {
       console.error("Erro ao entrar no modo de edição:", error);
       setError("Não foi possível carregar as matérias. Tente novamente.");
+    } finally {
+      setIsEnteringEditMode(false);
     }
   };
 
@@ -552,7 +583,7 @@ const Planner: React.FC = () => {
     // Adicione o console.log aqui para ver o pacote JSON
     console.log(
       "Enviando o seguinte pacote JSON para a API:",
-      JSON.stringify(scheduledEvents, null, 2)
+      JSON.stringify(scheduledEvents, null, 2),
     );
 
     try {
@@ -584,7 +615,7 @@ const Planner: React.FC = () => {
     setAllEvents(preEditEvents);
     const scheduledEvents = preEditEvents.filter((e) => e.isScheduled);
     setEvents(
-      hasActiveFilters ? filterEvents(scheduledEvents) : scheduledEvents
+      hasActiveFilters ? filterEvents(scheduledEvents) : scheduledEvents,
     );
     setIsEditing(false);
   };
@@ -624,7 +655,7 @@ const Planner: React.FC = () => {
     setAllEvents(preSuggestionEvents);
     const scheduledEvents = preSuggestionEvents.filter((e) => e.isScheduled);
     setEvents(
-      hasActiveFilters ? filterEvents(scheduledEvents) : scheduledEvents
+      hasActiveFilters ? filterEvents(scheduledEvents) : scheduledEvents,
     );
 
     setIsPreviewingSuggestion(false);
@@ -652,35 +683,63 @@ const Planner: React.FC = () => {
     priority: Priority;
     count: number;
     title?: string;
+    conteudoId?: string;
+    conteudo?: string;
+    materia?: string;
     onClick: () => void;
-  }> = ({ subject, color, priority, count, title, onClick }) => {
+  }> = ({
+    subject,
+    color,
+    priority,
+    count,
+    title,
+    conteudoId,
+    conteudo,
+    materia,
+    onClick,
+  }) => {
     const [{ isDragging }, drag] = useDrag(
       () => ({
         type: "study-card",
-        item: { subject, color, priority, title },
+        item: {
+          subject,
+          color,
+          priority,
+          title,
+          conteudoId,
+          conteudo,
+          materia,
+        },
         collect: (monitor) => ({
           isDragging: monitor.isDragging(),
         }),
       }),
-      [subject, color, priority, title]
+      [subject, color, priority, title, conteudoId, conteudo, materia],
     );
 
     return (
       <div
         ref={drag as unknown as React.LegacyRef<HTMLDivElement>}
         onClick={onClick}
-        className={`p-2.5 rounded-[10px] cursor-grab active:cursor-grabbing transition-all duration-150 flex items-center justify-between shadow-sm hover:shadow-md ${isDragging ? "opacity-40 scale-95" : "opacity-100"}`}
+        className={`p-3 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200 flex items-center justify-between shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)] active:scale-[0.97] hover:scale-[1.02] border border-white/10 ${isDragging ? "opacity-40 scale-95" : "opacity-100"}`}
         style={{ backgroundColor: color }}
       >
-        <span className="text-white font-medium text-[13px] truncate drop-shadow-sm">
-          {subject}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center text-[11px] font-bold text-white bg-black/20 w-5 h-5 rounded-full">
+        <div className="flex flex-col min-w-0 pr-2">
+          <span className="text-white font-semibold text-[13px] tracking-[-0.01em] leading-tight truncate drop-shadow-sm">
+            {conteudo || subject}
+          </span>
+          {conteudo && (
+            <span className="text-white/75 font-medium text-[11px] tracking-tight mt-0.5 uppercase">
+              {subject}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="flex items-center justify-center text-[11px] font-bold text-white bg-black/20 w-5 h-5 rounded-full ring-1 ring-white/10">
             {count}
           </span>
           <div
-            className={`w-2 h-2 rounded-full flex-shrink-0 border-[1.5px] border-white/60 ${priorityColors[priority]}`}
+            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 border-[1.5px] border-white/70 shadow-sm ${priorityColors[priority]}`}
           />
         </div>
       </div>
@@ -694,7 +753,7 @@ const Planner: React.FC = () => {
         item: { id: event.id },
         collect: (monitor) => ({ isDragging: monitor.isDragging() }),
       }),
-      [event.id]
+      [event.id],
     );
 
     return (
@@ -753,16 +812,26 @@ const Planner: React.FC = () => {
           newStart.setHours(hour, 0, 0, 0);
 
           if (type === "study-card") {
-            // 1. Extraia também o 'title' do item arrastado
-            const { subject, color, priority, title } = item as {
+            const {
+              subject,
+              color,
+              priority,
+              title,
+              conteudoId,
+              conteudo,
+              materia,
+            } = item as {
               subject: string;
               color: string;
               priority: Priority;
               title?: string;
+              conteudoId?: string;
+              conteudo?: string;
+              materia?: string;
             };
             const newEnd = new Date(newStart.getTime() + oneHour);
             const newEvent: StudyEvent = {
-              id: `event-${Date.now()}-${subject}`,
+              id: `event-${Date.now()}-${conteudoId ?? subject}-${Math.random()}`,
               title: title || subject,
               subject,
               color,
@@ -771,12 +840,15 @@ const Planner: React.FC = () => {
               end: newEnd,
               completed: false,
               isScheduled: true,
+              conteudoId,
+              conteudo,
+              materia,
             };
             setAllEvents((prev) => {
               const updated = [...prev, newEvent];
               return updated;
             });
-            handleDecrementCardCount(subject);
+            handleDecrementCardCount(conteudoId ?? subject);
           } else if (type === "planner-card") {
             const { id } = item as { id: string };
             setAllEvents((prev) => {
@@ -794,7 +866,7 @@ const Planner: React.FC = () => {
         },
         collect: (monitor) => ({ isOver: monitor.isOver() }),
       }),
-      [weekdayIndex, hour, handleDecrementCardCount]
+      [weekdayIndex, hour, handleDecrementCardCount],
     );
 
     const scheduledEvents = isEditing
@@ -802,7 +874,7 @@ const Planner: React.FC = () => {
           (ev) =>
             ev.isScheduled &&
             ev.start.getDay() === weekdayIndex &&
-            ev.start.getHours() === hour
+            ev.start.getHours() === hour,
         )
       : cellEvents;
 
@@ -839,13 +911,15 @@ const Planner: React.FC = () => {
           const eventToUnschedule = allEvents.find((e) => e.id === item.id);
           if (eventToUnschedule) {
             handleUnscheduleEvent(item.id);
-            handleIncrementCardCount(eventToUnschedule.subject);
+            handleIncrementCardCount(
+              eventToUnschedule.conteudoId ?? eventToUnschedule.subject,
+            );
           }
         }
       },
       collect: (monitor) => ({ isOverRemoveArea: monitor.isOver() }),
     }),
-    [allEvents, handleUnscheduleEvent, handleIncrementCardCount]
+    [allEvents, handleUnscheduleEvent, handleIncrementCardCount],
   );
 
   if (status === "loading") {
@@ -1006,10 +1080,17 @@ const Planner: React.FC = () => {
                       </button>
                       <button
                         onClick={handleEnterEditMode}
-                        className="bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2 rounded-[10px] flex items-center gap-2 shadow-lg hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] transition-all duration-150 cursor-pointer font-medium text-[13px]"
+                        disabled={isEnteringEditMode}
+                        className="bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2 rounded-[10px] flex items-center gap-2 shadow-lg hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] transition-all duration-150 cursor-pointer font-medium text-[13px] disabled:opacity-75 disabled:cursor-not-allowed"
                       >
-                        <Edit3 size={15} />
-                        <span className="hidden sm:inline">Editar</span>
+                        {isEnteringEditMode ? (
+                          <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-transparent border-t-white border-r-white" />
+                        ) : (
+                          <Edit3 size={15} />
+                        )}
+                        <span className="hidden sm:inline">
+                          {isEnteringEditMode ? "Carregando..." : "Editar"}
+                        </span>
                       </button>
                     </>
                   )}
@@ -1111,12 +1192,15 @@ const Planner: React.FC = () => {
                         .filter((card) => card.count > 0)
                         .map((card) => (
                           <StudyCard
-                            key={card.subject}
+                            key={card.conteudoId ?? card.subject}
                             subject={card.subject}
                             color={card.color}
                             priority={card.priority}
                             count={card.count}
                             title={card.title}
+                            conteudoId={card.conteudoId}
+                            conteudo={card.conteudo}
+                            materia={card.materia}
                             onClick={() => {}}
                           />
                         ))}
@@ -1201,7 +1285,7 @@ const Planner: React.FC = () => {
                             const cellEvents = events.filter(
                               (ev) =>
                                 ev.start.getDay() === weekdayIndex &&
-                                ev.start.getHours() === hour
+                                ev.start.getHours() === hour,
                             );
                             return (
                               <GridCell
@@ -1273,175 +1357,161 @@ const Planner: React.FC = () => {
                 </button>
               </div>
             )}
-
           </div>
         </div>
       </div>
-
       {/* Modais Rendereizados via Portal na Raiz do body para evitar Clipping de Blur e Z-Index issues */}
-      {mounted && createPortal(
-        <>
-          {selectedEvent && (
-            <div
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
-              onClick={() => setSelectedEvent(null)}
-            >
+      {mounted &&
+        createPortal(
+          <>
+            {selectedEvent && (
               <div
-                className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200/60 relative"
-                onClick={(e) => e.stopPropagation()}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
+                onClick={() => setSelectedEvent(null)}
               >
-                <div className="absolute top-4 right-4 opacity-15">
-                  <Image
-                    src={
-                      selectedEvent.completed
-                        ? "/Mascote/banners/Camaleão_21.png"
-                        : "/Mascote/banners/Camaleão_14.png"
-                    }
-                    alt="Evento"
-                    width={75}
-                    height={75}
-                  />
-                </div>
-
-                <div className="flex items-start justify-between mb-5 relative z-10">
-                  <div>
-                    <h2 className="text-2xl font-semibold text-gray-900 tracking-[-0.5px]">
-                      {selectedEvent.title}
-                    </h2>
-                    <p className="text-gray-500 text-[13px] mt-0.5">
-                      {selectedEvent.subject}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedEvent(null)}
-                    className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
-                    <Calendar size={18} className="text-gray-500" />
-                    <span className="font-medium text-gray-700 text-[13px]">
-                      {new Date(selectedEvent.start).toLocaleDateString(
-                        "pt-BR",
-                        { weekday: "long", day: "2-digit", month: "long" }
-                      )}
-                    </span>
+                <div
+                  className="bg-white backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200 relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between mb-5 relative z-10">
+                    <div>
+                      <h2 className="text-2xl font-semibold text-gray-900 tracking-[-0.5px]">
+                        {selectedEvent.title}
+                      </h2>
+                      <p className="text-gray-500 text-[13px] mt-0.5">
+                        {selectedEvent.subject}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedEvent(null)}
+                      className="p-1.5 rounded-full text-gray-700 hover:!bg-red-100 hover:!text-red-500 transition-colors active:scale-95 cursor-pointer"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
 
-                  <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
-                    <Clock size={18} className="text-gray-500" />
-                    <span className="font-medium text-gray-700 text-[13px]">
-                      {formatTime(selectedEvent.start)} -{" "}
-                      {formatTime(selectedEvent.end)}
-                    </span>
-                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-[10px] border border-gray-100">
+                      <Calendar size={18} className="text-gray-500" />
+                      <span className="font-medium !text-gray-700 text-[13px]">
+                        {new Date(selectedEvent.start).toLocaleDateString(
+                          "pt-BR",
+                          { weekday: "long", day: "2-digit", month: "long" },
+                        )}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100/50 p-3 rounded-[10px] border border-gray-100/60">
-                    <div
-                      className={`w-3.5 h-3.5 rounded-full ${priorityColors[selectedEvent.priority]}`}
-                    />
-                    <span className="font-medium text-gray-700 capitalize text-[13px]">
-                      Prioridade {selectedEvent.priority}
-                    </span>
-                  </div>
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-[10px] border border-gray-100">
+                      <Clock size={18} className="text-gray-500" />
+                      <span className="font-medium !text-gray-700 text-[13px]">
+                        {formatTime(selectedEvent.start)} -{" "}
+                        {formatTime(selectedEvent.end)}
+                      </span>
+                    </div>
 
-                  <div className="flex gap-3 pt-4 mt-5 border-t border-gray-200/60">
-                    {(() => {
-                      const eventDay = selectedEvent.start.getDay();
-                      const canComplete = eventDay <= todayWeekday;
-                      return (
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-[10px] border border-gray-100">
+                      <div
+                        className={`w-3.5 h-3.5 rounded-full ${priorityColors[selectedEvent.priority]}`}
+                      />
+                      <span className="font-medium !text-gray-700 capitalize text-[13px]">
+                        Prioridade {selectedEvent.priority}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 mt-5 border-t border-gray-200">
+                      {(() => {
+                        const eventDay = selectedEvent.start.getDay();
+                        const canComplete = eventDay <= todayWeekday;
+                        return (
+                          <button
+                            onClick={() => {
+                              if (!canComplete) return;
+                              setSelectedEvent(null);
+                              const newStatus = !selectedEvent.completed;
+                              handleCompleteEvent(selectedEvent.id, newStatus);
+                            }}
+                            disabled={!canComplete}
+                            title={
+                              !canComplete
+                                ? "Só pode concluir no dia ou depois do evento"
+                                : undefined
+                            }
+                            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, sans-serif' }}
+                            className={`flex-1 py-3 rounded-[14px] font-semibold text-[14px] tracking-[-0.2px] transition-all duration-200 ease-out active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                              !canComplete
+                                ? "bg-[#F2F2F7] text-[#AEAEB2] cursor-not-allowed shadow-none"
+                                : selectedEvent.completed
+                                  ? "bg-[#FF9F0A] hover:bg-[#FFB531] text-white shadow-[0_4px_14px_rgba(255,159,10,0.35)] hover:shadow-[0_6px_18px_rgba(255,159,10,0.45)] focus-visible:ring-[#FF9F0A]/40 cursor-pointer"
+                                  : "bg-[#34C759] hover:bg-[#30B753] text-white shadow-[0_4px_14px_rgba(52,199,89,0.35)] hover:shadow-[0_6px_18px_rgba(52,199,89,0.45)] focus-visible:ring-[#34C759]/40 cursor-pointer"
+                            }`}
+                          >
+                            {selectedEvent.completed
+                              ? "Marcar como Pendente"
+                              : "Marcar como Concluído"}
+                          </button>
+                        );
+                      })()}
+                      {isEditing && (
                         <button
                           onClick={() => {
-                            if (!canComplete) return;
+                            const id = selectedEvent.id;
                             setSelectedEvent(null);
-                            const newStatus = !selectedEvent.completed;
-                            handleCompleteEvent(selectedEvent.id, newStatus);
+                            handleUnscheduleEvent(id);
                           }}
-                          disabled={!canComplete}
-                          title={
-                            !canComplete
-                              ? "Só pode concluir no dia ou depois do evento"
-                              : undefined
-                          }
-                          className={`flex-1 py-3 rounded-[10px] transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-[13px] cursor-pointer ${
-                            !canComplete
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : selectedEvent.completed
-                                ? "bg-gradient-to-b from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white"
-                                : "bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
-                          }`}
+                          className="flex-1 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-[10px] transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-[13px] cursor-pointer"
                         >
-                          {selectedEvent.completed
-                            ? "Marcar como Pendente"
-                            : "Marcar como Concluído"}
+                          Excluir
                         </button>
-                      );
-                    })()}
-                    {isEditing && (
-                      <button
-                        onClick={() => {
-                          const id = selectedEvent.id;
-                          setSelectedEvent(null);
-                          handleUnscheduleEvent(id);
-                        }}
-                        className="flex-1 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-[10px] transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-[13px] cursor-pointer"
-                      >
-                        Excluir
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {showFilterModal && (
-            <div
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
-              onClick={() => setShowFilterModal(false)}
-            >
+            {showFilterModal && (
               <div
-                className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
-                onClick={(e) => e.stopPropagation()}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
+                onClick={() => setShowFilterModal(false)}
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
-                    Filtros
-                  </h2>
-                  <button
-                    onClick={() => setShowFilterModal(false)}
-                    className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
-                  >
-                    <X size={18} className="text-gray-700" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[13px] font-medium text-gray-700 mb-2">
-                      Matéria
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Filtrar por matéria..."
-                      value={filters.subject}
-                      onChange={(e) =>
-                        setFilters((f) => ({ ...f, subject: e.target.value }))
-                      }
-                      className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
-                    />
+                <div
+                  className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
+                      Filtros
+                    </h2>
+                    <button
+                      onClick={() => setShowFilterModal(false)}
+                      className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
+                    >
+                      <X size={18} className="text-gray-700" />
+                    </button>
                   </div>
 
-                  <div>
-                    <label className="block text-[13px] font-medium text-gray-700 mb-2">
-                      Prioridade
-                    </label>
-                    <div className="flex gap-2">
-                      {(["alta", "media", "baixa"] as Priority[]).map(
-                        (p) => (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[13px] font-medium text-gray-700 mb-2">
+                        Matéria
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Filtrar por matéria..."
+                        value={filters.subject}
+                        onChange={(e) =>
+                          setFilters((f) => ({ ...f, subject: e.target.value }))
+                        }
+                        className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[13px] font-medium text-gray-700 mb-2">
+                        Prioridade
+                      </label>
+                      <div className="flex gap-2">
+                        {(["alta", "media", "baixa"] as Priority[]).map((p) => (
                           <button
                             key={p}
                             onClick={() =>
@@ -1458,217 +1528,273 @@ const Planner: React.FC = () => {
                           >
                             {p.charAt(0).toUpperCase() + p.slice(1)}
                           </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[13px] font-medium text-gray-700 mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={filters.completed}
-                      onChange={(e) =>
-                        setFilters((f) => ({
-                          ...f,
-                          completed: e.target.value as CompletedFilter,
-                        }))
-                      }
-                      className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
-                    >
-                      <option value="">Todos</option>
-                      <option value="completed">Concluído</option>
-                      <option value="pending">Pendente</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 mt-7">
-                  <button
-                    onClick={clearFilters}
-                    className="w-full bg-white text-gray-700 px-4 py-2.5 rounded-[10px] font-medium border border-gray-200 shadow-sm hover:!border-blue-500 hover:shadow-md transition-all active:scale-[0.98] text-[13px] cursor-pointer"
-                  >
-                    Limpar Filtros
-                  </button>
-                  <button
-                    onClick={applyFilters}
-                    className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] text-[13px] cursor-pointer"
-                  >
-                    Aplicar
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {showScheduleModal && (
-            <div
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
-              onClick={() => setShowScheduleModal(false)}
-            >
-              <div
-                className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
-                    Gerar Sugestão
-                  </h2>
-                  <button
-                    onClick={() => setShowScheduleModal(false)}
-                    className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
-                  >
-                    <X size={18} className="text-gray-600" />
-                  </button>
-                </div>
-
-                <>
-                  <p className="text-gray-600 mb-5 text-[13px]">
-                    Selecione sua disponibilidade e nós criaremos um
-                    cronograma otimizado para você.
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {(
-                      ["full", "morning", "afternoon", "evening"] as const
-                    ).map((pref) => (
-                      <button
-                        key={pref}
-                        onClick={() => setSchedulePref(pref)}
-                        className={`p-4 rounded-[12px] text-left transition-all duration-150 border-2 cursor-pointer ${
-                          schedulePref === pref
-                            ? "!bg-blue-100 border-blue-500 shadow-md"
-                            : "!bg-gray-200 border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                        }`}
-                      >
-                        <span className="font-semibold !text-gray-700 capitalize text-[13px] block">
-                          {
-                            {
-                              full: "Dia Inteiro",
-                              morning: "Manhã",
-                              afternoon: "Tarde",
-                              evening: "Noite",
-                            }[pref]
-                          }
-                        </span>
-                        <p className="text-[11px] text-gray-500 mt-0.5">
-                          {
-                            {
-                              full: "8h - 22h",
-                              morning: "8h - 12h",
-                              afternoon: "12h - 17h",
-                              evening: "17h - 22h",
-                            }[pref]
-                          }
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={handleGenerateSuggestion}
-                    className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-3 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-[13px] cursor-pointer"
-                  >
-                    <Wand2 size={16} />
-                    Gerar Cronograma Mágico
-                  </button>
-                </>
-              </div>
-            </div>
-          )}
-
-          {showUpgradeModal && (
-            <div
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/10 backdrop-blur-[1px] transition-opacity duration-300 animate-in fade-in"
-              onClick={() => setShowUpgradeModal(false)}
-            >
-              <div
-                className="relative w-full max-w-[580px] bg-white/90 backdrop-blur-3xl rounded-[32px] p-[48px] shadow-[0_32px_80px_rgba(0,0,0,0.15)] border border-white/50 animate-[macOS-fade-in_0.3s_cubic-bezier(0.4,0,0.2,1)_forwards]"
-                style={{ fontFamily: '-apple-system, BlinkMacSystemFont, Arial, sans-serif' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="relative z-10 text-center mx-auto">
-                  <div className="inline-flex items-center gap-2 bg-[#5856D6]/10 text-[#5856D6] px-4 py-1.5 rounded-full text-[12px] font-bold mb-5 border border-purple-200/30 tracking-[0.3px] uppercase">
-                    <Award size={14} className="opacity-80" />
-                    Recurso Premium
-                  </div>
-
-                  <h2 className="text-[28px] font-bold text-[#1d1d1f] mb-3 tracking-tight leading-tight">
-                    Desbloqueie o Planner
-                  </h2>
-
-                  <p className="text-[15px] text-black/60 mb-8 leading-relaxed max-w-[340px] mx-auto">
-                    Organize seus estudos com inteligência e maximize sua produtividade com o{" "}
-                    <span className="font-bold text-[#5856D6]">
-                      Simula PRO
-                    </span>.
-                  </p>
-
-                  {/* Lista de benefícios (8 tópicos com ícones coloridos) */}
-                  <div className="mb-8 text-left max-w-2xl mx-auto px-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                      {[
-                        { icon: <Rocket className="w-5 h-5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
-                        { icon: <Library className="w-5 h-5" />, color: '#007AFF', text: "Biblioteca de provas" },
-                        { icon: <Activity className="w-5 h-5" />, color: '#34C759', text: "Estatística em tempo real" },
-                        { icon: <Cpu className="w-5 h-5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
-                        { icon: <Lightbulb className="w-5 h-5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
-                        { icon: <GraduationCap className="w-5 h-5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
-                        { icon: <BarChart3 className="w-5 h-5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
-                        { icon: <Headset className="w-5 h-5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
-                      ].map((benefit, index) => (
-                        <div key={index} className="flex items-center gap-3 group">
-                          <div 
-                            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                            style={{ backgroundColor: `${benefit.color}15`, color: benefit.color }}
-                          >
-                            {benefit.icon}
-                          </div>
-                          <span className={`text-[14.5px] font-medium leading-[1.3] text-black/85`} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
-                            {benefit.text}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-5">
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => (window.location.href = "/paidPlan")}
-                        className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white font-bold text-[14px] px-8 py-3.5 rounded-[12px] shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:ring-offset-2 transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-blue-500/20"
-                      >
-                        Garantir meu Simula PRO agora
-                      </button>
-                      
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="flex items-center justify-center gap-3 text-[13px] text-black/50 font-medium">
-                          <span className="bg-black/5 px-2 py-0.5 rounded-md text-black/70">R$ 41,50/mês</span>
-                          <div className="w-[1px] h-3 bg-black/10" />
-                          <div className="flex items-center gap-1.5">
-                            <CheckCircle2 size={14} className="text-[#34C759]" />
-                            <span>Sem fidelidade</span>
-                          </div>
-                        </div>
-                        <p className="text-[11px] text-black/30">Pagamento 100% seguro via Mercado Pago ou PIX</p>
+                        ))}
                       </div>
                     </div>
 
+                    <div>
+                      <label className="block text-[13px] font-medium text-gray-700 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={filters.completed}
+                        onChange={(e) =>
+                          setFilters((f) => ({
+                            ...f,
+                            completed: e.target.value as CompletedFilter,
+                          }))
+                        }
+                        className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-[13px] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
+                      >
+                        <option value="">Todos</option>
+                        <option value="completed">Concluído</option>
+                        <option value="pending">Pendente</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-7">
                     <button
-                      onClick={() => setShowUpgradeModal(false)}
-                      className="w-full text-black/40 font-semibold py-1 hover:text-black/70 transition-all duration-200 text-[14px] cursor-pointer focus:outline-none focus:underline"
+                      onClick={clearFilters}
+                      className="w-full bg-white text-gray-700 px-4 py-2.5 rounded-[10px] font-medium border border-gray-200 shadow-sm hover:!border-blue-500 hover:shadow-md transition-all active:scale-[0.98] text-[13px] cursor-pointer"
                     >
-                      Continuar no plano FREE
+                      Limpar Filtros
+                    </button>
+                    <button
+                      onClick={applyFilters}
+                      className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] text-[13px] cursor-pointer"
+                    >
+                      Aplicar
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </>,
-        document.body
-      )}    </>
+            )}
+
+            {showScheduleModal && (
+              <div
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn"
+                onClick={() => setShowScheduleModal(false)}
+              >
+                <div
+                  className="bg-white/90 backdrop-blur-xl rounded-[20px] p-7 max-w-md w-full mx-4 shadow-2xl transform animate-slideUp border border-gray-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-700 tracking-[-0.5px]">
+                      Gerar Sugestão
+                    </h2>
+                    <button
+                      onClick={() => setShowScheduleModal(false)}
+                      className="p-1.5 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors active:scale-95 cursor-pointer"
+                    >
+                      <X size={18} className="text-gray-600" />
+                    </button>
+                  </div>
+
+                  <>
+                    <p className="text-gray-600 mb-5 text-[13px]">
+                      Selecione sua disponibilidade e nós criaremos um
+                      cronograma otimizado para você.
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      {(
+                        ["full", "morning", "afternoon", "evening"] as const
+                      ).map((pref) => (
+                        <button
+                          key={pref}
+                          onClick={() => setSchedulePref(pref)}
+                          className={`p-4 rounded-[12px] text-left transition-all duration-150 border-2 cursor-pointer ${
+                            schedulePref === pref
+                              ? "!bg-blue-100 border-blue-500 shadow-md"
+                              : "!bg-gray-200 border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                          }`}
+                        >
+                          <span className="font-semibold !text-gray-700 capitalize text-[13px] block">
+                            {
+                              {
+                                full: "Dia Inteiro",
+                                morning: "Manhã",
+                                afternoon: "Tarde",
+                                evening: "Noite",
+                              }[pref]
+                            }
+                          </span>
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            {
+                              {
+                                full: "8h - 22h",
+                                morning: "8h - 12h",
+                                afternoon: "12h - 17h",
+                                evening: "17h - 22h",
+                              }[pref]
+                            }
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={handleGenerateSuggestion}
+                      className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white px-4 py-3 rounded-[10px] font-medium shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-[13px] cursor-pointer"
+                    >
+                      <Wand2 size={16} />
+                      Gerar Cronograma Mágico
+                    </button>
+                  </>
+                </div>
+              </div>
+            )}
+
+            {showUpgradeModal && (
+              <div
+                className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/10 backdrop-blur-[1px] transition-opacity duration-300 animate-in fade-in"
+                onClick={() => setShowUpgradeModal(false)}
+              >
+                <div
+                  className="relative w-full max-w-[580px] bg-white/90 backdrop-blur-3xl rounded-[32px] p-[48px] shadow-[0_32px_80px_rgba(0,0,0,0.15)] border border-white/50 animate-[macOS-fade-in_0.3s_cubic-bezier(0.4,0,0.2,1)_forwards]"
+                  style={{
+                    fontFamily:
+                      "-apple-system, BlinkMacSystemFont, Arial, sans-serif",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="relative z-10 text-center mx-auto">
+                    <div className="inline-flex items-center gap-2 bg-[#5856D6]/10 text-[#5856D6] px-4 py-1.5 rounded-full text-[12px] font-bold mb-5 border border-purple-200/30 tracking-[0.3px] uppercase">
+                      <Award size={14} className="opacity-80" />
+                      Recurso Premium
+                    </div>
+
+                    <h2 className="text-[28px] font-bold text-[#1d1d1f] mb-3 tracking-tight leading-tight">
+                      Desbloqueie o Planner
+                    </h2>
+
+                    <p className="text-[15px] text-black/60 mb-8 leading-relaxed max-w-[340px] mx-auto">
+                      Organize seus estudos com inteligência e maximize sua
+                      produtividade com o{" "}
+                      <span className="font-bold text-[#5856D6]">
+                        Simula PRO
+                      </span>
+                      .
+                    </p>
+
+                    {/* Lista de benefícios (8 tópicos com ícones coloridos) */}
+                    <div className="mb-8 text-left max-w-2xl mx-auto px-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                        {[
+                          {
+                            icon: <Rocket className="w-5 h-5" />,
+                            color: "#5856D6",
+                            text: "Acesso ilimitado a simulados",
+                          },
+                          {
+                            icon: <Library className="w-5 h-5" />,
+                            color: "#007AFF",
+                            text: "Biblioteca de provas",
+                          },
+                          {
+                            icon: <Activity className="w-5 h-5" />,
+                            color: "#34C759",
+                            text: "Estatística em tempo real",
+                          },
+                          {
+                            icon: <Cpu className="w-5 h-5" />,
+                            color: "#FF2D55",
+                            text: "Resolução com IA (PRO)",
+                          },
+                          {
+                            icon: <Lightbulb className="w-5 h-5" />,
+                            color: "#FFCC00",
+                            text: "Plano de estudos otimizado",
+                          },
+                          {
+                            icon: <GraduationCap className="w-5 h-5" />,
+                            color: "#FF3B30",
+                            text: "Consulta de notas de corte",
+                          },
+                          {
+                            icon: <BarChart3 className="w-5 h-5" />,
+                            color: "#5E5CE6",
+                            text: "Estatísticas avançadas",
+                          },
+                          {
+                            icon: <Headset className="w-5 h-5" />,
+                            color: "#FF9500",
+                            text: "Suporte prioritário 24/7",
+                          },
+                        ].map((benefit, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 group"
+                          >
+                            <div
+                              className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                              style={{
+                                backgroundColor: `${benefit.color}15`,
+                                color: benefit.color,
+                              }}
+                            >
+                              {benefit.icon}
+                            </div>
+                            <span
+                              className={`text-[14.5px] font-medium leading-[1.3] text-black/85`}
+                              style={{
+                                fontFamily:
+                                  "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+                              }}
+                            >
+                              {benefit.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-5">
+                      <div className="space-y-3">
+                        <button
+                          onClick={() => (window.location.href = "/paidPlan")}
+                          className="w-full bg-gradient-to-b from-blue-500 to-blue-600 text-white font-bold text-[14px] px-8 py-3.5 rounded-[12px] shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:ring-offset-2 transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-blue-500/20"
+                        >
+                          Garantir meu Simula PRO agora
+                        </button>
+
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex items-center justify-center gap-3 text-[13px] text-black/50 font-medium">
+                            <span className="bg-black/5 px-2 py-0.5 rounded-md text-black/70">
+                              R$ 41,50/mês
+                            </span>
+                            <div className="w-[1px] h-3 bg-black/10" />
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircle2
+                                size={14}
+                                className="text-[#34C759]"
+                              />
+                              <span>Sem fidelidade</span>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-black/30">
+                            Pagamento 100% seguro via Mercado Pago ou PIX
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setShowUpgradeModal(false)}
+                        className="w-full text-black/40 font-semibold py-1 hover:text-black/70 transition-all duration-200 text-[14px] cursor-pointer focus:outline-none focus:underline"
+                      >
+                        Continuar no plano FREE
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>,
+          document.body,
+        )}{" "}
+    </>
   );
 };
 

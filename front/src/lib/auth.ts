@@ -36,6 +36,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     return {
       ...token,
       accessToken: refreshedTokens.access_token,
+      token: refreshedTokens.access_token,
       // A API do Google retorna expires_in em segundos (ex: 3600), calculamos o novo timestamp de expiração
       expires_at: Math.floor(Date.now() / 1000 + refreshedTokens.expires_in),
       // O Google pode ou não retornar um novo refresh_token; mantenha o antigo se não vier um novo
@@ -82,32 +83,34 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  pages: {},
+  pages: {
+    signIn: "/",
+  },
   callbacks: {
     // Garantir um tipo consistente de retorno (JWT) em todos os caminhos
     async jwt({ token, account, user }): Promise<JWT> {
       // 1. No primeiro login (quando 'account' está presente)
       if (account && user) {
         console.log("[JWT] Primeiro login. Salvando tokens e dados do usuário.");
-  let userTier: "FREE" | "Simula PRO" = "FREE"; // Padrão é FREE
-        // Verifica se o e-mail do usuário é o específico para o teste
-        if (user.email === "fegrolla0210@gmail.com") {
-          userTier = "Simula PRO"; // Atribui o tier de teste
-          console.log(`[JWT] Usuário de teste ${user.email} identificado. Atribuindo tier: ${userTier}`);
-        }
         // Calcula expiracao com fallback de 1h quando não fornecida
         const expiresAt =
           typeof account.expires_at === "number"
             ? account.expires_at
             : Math.floor(Date.now() / 1000 + 3600);
 
+        const userEmail = user?.email || token.user?.email || "";
+        const userTier = (userEmail === "fegrolla0210@gmail.com" || userEmail === "fegrolla0210@gmail.com") ? "Simula PRO" : "FREE";
+        console.log(`[JWT] Definindo tier do usuário (${userEmail}): ${userTier}`);
+
         // Espalha o token existente para manter compatibilidade com o tipo JWT
         return {
           ...token,
-          accessToken: account.access_token,
+          googleAccount: account, // Armazena o objeto inteiro do Google (tokens, expiração, scopes, etc)
+          token: account.access_token, // Mantém a referência que você já está usando na rota
+          accessToken: account.access_token, // Garante que o accessToken esteja preenchido
           expires_at: expiresAt,
           refreshToken: account.refresh_token ?? (token as JWT).refreshToken,
-          tier: userTier, // Definindo o tier do usuário
+          tier: userTier, // Definindo o tier do usuário (padrão FREE, atualizado para Simula PRO no teste)
           user,
         } as JWT;
       }

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Plus, Globe, Star, TrendingUp, Moon, Sun } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { universities as allUniversities } from "@/lib/dataUniversity";
 import { useSession } from "next-auth/react";
+import { useUserTier } from "@/hooks/useUserTier";
+import { useUniversityStorage } from "@/contexts/UniversityStorage";
 
 interface Country {
   name: string;
@@ -19,50 +20,31 @@ interface Country {
   status: 'available' | 'coming-soon';
 }
 
-const countries: Country[] = [
-  {
-    name: "Brasil",
-    flag: "/Brazil-flag.svg",
-    href: "/library",
-    universities: allUniversities.length,
-    isPopular: true,
-    isAvailable: true,
-    region: "América do Sul",
-    status: 'available'
-  },
-  /*{
-    name: "Estados Unidos",
-    flag: "/USA-flag.svg",
-    href: "/Estados-Unidos",
-    universities: 0,
-    isPopular: true,
-    isAvailable: false,
-    region: "América do Norte",
-    status: 'coming-soon'
-  },*/
-  /*{
-    name: "Europa",
-    flag: "/Europe-flag.svg",
-    href: "/Em-DEV",
-    universities: 0,
-    isPopular: true,
-    isAvailable: false,
-    region: "Europa",
-    status: 'coming-soon'
-  }*/
-];
-
 export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
   const { data: session } = useSession();
+  const { tier, isPro } = useUserTier();
+  const { universities } = useUniversityStorage();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // A lógica para o valor inicial do estado pode vir antes, mas o Hook deve estar junto dos outros
-  const localTotalUniversities = countries.reduce((sum, country) => sum + country.universities, 0);
-  const [totalUniversities, setTotalUniversities] = useState<number>(localTotalUniversities);
+  // Derivar a lista de países baseada nos dados do contexto
+  const countries: Country[] = useMemo(() => [
+    {
+      name: "Brasil",
+      flag: "/Brazil-flag.svg",
+      href: "/library",
+      universities: universities.length,
+      isPopular: true,
+      isAvailable: true,
+      region: "América do Sul",
+      status: 'available'
+    },
+    /* Outros países podem ser adicionados aqui */
+  ], [universities]);
+
+  const totalUniversities = universities.length;
 
   // Hook para detectar se é dispositivo móvel
   useEffect(() => {
@@ -75,37 +57,13 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
-  // Animações de entrada e carregamento
+  // Animações de entrada
   useEffect(() => {
     const visibilityTimer = setTimeout(() => setIsVisible(true), 100);
-    const timer = setTimeout(() => setIsLoading(false), 1200);
     
     return () => {
-      clearTimeout(timer);
       clearTimeout(visibilityTimer);
     };
-  }, []);
-
-  // Busca de dados das universidades
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch('/api/universities', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!mounted) return;
-        if (Array.isArray(data)) {
-          setTotalUniversities(data.length);
-        }
-      } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('Falha ao buscar /api/universities – usando fallback local', err);
-        }
-      }
-    })();
-
-    return () => { mounted = false };
   }, []);
 
 
@@ -222,32 +180,6 @@ export default function Sidebar() {
           `}></div>
         </div>
 
-      {/* Botão Criar - macOS Style com mais cor */}
-      <div className="mb-5">
-        <Link href="/create">
-          <button className={`
-            w-full h-11 md:h-12 rounded-xl flex items-center justify-center text-white font-semibold text-sm
-            transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.97] relative overflow-hidden group cursor-pointer
-            ${isDarkMode 
-              ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:via-blue-600 hover:to-indigo-600 shadow-lg shadow-blue-600/40' 
-              : 'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-400 hover:via-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/30'
-            }
-          `}>
-            {/* Efeito de brilho no hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            
-            <div className="flex items-center gap-2.5 relative z-10">
-              <div className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-lg backdrop-blur-sm transition-transform duration-300 group-hover:rotate-90">
-                <Plus className="w-5 h-5" />
-              </div>
-              <div className="text-left">
-                <div>Criar Simulado</div>
-              </div>
-            </div>
-          </button>
-        </Link>
-      </div>
-
       {/* Estatísticas - macOS Card Style colorido */}
       <div className={`
         mb-5 p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group relative overflow-hidden
@@ -292,7 +224,7 @@ export default function Sidebar() {
 
       {/* Lista de Países */}
       <div className="space-y-2.5">
-        {isLoading ? (
+        {universities.length === 0 ? (
           // Loading Skeletons - macOS Style
           <div className="space-y-2.5">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -487,8 +419,9 @@ export default function Sidebar() {
         `}></div>
       </div>
 
+
       {/* Call-to-Action Premium - macOS Style colorido */}
-      {session?.user?.tier !== "Simula PRO" && (
+      {!isPro && (
         <div className={`
           p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl relative overflow-hidden group
           ${isDarkMode 
@@ -511,7 +444,7 @@ export default function Sidebar() {
             </div>
             <h4 className={`
               text-sm font-bold mb-1
-              ${isDarkMode ? 'text-white' : 'text-gray-900'}
+              ${isDarkMode ? 'text-white' : 'text-gray-700'}
             `}>
               Acesso Premium ⭐
             </h4>

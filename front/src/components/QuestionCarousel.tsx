@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, Circle, Play } from 'lucide-react';
 import Image from 'next/image';
 
@@ -40,8 +40,41 @@ const getStatusColor = (status: Status) => {
   }
 };
 
+// Componente memoizado para evitar o recálculo dos botões inalterados
+const CarouselItem = memo(function CarouselItem({ 
+  index, 
+  status, 
+  onJump 
+}: { 
+  index: number; 
+  status: Status; 
+  onJump: (idx: number) => void;
+}) {
+  return (
+    <button
+      onClick={() => onJump(index)}
+      // A classe flex-shrink-0 impede que os botões espremam um ao outro.
+      className={`
+        relative w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl text-sm font-medium
+        transition-all duration-200 cursor-pointer
+        ${getStatusColor(status)}
+        group
+        focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:ring-offset-2
+      `}
+      aria-label={`Ir para a questão ${index + 1}`}
+    >
+      <span className="relative z-10">{index + 1}</span>
+      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      </div>
+       <div className={`absolute top-0.5 right-0.5 transition-opacity ${status === 'answered' || status === 'current' ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
+        {getStatusIcon(status)}
+      </div>
+    </button>
+  );
+});
 
-export default function QuestionCarousel({
+
+function QuestionCarouselBase({
   totalQuestions,
   currentQuestion,
   userAnswers,
@@ -227,32 +260,17 @@ export default function QuestionCarousel({
         {Array.from({ length: totalQuestions }).map((_, index) => {
           const status = getQuestionStatus(index, currentQuestion, userAnswers);
           return (
-            <button
-              key={index}
-              onClick={() => onQuestionJump(index)}
-              // A classe flex-shrink-0 impede que os botões espremam um ao outro.
-              className={`
-                relative w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl text-sm font-medium
-                transition-all duration-200 cursor-pointer
-                ${getStatusColor(status)}
-                group
-                focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:ring-offset-2
-              `}
-              aria-label={`Ir para a questão ${index + 1}`}
-            >
-              <span className="relative z-10">{index + 1}</span>
-              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                 {/* Icon hidden on default, shows on hover or active logic if needed, 
-                     but simplifying visual noise for macOS feel */}
-              </div>
-               {/* Icon overlay logic maintained if needed, but styling adjusted */}
-               <div className={`absolute top-0.5 right-0.5 transition-opacity ${status === 'answered' || status === 'current' ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
-                {getStatusIcon(status)}
-              </div>
-            </button>
+            <CarouselItem 
+              key={index} 
+              index={index} 
+              status={status} 
+              onJump={onQuestionJump} 
+            />
           );
         })}
       </div>
     </div>
   );
 }
+
+export default memo(QuestionCarouselBase);

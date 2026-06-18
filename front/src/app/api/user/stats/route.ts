@@ -1,119 +1,42 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from "@/lib/auth";
+import { getCachedStats, setCachedStats, type TransformedStats } from '@/lib/store/userStatsCache';
 
-// O parâmetro 'request: NextRequest' foi removido da linha abaixo,
-// pois não era utilizado dentro da função.
-export async function GET() {
+// CACHE STRATEGY: in-memory TTL 5min — user-specific, key=userId from JWT sub/email
+
+function extractUserId(token: string): string | null {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return new NextResponse('Não autorizado', { status: 401 });
-    }
-    
-    const mockData = {
-      stats: {
-        simulados: 12,
-        questoes: 540,
-        acertos: 378,
-        percentagem: 70,
-        trend_simulados: { value: 15, type: 'up' as const },
-        trend_questoes: { value: 8, type: 'up' as const },
-        trend_acertos: { value: 12, type: 'up' as const },
-        trend_percentagem: { value: 5, type: 'up' as const },
-      },
-      recentExams: [ 
-        { name: "ENEM Simulado (Exemplo)", date: "10/07/2025", score: 82 },
-        { name: "FUVEST (Exemplo)", date: "22/06/2025", score: 68 },
-        { name: "Simulado Personalizado (Exemplo)", date: "15/06/2025", score: 75 }
-      ],
-      subjectPerformance: [
-        { subject: "Matemática", percentage: 80 },
-        { subject: "Física", percentage: 75 },
-        { subject: "Química", percentage: 65 },
-        { subject: "Biologia", percentage: 88 },
-        { subject: "Inglês", percentage: 72 },
-        { subject: "História", percentage: 68 },
-        { subject: "Geografia", percentage: 75 },
-        { subject: "Filosofia", percentage: 60 },
-        { subject: "Sociologia", percentage: 65 },
-        { subject: "Língua Portuguesa", percentage: 90 },
-        { subject: "Literatura", percentage: 85 },
-      ],
-      monthlyProgress: [
-        { label: 'Jan', value: 600 },
-        { label: 'Fev', value: 750 },
-        { label: 'Mar', value: 700 },
-        { label: 'Abr', value: 805 },
-        { label: 'Mai', value: 905 },
-        { label: 'Jun', value: 570 },
-        { label: 'Jul', value: 880 },
-        { label: 'Ago', value: 900 },
-        { label: 'Set', value: 800 },
-        { label: 'Out', value: 700 },
-        { label: 'Nov', value: 650 },
-        { label: 'Dez', value: 800 },
-      ],
-      reviewableQuestions: [
-        {
-          id: 'q1',
-          enunciado: "Um fio condutor é percorrido por cerca de 2x10⁻¹⁴ C a cada microssegundo (10⁻⁶ s). Determine a intensidade da corrente.",
-          suaResposta: "1 A",
-          gabarito: "2x10⁻⁸ A",
-          displayLabel: "FUVEST 2025",
-          displaySubject: "Física — Életrica e Eletromagnetismo",
-        },
-        {
-          id: 'q2',
-          enunciado: "Qual o resultado da equação de segundo grau x² - 5x + 6 = 0?",
-          suaResposta: "x=1, x=5",
-          gabarito: "x=2, x=3",
-          displayLabel: "ENEM 2024",
-          displaySubject: "Matemática — Funções",
-        },
-        {
-          id: 'q3',
-          enunciado: "Quem foi o primeiro presidente do Brasil?",
-          suaResposta: "Dom Pedro I",
-          gabarito: "Marechal Deodoro da Fonseca",
-          displayLabel: "UNICAMP 2023",
-          displaySubject: "História — República",
-        },
-        {
-          id: 'q4',
-          enunciado: "Qual a fórmula da Lei de Ohm?",
-          suaResposta: "R = IV",
-          gabarito: "V = IR",
-          displayLabel: "ENEM 2024",
-          displaySubject: "Física — Életrica e Eletromagnetismo",
-        }
-      ]
-    };
-
-    // Isso ajuda a ver seus componentes de "loading" em ação.
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Pausa de 1 segundo
-
-    // Retornamos os dados de exemplo como se tivessem vindo do backend.
-    return NextResponse.json(mockData);
-
-  } catch (error) {
-    console.error("[API_USER_STATS_GET] Erro:", error);
-    return new NextResponse('Erro interno do servidor', { status: 500 });
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    return payload.sub ?? payload.email ?? null;
+  } catch {
+    return null;
   }
 }
 
+function paginate(data: TransformedStats, page: number, limit: number) {
+  const total = data.recentExams.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const start = (page - 1) * limit;
+  const slice = data.recentExams.slice(start, start + limit);
+  return NextResponse.json({
+    ...data,
+    recentExams: slice,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  });
+}
 
-/**
-  ===========================================================
-  BFF API USER STATS - ROTA REAL PARA O BACKEND EXTERNO
-  ===========================================================
-/
-const transformExternalData = (apiData: any) => {
-  // A função auxiliar para tendências permanece a mesma.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const transformExternalData = (apiData: any): TransformedStats => {
   const createTrendObject = (value: number) => ({
     value: Math.abs(value),
     type: value >= 0 ? 'up' : 'down',
-  });
+  }) as { value: number; type: 'up' | 'down' };
 
   return {
     stats: {
@@ -121,81 +44,137 @@ const transformExternalData = (apiData: any) => {
       questoes: apiData.user_statistics?.questions_answered || 0,
       acertos: apiData.user_statistics?.correct_answers || 0,
       percentagem: apiData.user_statistics?.hit_percentage || 0,
-      trend_simulados: createTrendObject(apiData.user_statistics?.simulations_trend || 0),        // o percentual de simulações concluídas em relação ao periodo anterior
-      trend_questoes: createTrendObject(apiData.user_statistics?.questions_trend || 0),           // o percentual de questões respondidas em relação ao periodo anterior
-      trend_acertos: createTrendObject(apiData.user_statistics?.answers_trend || 0),              // o percentual de acertos em relação ao periodo anterior
-      trend_percentagem: createTrendObject(apiData.user_statistics?.percentage_trend || 0),       // o percentual de acertos em relação ao periodo anterior
+      trend_simulados: createTrendObject(apiData.user_statistics?.simulations_trend || 0),
+      trend_questoes: createTrendObject(apiData.user_statistics?.questions_trend || 0),
+      trend_acertos: createTrendObject(apiData.user_statistics?.answers_trend || 0),
+      trend_percentagem: createTrendObject(apiData.user_statistics?.percentage_trend || 0),
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recentExams: (apiData.last_exams || []).map((exam: any) => ({
       name: exam.exam_name || 'Simulado',
       date: exam.completed_at || 'Data não informada',
       score: exam.final_score || 0,
+      totalQuestions: exam.total_questions ?? undefined,
+      correctAnswers: exam.correct_answers ?? undefined,
+      incorrectAnswers: exam.wrong_answers ?? exam.incorrect_answers ?? undefined,
+      timeUsed: exam.time_spent ?? exam.time_used ?? undefined,
+      accuracy: exam.hit_percentage ?? exam.accuracy ?? undefined,
     })),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subjectPerformance: (apiData.performance_by_subject || []).map((subject: any) => ({
       subject: subject.discipline || 'Matéria',
       percentage: subject.accuracy || 0,
       icon: subject.image_url || '/default-icon.svg',
     })),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     monthlyProgress: (apiData.monthly_performance_data || []).map((monthlyPoint: any) => {
-      const date = new Date(monthlyPoint.mes); 
+      const date = new Date(monthlyPoint.mes);
       const label = date.toLocaleString('pt-BR', { month: 'short', year: '2-digit' });
       const value = Math.round(monthlyPoint.pontuacaoMedia || 0);
       return { label, value };
     }),
-    reviewableQuestions: (apiData.incorrectly_answered_questions || []).map((item: any) => ({
-        const nomeProva = item.questao?.prova?.nome || 'Prova';
-        const anoProva = item.questao?.prova?.ano || '';
-        const materia = item.questao?.materia || 'Matéria';
-        const conteudo = item.questao?.conteudo || 'Geral';
-
-        return {
-          id: item.id || `q-${Math.random()}`,
-          enunciado: item.questao?.enunciado || 'Enunciado não disponível.',
-          suaResposta: item.respostaDoUsuario || 'Não respondeu.',
-          gabarito: item.questao?.gabarito || 'Gabarito não disponível.',
-          displayLabel: `${nomeProva} ${anoProva}`.trim(),
-          displaySubject: `${materia} — ${conteudo}`
-        };
-    }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reviewableQuestions: (apiData.incorrectly_answered_questions || []).map((item: any) => {
+      const nomeProva = item.questao?.prova?.nome || 'Prova';
+      const anoProva = item.questao?.prova?.ano || '';
+      const materia = item.questao?.materia || 'Matéria';
+      const conteudo = item.questao?.conteudo || 'Geral';
+      return {
+        id: item.id || `q-${Math.random()}`,
+        enunciado: item.questao?.enunciado || 'Enunciado não disponível.',
+        suaResposta: item.respostaDoUsuario || 'Não respondeu.',
+        gabarito: item.questao?.gabarito || 'Gabarito não disponível.',
+        displayLabel: `${nomeProva} ${anoProva}`.trim(),
+        displaySubject: `${materia} — ${conteudo}`,
+      };
+    }),
   };
 };
 
 export async function GET(request: Request) {
-  try {
-    // 1. Autenticação (continua igual)
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.id) {
-      return new NextResponse('Não autorizado', { status: 401 });
-    }
-    const userId = session.user.id;
+  const externalApiUrl = process.env.BACKEND_API_URL;
 
-    // 2. Chamada para o Backend Externo (continua igual)
-    const externalApiUrl = process.env.BACKEND_API_URL;
-    const apiKey = process.env.BACKEND_API_KEY;
-    if (!externalApiUrl || !apiKey) {
-      throw new Error("Variáveis de ambiente não configuradas.");
+  if (!externalApiUrl) {
+    console.error('[API_USER_STATS_ERROR] BACKEND_API_URL não está configurado nas variáveis de ambiente.');
+    return NextResponse.json({ error: 'Erro de configuração do servidor.' }, { status: 500 });
+  }
+
+  try {
+    const authHeader = request.headers.get('Authorization');
+    const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+    if (!userToken) {
+      console.warn('[API_USER_STATS] ❌ Requisição sem token JWT.');
+      return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
     }
-    
-    const requestUrl = `${BACKEND_API_URL}/user-data/${userId}`;
-    const externalResponse = await fetch(requestUrl, {
-      headers: { 'Authorization': `Bearer ${apiKey}` },
+
+    const { searchParams } = new URL(request.url);
+    const page  = Math.max(1, Number(searchParams.get('page')  ?? 1));
+    const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit') ?? 3)));
+
+    const userId = extractUserId(userToken);
+
+    if (userId) {
+      const cached = getCachedStats(userId);
+      if (cached) {
+        console.log('[API_USER_STATS] ✅ Cache hit para userId:', userId.substring(0, 8) + '...');
+        return paginate(cached, page, limit);
+      }
+    }
+
+    const backendUrl = `${externalApiUrl}/user-data`;
+
+    console.log('[API_USER_STATS] 📤 Enviando requisição ao backend:');
+    console.log('[API_USER_STATS]    URL:', backendUrl);
+    console.log('[API_USER_STATS]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
+
+    const apiResponse = await fetch(backendUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+      },
+      cache: 'no-store',
     });
 
-    if (!externalResponse.ok) {
-      throw new Error(`Erro do backend externo: ${externalResponse.statusText}`);
-    }
-    
-    // Pegamos os dados "crus" do backend externo.
-    const rawData = await externalResponse.json();
+    console.log('[API_USER_STATS] 📥 Resposta recebida do backend:');
+    console.log('[API_USER_STATS]    Status:', apiResponse.status, apiResponse.statusText);
 
-    // Usamos nossa função adaptadora para limpar e organizar os dados.
+    const contentType = apiResponse.headers.get('content-type');
+
+    let rawData;
+    if (contentType && contentType.includes('application/json')) {
+      rawData = await apiResponse.json();
+      console.log('[API_USER_STATS]    Content-Type: application/json');
+      console.log('[API_USER_STATS]    Dados recebidos (raw):', JSON.stringify(rawData).substring(0, 300) + (JSON.stringify(rawData).length > 300 ? '...' : ''));
+    } else {
+      const textData = await apiResponse.text();
+      console.warn('[API_USER_STATS] ⚠️  Resposta não-JSON do backend:', textData);
+      return NextResponse.json(
+        { error: textData || 'O servidor de destino não enviou uma resposta legível.' },
+        { status: apiResponse.status }
+      );
+    }
+
+    if (!apiResponse.ok) {
+      console.error('[API_USER_STATS] ❌ Erro retornado pelo backend. Status:', apiResponse.status, '| Mensagem:', rawData?.message);
+      return NextResponse.json(
+        { error: rawData?.message || 'Ocorreu um erro no servidor de destino.' },
+        { status: apiResponse.status }
+      );
+    }
+
     const formattedData = transformExternalData(rawData);
 
-    // Enviamos para o frontend os dados já limpos e estruturados.
-    return NextResponse.json(formattedData);
+    if (userId) {
+      setCachedStats(userId, formattedData);
+    }
+
+    console.log('[API_USER_STATS] ✅ Sucesso! Dados adaptados e retornando ao frontend.');
+
+    return paginate(formattedData, page, limit);
 
   } catch (error) {
-    console.error("[BFF_API_USER_STATS] Erro:", error);
-    return new NextResponse('Erro interno ao processar a requisição', { status: 500 });
+    console.error('[API_USER_STATS_ERROR] Erro de comunicação com o back-end:', error);
+    return NextResponse.json({ error: 'Não foi possível se conectar ao servidor.' }, { status: 503 });
   }
-}*/
+}

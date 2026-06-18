@@ -11,11 +11,12 @@ import {
   ArrowLeft,
   Download,
   ListFilter,
-  CheckCircle2
+  CheckCircle2,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
-import { type Playlist } from "@/lib/Playlist_data";
+import { type Playlist } from "@/lib/data/playlists";
 
 interface PlaylistDetailProps {
   playlist: Playlist;
@@ -27,6 +28,31 @@ export function PlaylistDetail({ playlist }: PlaylistDetailProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sortConfigs, setSortConfigs] = useState<Array<{ key: string; direction: 'asc' | 'desc' }>>([]);
   const [showPlaylistTitle, setShowPlaylistTitle] = useState(false);
+
+  const handlePlayPlaylist = async () => {
+    try {
+      setIsPlaying(true);
+      const res = await fetch(`/api/playlist/${playlist.id}/play`, { 
+        method: "POST" 
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.id) {
+        // Redireciona o usuário para a página de realizar o simulado usando as questões dessa playlist
+        // Pega a primeira instituição da playlist que parece válida, ou um default se não existir
+        const university = playlist.questions?.[0]?.institution || "enem";
+        router.push(`/simulation/${university}?simId=${data.id}`);
+      } else {
+        alert(data.error || "Houve um problema ao iniciar a playlist.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro interno ao tentar iniciar o simulado.");
+    } finally {
+      setIsPlaying(false);
+    }
+  };
 
   // Detectar quando o título sai da tela durante scroll
   useEffect(() => {
@@ -248,10 +274,15 @@ export function PlaylistDetail({ playlist }: PlaylistDetailProps) {
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={handlePlayPlaylist}
               className="w-14 h-14 bg-green-500 hover:bg-green-400 rounded-full flex items-center justify-center shadow-lg transition-colors group cursor-pointer"
+              disabled={isPlaying}
             >
-              <Play className="w-6 h-6 fill-black text-black ml-1" />
+              {isPlaying ? (
+                <div className="w-6 h-6 border-2 border-black border-t-transparent animate-spin rounded-full" />
+              ) : (
+                <Play className="w-6 h-6 fill-black text-black ml-1" />
+              )}
             </motion.button>
             
             {/* Playlist Title - Aparece quando scrollado */}
@@ -484,146 +515,167 @@ export function PlaylistDetail({ playlist }: PlaylistDetailProps) {
 
         {/* Tracks (Questions) List */}
         <div className="px-6 md:px-10 pb-20 mt-4 space-y-2">
-          {getSortedQuestions().map((question, index) => (
+          {getSortedQuestions().length === 0 ? (
             <motion.div
-              key={question.id}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.02 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               className={cn(
-                "group grid grid-cols-[16px_3fr_1fr_1fr_1fr_1fr_1fr_minmax(60px,1fr)] gap-4 items-center p-3 rounded-lg transition-colors cursor-pointer border",
-                theme === 'dark'
-                  ? "hover:bg-white/10 border-transparent hover:border-white/5"
-                  : "hover:bg-gray-100 border-transparent hover:border-gray-300"
+                "flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-dashed",
+                theme === 'dark' 
+                  ? "bg-white/5 border-white/20" 
+                  : "bg-gray-50 border-gray-300"
               )}
             >
               <div className={cn(
-                "text-sm text-center font-medium relative",
-                theme === 'dark'
-                  ? "text-white/50 group-hover:text-white"
-                  : "text-gray-600 group-hover:text-gray-900"
+                "w-20 h-20 mb-6 rounded-full flex items-center justify-center",
+                theme === 'dark' ? "bg-white/10 text-white/50" : "bg-gray-200 text-gray-500"
               )}>
-                <span className="group-hover:hidden">{index + 1}</span>
-                <Play className="w-3 h-3 fill-current text-current absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100" />
+                <BookOpen className="w-10 h-10" />
               </div>
-              
-              <div className="flex flex-col">
-                <span className={cn(
-                  "font-medium text-base truncate pr-4",
-                  question.completed && "text-green-500",
-                  !question.completed && (theme === 'dark' ? "text-white" : "text-gray-900")
+              <h3 className={cn(
+                "text-2xl font-bold mb-3",
+                theme === 'dark' ? "text-white" : "text-gray-900"
+              )}>
+                Playlist Vazia
+              </h3>
+              <p className={cn(
+                "max-w-sm mb-8",
+                theme === 'dark' ? "text-white/60" : "text-gray-600"
+              )}>
+                Você ainda não adicionou nenhuma questão a esta playlist. Explore as bibliotecas e comece a praticar!
+              </p>
+              <button 
+                onClick={() => router.push('/library')}
+                className={cn(
+                  "px-8 py-3.5 rounded-full font-bold shadow-lg transition-all active:scale-95 cursor-pointer flex items-center gap-2",
+                  theme === 'dark'
+                    ? "bg-white text-black hover:bg-gray-200"
+                    : "bg-black text-white hover:bg-gray-800"
+                )}
+              >
+                Adicionar Questões <span>→</span>
+              </button>
+            </motion.div>
+          ) : (
+            getSortedQuestions().map((question, index) => (
+              <motion.div
+                key={question.id}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.02 }}
+                className={cn(
+                  "group grid grid-cols-[16px_3fr_1fr_1fr_1fr_1fr_1fr_minmax(60px,1fr)] gap-4 items-center p-3 rounded-lg transition-colors cursor-pointer border",
+                  theme === 'dark'
+                    ? "hover:bg-white/10 border-transparent hover:border-white/5"
+                    : "hover:bg-gray-100 border-transparent hover:border-gray-300"
+                )}
+              >
+                <div className={cn(
+                  "text-sm text-center font-medium relative",
+                  theme === 'dark'
+                    ? "text-white/50 group-hover:text-white"
+                    : "text-gray-600 group-hover:text-gray-900"
                 )}>
-                  {question.title}
-                </span>
-                <span className={cn(
-                  "text-xs md:hidden",
+                  <span className="group-hover:hidden">{index + 1}</span>
+                  <Play className="w-3 h-3 fill-current text-current absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100" />
+                </div>
+                
+                <div className="flex flex-col">
+                  <span className={cn(
+                    "font-medium text-base truncate pr-4",
+                    question.completed && "text-green-500",
+                    !question.completed && (theme === 'dark' ? "text-white" : "text-gray-900")
+                  )}>
+                    {question.title}
+                  </span>
+                  <span className={cn(
+                    "text-xs md:hidden",
+                    theme === 'dark' ? "text-white/50" : "text-gray-600"
+                  )}>
+                    {question.subject} • {question.topic} • {question.difficulty} • {question.institution} {question.year}
+                  </span>
+                </div>
+                
+                <div className={cn(
+                  "hidden md:flex items-center text-sm transition-colors",
+                  theme === 'dark'
+                    ? "text-white/50 hover:text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                )}>
+                  {question.subject}
+                </div>
+
+                <div className={cn(
+                  "hidden lg:flex items-center text-sm",
                   theme === 'dark' ? "text-white/50" : "text-gray-600"
                 )}>
-                  {question.subject} • {question.topic} • {question.difficulty} • {question.institution} {question.year}
-                </span>
-              </div>
-              
-              <div className={cn(
-                "hidden md:flex items-center text-sm transition-colors",
-                theme === 'dark'
-                  ? "text-white/50 hover:text-white"
-                  : "text-gray-600 hover:text-gray-900"
-              )}>
-                {question.subject}
-              </div>
+                  <span className={cn(
+                    "px-2 py-1 rounded-md text-xs font-medium truncate",
+                    theme === 'dark'
+                      ? "bg-white/5 border border-white/10"
+                      : "bg-gray-200 border border-gray-300"
+                  )}>
+                    {question.topic}
+                  </span>
+                </div>
 
-              <div className={cn(
-                "hidden lg:flex items-center text-sm",
-                theme === 'dark' ? "text-white/50" : "text-gray-600"
-              )}>
-                <span className={cn(
-                  "px-2 py-1 rounded-md text-xs font-medium truncate",
-                  theme === 'dark'
-                    ? "bg-white/5 border border-white/10"
-                    : "bg-gray-200 border border-gray-300"
+                <div className="hidden md:flex items-center">
+                  <span className={cn(
+                    "px-2 py-1 rounded-full text-xs font-bold border",
+                    question.difficulty === "Fácil" && (theme === 'dark'
+                      ? "border-green-500/30 text-green-400 bg-green-500/10"
+                      : "border-green-300 text-green-700 bg-green-100"
+                    ),
+                    question.difficulty === "Médio" && (theme === 'dark'
+                      ? "border-yellow-500/30 text-yellow-400 bg-yellow-500/10"
+                      : "border-yellow-300 text-yellow-700 bg-yellow-100"
+                    ),
+                    question.difficulty === "Difícil" && (theme === 'dark'
+                      ? "border-red-500/30 text-red-400 bg-red-500/10"
+                      : "border-red-300 text-red-700 bg-red-100"
+                    ),
+                  )}>
+                    {question.difficulty}
+                  </span>
+                </div>
+
+                <div className="hidden lg:flex items-center">
+                  <span className={cn(
+                    "px-2 py-1 rounded-md text-xs font-semibold truncate",
+                    theme === 'dark'
+                      ? "bg-blue-500/10 border border-blue-500/30 text-blue-400"
+                      : "bg-blue-100 border border-blue-300 text-blue-700"
+                  )}>
+                    {question.institution}
+                  </span>
+                </div>
+
+                <div className={cn(
+                  "hidden lg:flex items-center text-sm font-medium",
+                  theme === 'dark' ? "text-white/50" : "text-gray-600"
                 )}>
-                  {question.topic}
-                </span>
-              </div>
-
-              <div className="hidden md:flex items-center">
-                <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-bold border",
-                  question.difficulty === "Fácil" && (theme === 'dark'
-                    ? "border-green-500/30 text-green-400 bg-green-500/10"
-                    : "border-green-300 text-green-700 bg-green-100"
-                  ),
-                  question.difficulty === "Médio" && (theme === 'dark'
-                    ? "border-yellow-500/30 text-yellow-400 bg-yellow-500/10"
-                    : "border-yellow-300 text-yellow-700 bg-yellow-100"
-                  ),
-                  question.difficulty === "Difícil" && (theme === 'dark'
-                    ? "border-red-500/30 text-red-400 bg-red-500/10"
-                    : "border-red-300 text-red-700 bg-red-100"
-                  ),
+                  {question.year}
+                </div>
+                
+                <div className={cn(
+                  "flex items-center justify-end pr-4 text-sm font-medium",
+                  theme === 'dark' ? "text-white/50" : "text-gray-600"
                 )}>
-                  {question.difficulty}
-                </span>
-              </div>
-
-              <div className="hidden lg:flex items-center">
-                <span className={cn(
-                  "px-2 py-1 rounded-md text-xs font-semibold truncate",
-                  theme === 'dark'
-                    ? "bg-blue-500/10 border border-blue-500/30 text-blue-400"
-                    : "bg-blue-100 border border-blue-300 text-blue-700"
-                )}>
-                  {question.institution}
-                </span>
-              </div>
-
-              <div className={cn(
-                "hidden lg:flex items-center text-sm font-medium",
-                theme === 'dark' ? "text-white/50" : "text-gray-600"
-              )}>
-                {question.year}
-              </div>
-              
-              <div className={cn(
-                "flex items-center justify-end pr-4 text-sm font-medium",
-                theme === 'dark' ? "text-white/50" : "text-gray-600"
-              )}>
-                {question.completed ? (
-                  <CheckCircle2 className="w-4 h-4 text-green-500 mr-2" />
-                ) : null}
-                {question.duration}
-              </div>
-            </motion.div>
-          ))}
+                  {question.completed ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mr-2" />
+                  ) : null}
+                  {question.duration}
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export function PlaylistDetailSkeleton() {
-  const { theme } = useTheme();
-  
-  return (
-    <div className={cn(
-      "min-h-screen flex items-center justify-center",
-      theme === 'dark' ? "bg-[#121212] text-white" : "bg-white text-gray-900"
-    )}>
-      <div className="text-center">
-        <div className={cn(
-          "w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4",
-          theme === 'dark'
-            ? "border-green-500 border-t-transparent"
-            : "border-green-600 border-t-transparent"
-        )}></div>
-        <p className={theme === 'dark' ? "text-white/70" : "text-gray-600"}>
-          Carregando playlist...
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export function PlaylistDetailError({ error, onBack }: { error: string; onBack: () => void }) {
   const { theme } = useTheme();

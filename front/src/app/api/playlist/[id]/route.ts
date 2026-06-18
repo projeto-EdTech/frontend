@@ -1,4 +1,4 @@
-import { PLAYLISTS_MOCK } from "@/lib/Playlist_data";
+import { PLAYLISTS_MOCK } from "@/lib/data/playlists";
 import { NextResponse } from "next/server";
 
 export async function GET(

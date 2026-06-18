@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"D:\\\\GitHub\\\\frontend\\\\front\" /s /b)",
+      "Bash(Get-Content \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\app\\\\globals.css\")",
+      "Bash(Measure-Object -Line)",
+      "Bash(Select-Object -ExpandProperty Lines)",
+      "Bash(npm run *)",
+      "Bash(npx next *)",
+      "Bash(npx eslint *)",
+      "Bash(npx tsc *)",
+      "Bash(xargs grep -l \"tier.*===\")",
+      "Bash(xargs grep -l \"Google\\\\|Microsoft\\\\|Discord\")",
+      "Bash(git show *)",
+      "Read(//tmp/**)",
+      "Bash(dir d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\app\\\\simulation)",
+      "Bash(dir d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\lib\\\\dataUniversity.ts)",
+      "Bash(mkdir -p d:/GitHub/frontend/front/src/components/Simulation)",
+      "Bash(dir /s /b \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\*Historic*\")",
+      "PowerShell(Set-Location \"d:\\\\GitHub\\\\frontend\\\\front\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -match \"SimulationHistoric\" } | Select-Object -First 20)",
+      "Bash(Select-String -Pattern \"SimulationModal|SimulationHistoric\")",
+      "PowerShell(Set-Location d:\\\\GitHub\\\\frontend\\\\front; npx tsc --noEmit 2>&1 | Select-String \"SimulationModal|SimulationHistoric\" | ForEach-Object { $_.Line })",
+      "PowerShell(Set-Location d:\\\\GitHub\\\\frontend\\\\front; npx tsc --noEmit 2>&1 | Select-String \"profile\" | ForEach-Object { $_.Line })",
+      "Bash(grep -v \"courseName\\\\|university\\\\|//\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\app\\\\simulation\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName)",
+      "Bash(xargs grep -l -i \"nota\\\\|corte\\\\|NotaCorte\")",
+      "Bash(Get-ChildItem \"d:\\\\GitHub\\\\frontend\\\\front\\\\public\\\\Logo_Universidades\" -File)",
+      "Bash(Select-Object -ExpandProperty Name)"
+    ],
+    "additionalDirectories": [
+      "d:\\GitHub\\frontend\\front\\src\\components"
+    ]
+  }
+}

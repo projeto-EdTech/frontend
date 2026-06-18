@@ -1,0 +1,62 @@
+[
+  {
+    "id": "maquina_questoes",
+    "name": "Máquina de Questões",
+    "description": "Responda questões no app",
+    "icon": "Brain",
+    "category": "marco",
+    "metric": "questoes",
+    "tiers": [
+      { "tier": "bronze", "requirement": 1 },
+      { "tier": "prata", "requirement": 100 },
+      { "tier": "ouro", "requirement": 500 },
+      { "tier": "diamante", "requirement": 1000 },
+      { "tier": "platina", "requirement": 5000 }
+    ]
+  },
+  {
+    "id": "maratona_simulados",
+    "name": "Maratona de Simulados",
+    "description": "Complete simulados completos",
+    "icon": "FileText",
+    "category": "marco",
+    "metric": "simulados",
+    "tiers": [
+      { "tier": "bronze", "requirement": 1 },
+      { "tier": "prata", "requirement": 10 },
+      { "tier": "ouro", "requirement": 50 },
+      { "tier": "diamante", "requirement": 100 },
+      { "tier": "platina", "requirement": 500 }
+    ]
+  },
+  {
+    "id": "desempenho_elite",
+    "name": "Desempenho de Elite",
+    "description": "Mantenha alta taxa de acertos",
+    "icon": "Target",
+    "category": "desempenho",
+    "metric": "percentagem",
+    "tiers": [
+      { "tier": "bronze", "requirement": 70 },
+      { "tier": "prata", "requirement": 80 },
+      { "tier": "ouro", "requirement": 90 },
+      { "tier": "diamante", "requirement": 95 },
+      { "tier": "platina", "requirement": 100 }
+    ]
+  },
+  {
+    "id": "gloria_ranking",
+    "name": "Glória no Ranking",
+    "description": "Avance nas Ligas da Arena",
+    "icon": "Trophy",
+    "category": "ranking",
+    "metric": "rank",
+    "tiers": [
+      { "tier": "bronze", "requirement": 1, "rankNames": ["Bronze"] },
+      { "tier": "prata", "requirement": 2, "rankNames": ["Prata"] },
+      { "tier": "ouro", "requirement": 3, "rankNames": ["Ouro"] },
+      { "tier": "diamante", "requirement": 4, "rankNames": ["Diamante"] },
+      { "tier": "platina", "requirement": 5, "rankNames": ["Mestre", "Lenda", "Imortal"] }
+    ]
+  }
+]

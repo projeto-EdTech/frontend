@@ -9,6 +9,7 @@ import rehypeKatex from 'rehype-katex'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useUserTier } from '@/hooks/useUserTier'
 import 'katex/dist/katex.min.css'
 
 // A interface da questão permanece a mesma
@@ -50,6 +51,7 @@ const Gemini: React.FC<GeminiProps> = ({
 }) => {
   const { data: session, status } = useSession();
   const { theme } = useTheme();
+  const { isFree } = useUserTier();
   
   // Estado para rastrear quantas vezes o usuário FREE já usou a IA (máximo 5)
   const [freeUsageCount, setFreeUsageCount] = useState<number>(() => {
@@ -74,7 +76,7 @@ const Gemini: React.FC<GeminiProps> = ({
 
   // Função para incrementar o uso quando a IA for chamada
   const handleAIUsage = () => {
-    if (session?.user?.tier === 'FREE') {
+    if (isFree) {
       setFreeUsageCount(prev => prev + 1);
     }
   };
@@ -144,10 +146,10 @@ const Gemini: React.FC<GeminiProps> = ({
 
   // Mostrar o modal quando o usuário FREE exceder o limite
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.tier === 'FREE' && hasExceededFreeLimit) {
+    if (status === 'authenticated' && isFree && hasExceededFreeLimit) {
       setShowUpgradeModal(true);
     }
-  }, [status, session?.user?.tier, hasExceededFreeLimit]);
+  }, [status, isFree, hasExceededFreeLimit]);
   return (
     <div className="w-full max-w-6xl mx-auto space-y-5">
       {/* Header Card Modernizado com Mascote */}
@@ -181,7 +183,7 @@ const Gemini: React.FC<GeminiProps> = ({
             </div>
             
             {/* Badge de usos restantes para usuários FREE */}
-            {status === 'authenticated' && session?.user?.tier === 'FREE' && (
+            {status === 'authenticated' && isFree && (
               <div className={`flex items-center gap-2 px-3.5 py-2 rounded-lg shadow-sm ${
                 remainingFreeUses > 2 
                   ? 'bg-green-100/80 border border-green-300/60' 

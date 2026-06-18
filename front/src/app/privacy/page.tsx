@@ -8,12 +8,10 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 // Motion variants
 const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
+  hidden: {},
   show: {
-    opacity: 1,
     transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
+      staggerChildren: 0.1,
     },
   },
 };
@@ -21,23 +19,18 @@ const staggerContainer: Variants = {
 const fadeIn = (direction = "up", delay = 0): Variants => ({
   hidden: {
     opacity: 0,
-    y: direction === "up" ? 30 : direction === "down" ? -30 : 0,
-    x: direction === "left" ? 30 : direction === "right" ? -30 : 0,
-    scale: 0.97,
-    filter: "blur(10px)",
+    y: direction === "up" ? 40 : direction === "down" ? -40 : 0,
+    x: direction === "left" ? 40 : direction === "right" ? -40 : 0,
   },
   show: {
     opacity: 1,
     y: 0,
     x: 0,
-    scale: 1,
-    filter: "blur(0px)",
     transition: {
-      type: "spring",
-      stiffness: 80,
-      damping: 15,
-      mass: 0.8,
+      type: "tween" as const,
+      duration: 0.6,
       delay: delay,
+      ease: "easeOut",
     },
   },
 });
@@ -72,11 +65,11 @@ export default function PrivacyPolicyPage() {
           <motion.div
             className="fixed top-28 right-8 md:right-12 lg:right-16 w-20 h-20 md:w-24 md:h-24 z-50 hidden lg:block"
             animate={{
-              y: [0, -15, 0],
-              rotate: [0, 2, 0, -2, 0]
+              y: [0, -12, 0],
+              rotate: [0, 5, 0, -5, 0]
             }}
             transition={{
-              duration: 8,
+              duration: 6,
               repeat: Infinity,
               ease: "easeInOut"
             }}
@@ -94,7 +87,8 @@ export default function PrivacyPolicyPage() {
           <motion.div
             variants={staggerContainer}
             initial="hidden"
-            animate="show"
+            whileInView="show"
+            viewport={{ once: false, amount: 0.25 }}
           >
             {/* Header Section - macOS Style */}
             <div className="text-center mb-16 md:mb-20 relative">
@@ -106,12 +100,12 @@ export default function PrivacyPolicyPage() {
                 <div className="relative w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56">
                   <motion.div
                     className="relative w-full h-full"
-                    whileHover={{ scale: 1.02, rotate: 1.5 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    whileHover={{ scale: 1.05, rotate: 3 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   >
                     <Image
                       src="/Mascote/banners/Camaleão_1.png"
-                      alt="Mascote vestibuline"
+                      alt="Mascote Simula Vest"
                       fill
                       className="object-contain drop-shadow-2xl"
                       priority
@@ -140,7 +134,7 @@ export default function PrivacyPolicyPage() {
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                 }`}
               >
-                vestibuline
+                Simula Vest
               </motion.p>
             </div>
 
@@ -187,7 +181,7 @@ export default function PrivacyPolicyPage() {
                           ? 'text-gray-300'
                           : 'text-gray-600'
                       }`}>
-                        Coletamos informações fornecidas por você ao se cadastrar, preencher formulários ou interagir com nossos serviços. Também coletamos dados automaticamente, como tipo de navegador, proporção de tela e afins, páginas acessadas e cookies para melhorar sua experiência.
+                        Coletamos informações fornecidas por você ao se cadastrar, preencher formulários ou interagir com nossos serviços. Também coletamos dados automaticamente, como endereço IP, tipo de navegador, páginas acessadas e cookies para melhorar sua experiência.
                       </p>
                     </div>
                   </div>
@@ -308,11 +302,11 @@ export default function PrivacyPolicyPage() {
                     <motion.div
                       className="w-32 h-32 md:w-40 md:h-40 lg:w-44 lg:h-44 relative flex-shrink-0"
                       animate={{ 
-                        y: [0, -8, 0],
-                        rotate: [0, 3, 0, -3, 0],
+                        rotate: [0, 8, 0, -8, 0],
+                        scale: [1, 1.03, 1]
                       }}
                       transition={{ 
-                        duration: 7,
+                        duration: 5,
                         repeat: Infinity,
                         ease: "easeInOut"
                       }}
@@ -345,14 +339,14 @@ export default function PrivacyPolicyPage() {
                     <motion.div
                       className="w-32 h-32 md:w-40 md:h-40 lg:w-44 lg:h-44 relative flex-shrink-0"
                       animate={{ 
-                        y: [0, -8, 0],
-                        rotate: [0, -3, 0, 3, 0],
+                        rotate: [0, -8, 0, 8, 0],
+                        scale: [1, 1.03, 1]
                       }}
                       transition={{ 
-                        duration: 7,
+                        duration: 5,
                         repeat: Infinity,
                         ease: "easeInOut",
-                        delay: 3.5
+                        delay: 2.5
                       }}
                     >
                       <Image

@@ -12,6 +12,7 @@ import LoginModal from "@/components/Login-modal";
 import PremiumFeatureModal from "@/components/PremiumFeatureModal";
 import Image from "next/image";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useUserTier } from "@/hooks/useUserTier";
 
 // Tipo para as mensagens
 interface Message {
@@ -36,7 +37,7 @@ export default function IATutorPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const hasPaidPlan = session?.user?.tier && session.user.tier !== "FREE";
+  const { isPro: hasPaidPlan, loading: tierLoading } = useUserTier();
 
   // Sincronizar montagem do componente
   useEffect(() => {
@@ -57,10 +58,10 @@ export default function IATutorPage() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       setIsLoginModalOpen(true);
-    } else if (status === 'authenticated' && !hasPaidPlan) {
+    } else if (status === 'authenticated' && !tierLoading && !hasPaidPlan) {
       setIsPremiumModalOpen(true);
     }
-  }, [status, hasPaidPlan]);
+  }, [status, hasPaidPlan, tierLoading]);
 
   // Função para obter o ícone apropriado baseado no tipo de arquivo
   const getFileIcon = (fileType: string, fileName: string) => {
