@@ -21,9 +21,9 @@ import {
   isRankUp,
   shouldShowRankUpPopup,
   RankType,
-} from "@/lib/utils/rankUpUtils";
-import { computeBadges } from "@/lib/utils/badgeUtils";
-import { getRankProgress, getRankFromScore } from "@/lib/utils/rankUtils";
+} from "@/lib/ranking/rankUpUtils";
+import { computeBadges } from "@/lib/badges/badgeUtils";
+import { getRankProgress, getRankFromScore } from "@/lib/ranking/rankUtils";
 import { DEV_CONFIG } from "@/lib/data/profile";
 
 // Cores das partículas por elo
@@ -47,43 +47,43 @@ const BADGE_TIER_STYLES = {
   bloqueado: {
     bg: "bg-slate-500/10 dark:bg-slate-800/20",
     border: "border-slate-200/50 dark:border-slate-800/40",
-    text: "text-slate-400 dark:text-slate-500",
-    iconText: "text-slate-500 dark:text-slate-400",
+    text: "text-slate-500 dark:text-slate-400",
+    iconText: "text-slate-600 dark:text-slate-400",
     label: "Bloqueado",
   },
   bronze: {
     bg: "bg-amber-500/[0.08]",
     border: "border-amber-500/20",
-    text: "text-amber-500",
-    iconText: "text-amber-500",
+    text: "text-amber-600 dark:text-amber-400",
+    iconText: "text-amber-600 dark:text-amber-400",
     label: "Bronze",
   },
   prata: {
     bg: "bg-gray-400/[0.08]",
     border: "border-gray-400/20",
-    text: "text-gray-400",
-    iconText: "text-gray-400",
+    text: "text-slate-600 dark:text-slate-300",
+    iconText: "text-slate-600 dark:text-slate-300",
     label: "Prata",
   },
   ouro: {
     bg: "bg-yellow-400/[0.08]",
     border: "border-yellow-500/20",
-    text: "text-yellow-500",
-    iconText: "text-yellow-500",
+    text: "text-amber-600 dark:text-yellow-400",
+    iconText: "text-amber-600 dark:text-yellow-400",
     label: "Ouro",
   },
   diamante: {
     bg: "bg-cyan-400/[0.08]",
     border: "border-cyan-500/20",
-    text: "text-cyan-500",
-    iconText: "text-cyan-500",
+    text: "text-cyan-600 dark:text-cyan-400",
+    iconText: "text-cyan-600 dark:text-cyan-400",
     label: "Diamante",
   },
   platina: {
     bg: "bg-purple-500/[0.08]",
     border: "border-purple-500/20",
-    text: "text-purple-500",
-    iconText: "text-purple-500",
+    text: "text-purple-600 dark:text-purple-400",
+    iconText: "text-purple-600 dark:text-purple-400",
     label: "Platina",
   },
 };
@@ -483,7 +483,7 @@ export default function RankingUpNotification() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="absolute inset-0 bg-black/40 dark:bg-black/65 backdrop-blur-[4px]"
+            className="absolute inset-0 bg-black/25 dark:bg-black/60 backdrop-blur-[6px]"
           />
 
           {/* Container Principal do Modal com Spring Animation e Screen Shake */}
@@ -497,7 +497,7 @@ export default function RankingUpNotification() {
                   : "idle"
             }
             initial="idle"
-            className={`relative max-w-md w-full bg-white/80 dark:bg-slate-900/70 border border-white/20 dark:border-slate-800/40 backdrop-blur-xl rounded-[32px] p-8 shadow-2xl overflow-hidden flex flex-col items-center text-center transition-all duration-500 ${
+            className={`relative max-w-md w-full bg-white/70 dark:bg-slate-900/60 border border-white/30 dark:border-white/10 backdrop-blur-2xl rounded-[32px] p-8 shadow-[0_8px_32px_0_rgba(31,38,135,0.08)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] overflow-hidden flex flex-col items-center text-center transition-all duration-500 ${
               animationPhase === "completed"
                 ? currentConfig.accentGlow
                 : oldConfig.accentGlow
@@ -660,11 +660,11 @@ export default function RankingUpNotification() {
 
             {/* Barra de Progresso Linear Celebrativa (FPS Style) */}
             <div className="w-full max-w-xs mb-8 z-20 flex flex-col gap-2">
-              <div className="flex justify-between items-center text-xs font-semibold text-gray-500 dark:text-slate-400">
+              <div className="flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <span className="tracking-widest text-[10px]">
                   PROGRESSO DE LIGA
                 </span>
-                <span className="font-mono text-[11px]">
+                <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
                   {animationPhase === "progress-start" ||
                   animationPhase === "shattering"
                     ? isPromotion
@@ -673,7 +673,7 @@ export default function RankingUpNotification() {
                     : `${displayScore} pts / ${nextThresholdLabel}`}
                 </span>
               </div>
-              <div className="w-full h-3 bg-slate-800/80 border border-slate-700/30 rounded-full overflow-hidden shadow-inner relative">
+              <div className="w-full h-3 bg-slate-100 dark:bg-slate-950/80 border border-slate-200/50 dark:border-slate-800/40 rounded-full overflow-hidden clay-card relative">
                 <motion.div
                   initial={{ width: isPromotion ? "80%" : "20%" }}
                   animate={{
@@ -708,14 +708,14 @@ export default function RankingUpNotification() {
 
             {/* Elementos Finais (Mascote, Título, Descrição, Badges e Botões) com transição de altura fluida */}
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, height: 0, overflow: "hidden" }}
               animate={
                 animationPhase === "completed"
-                  ? { opacity: 1, height: "auto" }
-                  : { opacity: 0, height: 0 }
+                  ? { opacity: 1, height: "auto", transitionEnd: { overflow: "visible" } }
+                  : { opacity: 0, height: 0, overflow: "hidden" }
               }
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full flex flex-col items-center overflow-hidden z-20"
+              className="w-full flex flex-col items-center z-20"
             >
               {/* Mascote Festivo / Triste */}
               <motion.div className="relative w-28 h-28 mb-4 flex justify-center items-center">
@@ -744,12 +744,12 @@ export default function RankingUpNotification() {
               </p>
 
               {/* Comparativo de Ranks (Progresso) */}
-              <div className="flex items-center gap-4 bg-gray-50 dark:bg-slate-950/50 border border-gray-100 dark:border-slate-900 px-6 py-3 rounded-2xl mb-6 shadow-inner">
-                <div className="flex items-center gap-1.5 font-semibold text-gray-500 dark:text-slate-400">
-                  <OldIconComponent className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center gap-4 bg-gray-100/80 dark:bg-slate-950/40 border border-gray-200/50 dark:border-slate-800/30 px-6 py-3 rounded-2xl mb-6 clay-card">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                  <OldIconComponent className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                   <span className="text-sm">{popupData.oldRank}</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <ArrowRight className="w-4 h-4 text-slate-400" />
                 <div className="flex items-center gap-1.5 font-bold">
                   <IconComponent
                     className={`w-4 h-4 ${currentConfig.textColor}`}
@@ -764,7 +764,7 @@ export default function RankingUpNotification() {
 
               {/* Seção de Badges (Grade de Conquistas) */}
               <div className="w-full flex flex-col items-start mb-6 text-left">
-                <span className="tracking-widest text-[10px] font-semibold text-gray-500 dark:text-slate-400 mb-3 uppercase">
+                <span className="tracking-widest text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase">
                   Suas Badges & Ligas
                 </span>
                 <div className="grid grid-cols-2 gap-3 w-full p-1">
@@ -801,14 +801,13 @@ export default function RankingUpNotification() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                        className={`relative bg-slate-900/40 border rounded-3xl p-3 flex flex-col gap-2 transition-all duration-300 ${
+                        className={`relative bg-gray-100/50 dark:bg-slate-950/40 border rounded-3xl p-3 flex flex-col gap-2 transition-all duration-300 ${
                           tierStyle.border
-                        } hover:shadow-md ${!isUnlocked ? "opacity-60 grayscale" : ""}`}
+                        } hover:shadow-md hover:scale-[1.02] clay-card ${!isUnlocked ? "opacity-60 grayscale" : ""}`}
                         style={{
-                          boxShadow:
-                            isUnlocked
-                              ? `0 0 12px -4px var(--badge-glow, rgba(0,0,0,0))`
-                              : undefined,
+                          boxShadow: isUnlocked
+                            ? `0 0 12px -4px var(--badge-glow, rgba(0,0,0,0)), inset 1px 1px 3px var(--clay-highlight), inset -1px -1px 3px var(--clay-shadow)`
+                            : `inset 1px 1px 3px var(--clay-highlight), inset -1px -1px 3px var(--clay-shadow)`,
                         }}
                       >
                         {/* Linha superior: ícone + nome + tier */}
@@ -823,14 +822,14 @@ export default function RankingUpNotification() {
                             ) : (
                               <>
                                 <Icon className="w-4 h-4 grayscale opacity-30 text-slate-500" />
-                                <div className="absolute inset-0 flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] rounded-xl z-20">
-                                  <Lock size={14} className="text-slate-400" strokeWidth={1.5} />
+                                <div className="absolute inset-0 flex items-center justify-center bg-slate-200/55 dark:bg-slate-950/50 backdrop-blur-[2px] rounded-xl z-20">
+                                  <Lock size={14} className="text-slate-600 dark:text-slate-400" strokeWidth={1.5} />
                                 </div>
                               </>
                             )}
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-bold text-slate-200 truncate leading-tight">
+                            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate leading-tight">
                               {badge.name}
                             </span>
                             <span
@@ -844,7 +843,7 @@ export default function RankingUpNotification() {
                         {/* Mini barra de progresso da badge */}
                         {!isMaxTier ? (
                           <div className="flex flex-col gap-1">
-                            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${badgeProgressPct}%` }}
@@ -856,15 +855,15 @@ export default function RankingUpNotification() {
                                 className={`h-full bg-gradient-to-r ${
                                   isUnlocked
                                     ? "from-blue-500 to-indigo-500"
-                                    : "from-slate-600 to-slate-500"
+                                    : "from-slate-400 to-slate-350 dark:from-slate-600 dark:to-slate-500"
                                 } rounded-full`}
                               />
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-[8px] text-slate-500 font-mono">
+                              <span className="text-[8px] text-slate-500 dark:text-slate-400 font-mono">
                                 {badge.progress.toLocaleString("pt-BR")}
                               </span>
-                              <span className="text-[8px] text-slate-600 font-mono">
+                              <span className="text-[8px] text-slate-400 dark:text-slate-600 font-mono">
                                 /{" "}
                                 {badge.nextTierRequirement?.toLocaleString(
                                   "pt-BR",
@@ -873,7 +872,7 @@ export default function RankingUpNotification() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[8px] text-slate-500 font-medium">
+                          <span className="text-[8px] text-slate-600 dark:text-slate-400 font-medium">
                             Nível máximo atingido
                           </span>
                         )}
@@ -883,11 +882,12 @@ export default function RankingUpNotification() {
                 </div>
               </div>
 
-              {/* Botão de Fechar com Interação HIG (Scale Tap) */}
+              {/* Botão de Fechar com Interação HIG (Scale Tap) e Claymorphism */}
               <motion.button
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={handleClose}
-                className={`w-full py-4 rounded-2xl bg-gradient-to-r ${currentConfig.gradient} text-white font-bold text-base shadow-lg hover:shadow-xl transition-shadow cursor-pointer`}
+                className={`w-full py-4 rounded-2xl bg-gradient-to-r ${currentConfig.gradient} text-white font-bold text-base clay-button cursor-pointer`}
               >
                 {isPromotion ? "Continuar Estudando" : "Voltar aos Estudos"}
               </motion.button>

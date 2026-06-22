@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* 
  * TIPOGRAFIA GLOBAL - macOS System Font (San Francisco)
  * Aplicando a fonte do sistema Apple em todos os elementos
@@ -105,6 +107,8 @@ html {
   --button-text: #ffffff;
   --shadow: rgba(0, 0, 0, 0.1);
   --shadow-hover: rgba(0, 0, 0, 0.15);
+  --clay-highlight: rgba(255, 255, 255, 0.6);
+  --clay-shadow: rgba(0, 0, 0, 0.08);
 }
 
 :root[data-theme="dark"] {
@@ -127,6 +131,8 @@ html {
   --button-text: #ffffff;
   --shadow: rgba(0, 0, 0, 0.5);
   --shadow-hover: rgba(0, 0, 0, 0.7);
+  --clay-highlight: rgba(255, 255, 255, 0.1);
+  --clay-shadow: rgba(0, 0, 0, 0.35);
 }
 
 /* Fallback para quando não há tema definido */
@@ -146,6 +152,40 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+/* ===== ESTILOS CLAYMORPHISM ===== */
+.clay-button {
+  box-shadow: 
+    inset 2px 2px 4px rgba(255, 255, 255, 0.7),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .clay-button {
+  box-shadow: 
+    inset 2px 2px 4px rgba(255, 255, 255, 0.25),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.clay-button:hover {
+  box-shadow: 
+    inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.20),
+    0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .clay-button:hover {
+  box-shadow: 
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.5),
+    0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.clay-card {
+  box-shadow: 
+    inset 1px 1px 3px var(--clay-highlight),
+    inset -1px -1px 3px var(--clay-shadow);
 }
 
 /* ===== CLASSES OTIMIZADAS PARA PERFORMANCE ===== */
