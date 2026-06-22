@@ -12,7 +12,7 @@ import {
 import SimulationHistoric from "@/components/profile/SimulationHistoric";
 import ProfileHeroCard from "@/components/profile/ProfileHeroCard";
 import AchievementCarousel from "@/components/profile/AchievementCarousel";
-import type { UserRankingData } from "@/lib/utils/rankUtils";
+import type { UserRankingData } from "@/lib/ranking/rankUtils";
 
 // --- TIPAGENS ---
 export interface RecentExam {
@@ -34,6 +34,8 @@ export interface ProfileStats {
   trend_questoes: StatTrend;
   trend_acertos: StatTrend;
   trend_percentagem: StatTrend;
+  /** 1 = conta Discord vinculada, 0/ausente = não vinculada. Alimenta a badge "Guerreiro do Discord". */
+  discordLinked?: number;
 }
 
 interface GeneralStatsProps {

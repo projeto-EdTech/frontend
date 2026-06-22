@@ -1,5 +1,15 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getCachedStats, setCachedStats, type TransformedStats } from '@/lib/store/userStatsCache';
+import { decodeJWT } from '@/app/service/jwtDecoder';
+import { getDiscordLinked } from '@/lib/core/discordLinked';
+
+// Lê o flag de conta Discord vinculada do JWT user_data (HttpOnly).
+// Decodificação SEMPRE via jwtDecoder (regra de segurança do projeto).
+async function readDiscordLinked(): Promise<number> {
+  const userData = (await cookies()).get('user_data')?.value;
+  return getDiscordLinked(userData ? decodeJWT(userData) : null);
+}
 
 // CACHE STRATEGY: in-memory TTL 5min — user-specific, key=userId from JWT sub/email
 
@@ -113,11 +123,13 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit') ?? 3)));
 
     const userId = extractUserId(userToken);
+    const discordLinked = await readDiscordLinked();
 
     if (userId) {
       const cached = getCachedStats(userId);
       if (cached) {
         console.log('[API_USER_STATS] ✅ Cache hit para userId:', userId.substring(0, 8) + '...');
+        cached.stats.discordLinked = discordLinked;
         return paginate(cached, page, limit);
       }
     }
