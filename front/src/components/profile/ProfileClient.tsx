@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useUniversityStorage } from "@/contexts/UniversityStorage";
+import { resolveUniversityLogo } from "./universityLogo";
 import GeneralStats, {
   SkeletonCard,
   type ProfileStats,
@@ -24,7 +25,7 @@ import Gemini from "@/components/Simula_PRO/Questoes_Gemini";
 import Planner from "@/components/Simula_PRO/Planner/Planner";
 
 import { getRankingData } from "@/app/service/ranking.service";
-import { type UserRankingData, getRankFromScore } from "@/lib/utils/rankUtils";
+import { type UserRankingData, getRankFromScore } from "@/lib/ranking/rankUtils";
 import { mockProfileData, DEV_CONFIG } from "@/lib/data/profile";
 import { decodeJWT } from "@/app/service/jwtDecoder";
 
@@ -136,15 +137,10 @@ export default function ProfileClient({
       return null;
     }
 
-    const universityName = currentQuestion.displayLabel
-      .split(" ")[0]
-      .toLowerCase();
-    const universityData = universities.find(
-      (u) => u.slug.toLowerCase() === universityName,
-    );
-
-    return universityData ? universityData.logo : null;
-  }, [groupedQuestions, selectedSubject, currentQuestionIndex]);
+    // Resolve a logo dinamicamente pela 1ª palavra do displayLabel ("FUVEST 2025"
+    // → fuvest). `universities` carrega de forma assíncrona, por isso entra nas deps.
+    return resolveUniversityLogo(currentQuestion.displayLabel, universities);
+  }, [groupedQuestions, selectedSubject, currentQuestionIndex, universities]);
 
   const isMockUser =
     status === "authenticated" &&
