@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { decodeJWT } from "@/app/service/jwtDecoder";
 // GA4: serviço centralizado de analytics (no-op seguro em dev e SSR)
-import { setUserId, trackLogin, resetAnalytics } from "@/lib/analytics";
+import { setUserId, trackLogin, resetAnalytics } from "@/lib/core/analytics";
 
 export default function SyncUserEffect() {
   const { data: session, status } = useSession();

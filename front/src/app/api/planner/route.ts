@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { colorForSubject, availableSubjects } from '@/lib/utils/planner';
+import { colorForSubject, availableSubjects } from '@/lib/planner/planner';
 
 // Estrutura de um "material de estudo" no NÍVEL DE CONTEÚDO, que vira card no frontend.
 // `subject` continua sendo a MATÉRIA (compat com filtros/stats/cores do Planner);

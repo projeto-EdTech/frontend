@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/core/auth";
 import BlogPostClient from "@/components/blog/BlogPostClient";
 import { Post, PostPreview } from "@/types";
 

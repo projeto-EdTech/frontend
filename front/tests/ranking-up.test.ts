@@ -1,6 +1,6 @@
 import assert from 'assert';
-import { isRankUp, shouldShowRankUpPopup, RankType } from '../front/src/lib/utils/rankUpUtils';
-import { getRankFromScore, UserRankingData } from '../front/src/lib/utils/rankUtils';
+import { isRankUp, shouldShowRankUpPopup, RankType } from '../src/lib/ranking/rankUpUtils';
+import { getRankFromScore, UserRankingData } from '../src/lib/ranking/rankUtils';
 
 // A cópia local da lógica de preenchimento para teste do comportamento esperado
 function getProcessedInitialDataForTest(

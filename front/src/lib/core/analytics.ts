@@ -13,7 +13,7 @@ import posthog from 'posthog-js';
  *     todas as funções aqui são no-ops seguros em desenvolvimento.
  *
  * Como usar:
- *   import { setUserId, trackLogin } from '@/lib/analytics';
+ *   import { setUserId, trackLogin } from '@/lib/core/analytics';
  *   setUserId(decoded.id);
  *   trackLogin('google');
  */

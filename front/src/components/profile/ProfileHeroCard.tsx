@@ -9,7 +9,7 @@ import {
   getRankProgress,
   getRankEpithet,
   type UserRankingData,
-} from '@/lib/utils/rankUtils';
+} from '@/lib/ranking/rankUtils';
 
 interface ProfileHeroCardProps {
   name: string;

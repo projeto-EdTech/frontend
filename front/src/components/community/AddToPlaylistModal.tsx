@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Plus, ChevronLeft, Search, CheckCircle2, BookmarkPlus, Loader2, ListVideo } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 interface AddToPlaylistModalProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 import type { ProfileStats } from '@/components/profile/GeneralStats';
-import type { UserRankingData } from '@/lib/utils/rankUtils';
+import type { UserRankingData } from '@/lib/ranking/rankUtils';
 import type { Badge, Tier } from '@/components/profile/BadgeCard';
-import badgesConfigRaw from '../data/badges.json';
+import badgesConfigRaw from './badges.json';
 
 export interface BadgeConfigTier {
   tier: string;

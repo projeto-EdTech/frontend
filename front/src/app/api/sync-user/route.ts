@@ -5,7 +5,18 @@ export async function POST(req: Request) {
   // Obtém o token da sessão (JWT decodificado pelo next-auth)
   // getToken typing expects NextRequest/NextApiRequest; cast via unknown -> NextRequest to avoid 'any'
   const token = await getToken({ req: req as unknown as NextRequest, secret: process.env.NEXTAUTH_SECRET });
-  
+
+  console.log("[sync-user][TOKEN] token completo (decodificado):", JSON.stringify(token, null, 2));
+  console.log("[sync-user][TOKEN] googleAccount:", JSON.stringify(token?.googleAccount, null, 2));
+
+  // JWT bruto completo (string assinada), sem decodificar
+  const rawToken = await getToken({
+    req: req as unknown as NextRequest,
+    secret: process.env.NEXTAUTH_SECRET,
+    raw: true,
+  });
+  console.log("[sync-user][TOKEN] JWT bruto completo:", rawToken);
+
   if (!token?.googleAccount) {
     console.log("[sync-user][ABORT] googleAccount ausente no token");
     return NextResponse.json(
@@ -24,6 +35,9 @@ export async function POST(req: Request) {
 
   try {
     const idToken = (token.googleAccount as any)?.id_token;
+    console.log("[sync-user][GOOGLE] id_token extraído:", idToken);
+    console.log("[sync-user][GOOGLE] access_token:", (token.googleAccount as any)?.access_token);
+    console.log("[sync-user][GOOGLE] refresh_token:", (token.googleAccount as any)?.refresh_token);
 
     if (!idToken) {
       console.log("[sync-user][ABORT] id_token ausente no googleAccount");
@@ -37,6 +51,9 @@ export async function POST(req: Request) {
     const payload = {
       token: idToken
     };
+
+    console.log("[sync-user][BFF] enviando payload:", JSON.stringify(payload, null, 2));
+    console.log("[sync-user][BFF] URL destino:", `${process.env.BACKEND_API_URL}/auth/google`);
 
     // Faz a chamada ao backend na rota especificada
     const response = await fetch(`${process.env.BACKEND_API_URL}/auth/google`, {
@@ -56,6 +73,9 @@ export async function POST(req: Request) {
     } else {
       backendData = await response.text();
     }
+
+    console.log("[sync-user][BFF] status:", response.status);
+    console.log("[sync-user][BFF] resposta:", JSON.stringify(backendData, null, 2));
 
     if (!response.ok) {
        return NextResponse.json(

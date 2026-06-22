@@ -13,7 +13,7 @@ import UserRankingCard from "@/components/ranking/UserRankingCard";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { DEV_CONFIG } from "@/lib/data/profile";
-import { getRankFromScore } from "@/lib/utils/rankUtils";
+import { getRankFromScore } from "@/lib/ranking/rankUtils";
 
 type PeriodFilter = 'mensal' | 'semanal' | 'anual';
 

@@ -58,5 +58,16 @@
       { "tier": "diamante", "requirement": 4, "rankNames": ["Diamante"] },
       { "tier": "platina", "requirement": 5, "rankNames": ["Mestre", "Lenda", "Imortal"] }
     ]
+  },
+  {
+    "id": "guerreiro_discord",
+    "name": "Guerreiro do Discord",
+    "description": "Vincule sua conta do Discord",
+    "icon": "Discord",
+    "category": "social",
+    "metric": "discordLinked",
+    "tiers": [
+      { "tier": "bronze", "requirement": 1 }
+    ]
   }
 ]

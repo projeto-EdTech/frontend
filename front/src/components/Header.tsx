@@ -5,7 +5,7 @@ import AccessibilityMenu from "@/components/AccessibilityMenu";
 import Image from "next/image";
 import Link from "next/link";
 import UserAvatar from "./UserAvatar";
-import { getRankIcon } from "@/lib/utils/rankUtils";
+import { getRankIcon } from "@/lib/ranking/rankUtils";
 import { useSession, signOut } from "next-auth/react";
 import { useUserTier } from "@/hooks/useUserTier";
 import {
@@ -50,7 +50,7 @@ export default function Header() {
   });
 
   const [userRank, setUserRank] = useState<
-    import("@/lib/utils/rankUtils").RankType | null
+    import("@/lib/ranking/rankUtils").RankType | null
   >(null);
 
   // Blur do header quando o pop-up de ranking estiver ativo
@@ -158,12 +158,12 @@ export default function Header() {
   // Carrega rank do sessionStorage e ouve atualizações do perfil
   useEffect(() => {
     const stored = sessionStorage.getItem("userRank");
-    if (stored) setUserRank(stored as import("@/lib/utils/rankUtils").RankType);
+    if (stored) setUserRank(stored as import("@/lib/ranking/rankUtils").RankType);
 
     const handleRankUpdate = () => {
       const updated = sessionStorage.getItem("userRank");
       setUserRank(
-        (updated as import("@/lib/utils/rankUtils").RankType) ?? null,
+        (updated as import("@/lib/ranking/rankUtils").RankType) ?? null,
       );
     };
 

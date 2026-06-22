@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import {mockRankingsByUniversity, RawUserData
-} from "@/lib/data/ranking";
+} from "@/lib/ranking/ranking";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/core/auth";
 
 export type UserRanking = {
   position: number;
