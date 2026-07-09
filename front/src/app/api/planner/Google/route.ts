@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth"; 
+import { authOptions } from "@/lib/core/auth"; 
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
 import Holidays from 'date-holidays';
-import { colorForSubject } from "@/lib/utils/planner";
+import { colorForSubject } from "@/lib/planner/planner";
 
 // Paleta oficial de cores de eventos do Google Calendar (Graph API)
 const googlePalette = [

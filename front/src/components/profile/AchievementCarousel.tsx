@@ -2,9 +2,9 @@
 
 import React, { useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { computeBadges } from "@/lib/utils/badgeUtils";
+import { computeBadges } from "@/lib/badges/badgeUtils";
 import type { ProfileStats } from "@/components/profile/GeneralStats";
-import type { UserRankingData } from "@/lib/utils/rankUtils";
+import type { UserRankingData } from "@/lib/ranking/rankUtils";
 import {
   Lock,
   ChevronRight,
@@ -15,16 +15,21 @@ import {
   Target,
 } from "lucide-react";
 import type { Tier } from "@/components/profile/BadgeCard";
+import DiscordIcon from "@/components/profile/DiscordIcon";
 
 const IconMap: Record<string, React.ElementType> = {
   Brain,
   FileText,
   Target,
   Trophy,
+  Discord: DiscordIcon,
 };
 
+// Cor da marca Discord (blurple) usada como text-[#5865F2]/bg-[#5865F2] nas
+// badges sociais. Exceção pontual de cor de marca; não é tokenizada globalmente.
+
 import useSWR from "swr";
-import type { BadgeConfig } from "@/lib/utils/badgeUtils";
+import type { BadgeConfig } from "@/lib/badges/badgeUtils";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -178,6 +183,7 @@ export default function AchievementCarousel({
       >
         {sortedBadges.map((badge) => {
           const isUnlocked = badge.currentTier !== "bloqueado";
+          const isSocialUnlocked = badge.category === "social" && isUnlocked;
 
           return (
             <motion.div
@@ -199,20 +205,22 @@ export default function AchievementCarousel({
                   </h5>
 
                   <div
-                    className={`relative w-22 h-22 flex items-center justify-center rounded-xl flex-shrink-0 transition-all duration-500 ${getIconContainerStyles(badge.currentTier)}`}
+                    className={`relative w-22 h-22 flex items-center justify-center rounded-xl flex-shrink-0 transition-all duration-500 ${isSocialUnlocked ? "bg-[#5865F2]/[0.08]" : getIconContainerStyles(badge.currentTier)}`}
                   >
                     {isUnlocked && (
                       <div
                         className={`absolute inset-0 rounded-xl blur-xl opacity-20 transition-opacity duration-700 group-hover:opacity-40 ${
-                          badge.currentTier === "bronze"
-                            ? "bg-amber-500"
-                            : badge.currentTier === "prata"
-                              ? "bg-gray-400"
-                              : badge.currentTier === "ouro"
-                                ? "bg-yellow-500"
-                                : badge.currentTier === "diamante"
-                                  ? "bg-cyan-500"
-                                  : "bg-purple-500"
+                          isSocialUnlocked
+                            ? "bg-[#5865F2]"
+                            : badge.currentTier === "bronze"
+                              ? "bg-amber-500"
+                              : badge.currentTier === "prata"
+                                ? "bg-gray-400"
+                                : badge.currentTier === "ouro"
+                                  ? "bg-yellow-500"
+                                  : badge.currentTier === "diamante"
+                                    ? "bg-cyan-500"
+                                    : "bg-purple-500"
                         }`}
                       />
                     )}
@@ -220,7 +228,7 @@ export default function AchievementCarousel({
                     <span
                       className={`flex items-center justify-center [&>svg]:w-12 [&>svg]:h-12 transition-all duration-500 relative z-10 ${
                         isUnlocked
-                          ? `group-hover:scale-110 ${getIconColorClass(badge.currentTier)}`
+                          ? `group-hover:scale-110 ${isSocialUnlocked ? "text-[#5865F2]" : getIconColorClass(badge.currentTier)}`
                           : "grayscale opacity-30 text-[var(--text-secondary)]"
                       }`}
                     >
@@ -238,7 +246,11 @@ export default function AchievementCarousel({
                     )}
                   </div>
 
-                  {isUnlocked ? (
+                  {isSocialUnlocked ? (
+                    <div className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] text-[9px] font-bold tracking-widest uppercase text-[#5865F2]">
+                      Conquistado
+                    </div>
+                  ) : isUnlocked ? (
                     <div
                       className={`inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] text-[9px] font-bold tracking-widest uppercase ${getIconColorClass(badge.currentTier)}`}
                     >
@@ -252,7 +264,11 @@ export default function AchievementCarousel({
                 </div>
 
                 <div className="w-full mt-auto">
-                  {isUnlocked && badge.nextTierRequirement !== null ? (
+                  {isSocialUnlocked ? (
+                    <p className="text-[11px] text-[var(--text-secondary)] font-normal leading-snug text-left truncate w-full">
+                      {badge.description}
+                    </p>
+                  ) : isUnlocked && badge.nextTierRequirement !== null ? (
                     <div className="space-y-1.5">
                       <div className="flex justify-between items-end text-[10px] font-medium tracking-tight px-0.5">
                         <span className="text-[var(--text-secondary)]">

@@ -1,6 +1,6 @@
 // DataRanking.ts
 
-import { universities } from './universities';
+import { universities } from '../data/universities';
 
 // O tipo de dado que simula a resposta crua do banco de dados para um usuário no ranking.
 export type RawUserData = {

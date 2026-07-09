@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import LoadingScreen from "@/components/LoadingScreen";
 import LoginModal from "@/components/Login-modal";
-import { type MinigameData } from "@/lib/data/games";
+import { type MinigameData } from "@/lib/games/games";
 import { getGameComponent } from "@/lib/games/config";
 import { ArrowLeft } from "lucide-react";
 

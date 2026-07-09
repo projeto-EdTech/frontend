@@ -3,8 +3,8 @@ import assert from 'assert';
 // Configura as variáveis de ambiente necessárias para os testes
 process.env.BACKEND_API_URL = 'http://localhost:8080';
 
-import { decodeJWT } from '../front/src/app/service/jwtDecoder';
-import { POST } from '../front/src/app/api/user/profile/route';
+import { decodeJWT } from '../src/app/service/jwtDecoder';
+import { POST } from '../src/app/api/user/profile/route';
 
 // 1. Testar decodificação do JWT com novos campos
 function testJWTDecoding() {

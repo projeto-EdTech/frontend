@@ -9,7 +9,7 @@
  *   import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generateDiscordToken } from '../front/src/app/service/discordToken.service';
+import { generateDiscordToken } from '../src/app/service/discordToken.service';
 
 const BFF = 'http://bff.local';
 

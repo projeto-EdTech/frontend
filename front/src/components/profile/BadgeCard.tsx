@@ -3,6 +3,7 @@
 import React from 'react';
 import { Lock, Brain, FileText, Target, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import DiscordIcon from '@/components/profile/DiscordIcon';
 
 export type Tier = 'bloqueado' | 'bronze' | 'prata' | 'ouro' | 'diamante' | 'platina';
 
@@ -11,7 +12,7 @@ export interface Badge {
   name: string;
   description: string;
   icon: string | React.ReactNode;
-  category: 'marco' | 'desempenho' | 'ranking';
+  category: 'marco' | 'desempenho' | 'ranking' | 'social';
   currentTier: Tier;
   progress: number;
   nextTierRequirement: number | null;
@@ -22,6 +23,7 @@ const IconMap: Record<string, React.ElementType> = {
   FileText,
   Target,
   Trophy,
+  Discord: DiscordIcon,
 };
 
 interface BadgeCardProps {
@@ -30,6 +32,7 @@ interface BadgeCardProps {
 
 export default function BadgeCard({ badge }: BadgeCardProps) {
   const isUnlocked = badge.currentTier !== 'bloqueado';
+  const isSocial = badge.category === 'social';
 
   const getTierStyles = (tier: Tier) => {
     switch (tier) {
@@ -86,20 +89,22 @@ export default function BadgeCard({ badge }: BadgeCardProps) {
       )}
       
       <div className="flex-1 flex flex-col items-center justify-center gap-3">
-        <span className={`flex items-center justify-center [&>svg]:w-10 [&>svg]:h-10 transition-all duration-500 ${isUnlocked ? 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.1)] group-hover:scale-110' : ''} ${getIconColorClass(badge.currentTier)}`} role="img" aria-label={badge.name}>
+        <span className={`flex items-center justify-center [&>svg]:w-10 [&>svg]:h-10 transition-all duration-500 ${isUnlocked ? 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.1)] group-hover:scale-110' : ''} ${isSocial && isUnlocked ? 'text-[#5865F2]' : getIconColorClass(badge.currentTier)}`} role="img" aria-label={badge.name}>
           {renderIcon()}
         </span>
         
         <div className="text-center space-y-1">
           <p className="text-[13px] font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight">{badge.name}</p>
-          {isUnlocked && (
+          {isUnlocked && isSocial ? (
+            <p className="text-[10px] font-bold text-[#5865F2] tracking-wider uppercase">Conquistado</p>
+          ) : isUnlocked ? (
             <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 tracking-wider uppercase">{getTierName(badge.currentTier)}</p>
-          )}
+          ) : null}
         </div>
       </div>
 
       <div className="w-full mt-3">
-        {isUnlocked && badge.nextTierRequirement !== null ? (
+        {isSocial ? null : isUnlocked && badge.nextTierRequirement !== null ? (
           <div className="space-y-1.5">
             <div className="flex justify-between text-[9px] font-bold text-gray-500 dark:text-gray-400 tracking-tight">
               <span>{badge.progress}</span>

@@ -1,7 +1,7 @@
 import { getPlanos } from "@/app/service/pricing.service";
 import { PricingClient } from "./PricingClient";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/core/auth";
 
 /**
  * PricingDataServer - Server Component

@@ -55,7 +55,7 @@ export interface MockProfileData {
 export const DEV_CONFIG = {
   enabled: process.env.NODE_ENV === "development",
   /** Pontuação simulada do usuário (substitui o valor vindo da API). */
-  devScore: 3500, // → Prata
+  devScore: 2700,
 } as const;
 
 export const mockProfileData: MockProfileData = {

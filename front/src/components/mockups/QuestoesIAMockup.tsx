@@ -2,7 +2,12 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { BotMessageSquare, BookOpen, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  BotMessageSquare,
+  BookOpen,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 
 interface QuestoesIAMockupProps {
   isDark: boolean;
@@ -14,41 +19,38 @@ const questionsData: Record<string, any> = {
     exam: "FUVEST 2025",
     subject: "Física",
     // Certifique-se de ter esta imagem em public/Logo_Universidades/fuvest.jpg
-    logo: "/Logo_Universidades/fuvest.jpg", 
-    question: "Um fio condutor é percorrido por cerca de 2x10⁻¹⁴ C. Determine a intensidade da corrente elétrica média num intervalo de 1 µs.",
+    logo: "/Logo_Universidades/fuvest.jpg",
+    question:
+      "Um fio condutor é percorrido por cerca de 2x10⁻¹⁴ C. Determine a intensidade da corrente elétrica média num intervalo de 1 µs.",
     userAnswer: "1 A",
     correctAnswer: "2x10⁻⁸ A",
-    explanationSteps: [
-      "Aplicar I = Q/t",
-      "(2×10⁻¹⁴)/(10⁻⁶) = 2×10⁻⁸ A"
-    ]
+    explanationSteps: ["Aplicar I = Q/t", "(2×10⁻¹⁴)/(10⁻⁶) = 2×10⁻⁸ A"],
   },
   "Química — Reações": {
     exam: "UNICAMP 2024",
     subject: "Química",
     // Certifique-se de ter esta imagem em public/Logo_Universidades/unicamp.png
     logo: "/Logo_Universidades/unicamp.png",
-    question: "Na combustão completa do metano (CH₄), quais são os produtos formados e qual a estequiometria correta da reação balanceada?",
+    question:
+      "Na combustão completa do metano (CH₄), quais são os produtos formados e qual a estequiometria correta da reação balanceada?",
     userAnswer: "CO + H₂O",
     correctAnswer: "CO₂ + 2H₂O",
     explanationSteps: [
       "Reação geral: CH₄ + O₂ → CO₂ + H₂O",
-      "Balanceamento: CH₄ + 2O₂ → CO₂ + 2H₂O"
-    ]
+      "Balanceamento: CH₄ + 2O₂ → CO₂ + 2H₂O",
+    ],
   },
   "Matemática — Álgebra": {
     exam: "ENEM 2024",
     subject: "Matemática",
     // Certifique-se de ter esta imagem em public/Logo_Universidades/enem.png
     logo: "/Logo_Universidades/enem.png",
-    question: "Quais são as raízes reais da equação quadrática x² - 5x + 6 = 0?",
+    question:
+      "Quais são as raízes reais da equação quadrática x² - 5x + 6 = 0?",
     userAnswer: "-2 e -3",
     correctAnswer: "2 e 3",
-    explanationSteps: [
-      "Soma = 5, Produto = 6",
-      "Raízes são x' = 2 e x'' = 3"
-    ]
-  }
+    explanationSteps: ["Soma = 5, Produto = 6", "Raízes são x' = 2 e x'' = 3"],
+  },
 };
 
 export function QuestoesIAMockup({ isDark }: QuestoesIAMockupProps) {
@@ -70,7 +72,7 @@ export function QuestoesIAMockup({ isDark }: QuestoesIAMockupProps) {
           <div
             className={`p-1.5 rounded-lg shadow-sm transition-colors duration-300 ${isDark ? "bg-blue-800" : "bg-blue-100"}`}
           >
-            <BotMessageSquare className="w-4 h-4 text-blue-600" />
+            <BotMessageSquare className="w-4 h-4 text-white" />
           </div>
           <div>
             <h3
@@ -93,11 +95,7 @@ export function QuestoesIAMockup({ isDark }: QuestoesIAMockupProps) {
       >
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-5 h-5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
-            <BookOpen
-              size={12}
-              className="text-white"
-              strokeWidth={2}
-            />
+            <BookOpen size={12} className="text-white" strokeWidth={2} />
           </div>
           <label
             className={`text-xs font-semibold transition-colors duration-300 ${isDark ? "text-gray-300" : "text-gray-700"}`}
@@ -112,7 +110,9 @@ export function QuestoesIAMockup({ isDark }: QuestoesIAMockupProps) {
         >
           {/* Gera as opções baseadas nas chaves do objeto */}
           {Object.keys(questionsData).map((topic) => (
-            <option key={topic} value={topic}>{topic}</option>
+            <option key={topic} value={topic}>
+              {topic}
+            </option>
           ))}
         </select>
       </div>
@@ -194,10 +194,7 @@ export function QuestoesIAMockup({ isDark }: QuestoesIAMockupProps) {
             <div
               className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${isDark ? "bg-red-700" : "bg-red-500"}`}
             >
-              <AlertCircle
-                size={14}
-                className="text-white"
-              />
+              <AlertCircle size={14} className="text-white" />
             </div>
             <span
               className={`text-xs font-semibold transition-colors duration-300 ${isDark ? "text-red-400" : "text-red-700"}`}
@@ -218,10 +215,7 @@ export function QuestoesIAMockup({ isDark }: QuestoesIAMockupProps) {
             <div
               className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${isDark ? "bg-green-700" : "bg-green-500"}`}
             >
-              <CheckCircle
-                size={14}
-                className="text-white"
-              />
+              <CheckCircle size={14} className="text-white" />
             </div>
             <span
               className={`text-xs font-semibold transition-colors duration-300 ${isDark ? "text-green-400" : "text-green-700"}`}
@@ -259,12 +253,14 @@ export function QuestoesIAMockup({ isDark }: QuestoesIAMockupProps) {
                 className={`text-xs transition-colors duration-300 ${isDark ? "text-blue-400/80" : "text-blue-600/90"}`}
               >
                 {/* Renderização dinâmica dos passos */}
-                {currentData.explanationSteps.map((step: string, index: number) => (
-                  <React.Fragment key={index}>
-                    <strong>Passo {index + 1}:</strong> {step}
-                    <br />
-                  </React.Fragment>
-                ))}
+                {currentData.explanationSteps.map(
+                  (step: string, index: number) => (
+                    <React.Fragment key={index}>
+                      <strong>Passo {index + 1}:</strong> {step}
+                      <br />
+                    </React.Fragment>
+                  ),
+                )}
               </p>
             </div>
           </div>

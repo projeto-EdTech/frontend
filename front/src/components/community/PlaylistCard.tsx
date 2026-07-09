@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Play, Heart, Layers, Divide, Zap } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 interface PlaylistCardProps {
   title: string;

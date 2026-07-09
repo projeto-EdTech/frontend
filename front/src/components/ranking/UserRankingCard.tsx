@@ -20,7 +20,7 @@ interface UserRankingCardProps {
   isLoading: boolean;
 }
 
-import { getRankIcon, getRankBadgeColor, getRankProgress } from "@/lib/utils/rankUtils";
+import { getRankIcon, getRankBadgeColor, getRankProgress } from "@/lib/ranking/rankUtils";
 
 const getPositionBadge = (position: number) => {
   if (position === 1) return <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full shadow-lg"><span className="text-white font-bold text-lg">🥇</span></div>;

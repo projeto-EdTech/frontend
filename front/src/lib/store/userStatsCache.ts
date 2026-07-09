@@ -13,6 +13,8 @@ export type TransformedStats = {
     trend_questoes: { value: number; type: 'up' | 'down' };
     trend_acertos: { value: number; type: 'up' | 'down' };
     trend_percentagem: { value: number; type: 'up' | 'down' };
+    /** 1 = conta Discord vinculada, 0 = não. Derivado do JWT user_data. */
+    discordLinked?: number;
   };
   recentExams: {
     name: string;

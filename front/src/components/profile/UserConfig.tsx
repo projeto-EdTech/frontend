@@ -34,7 +34,7 @@ interface UserConfigProps {
       useInitialAvatar: boolean;
     }>
   >;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -60,6 +60,7 @@ export default function UserConfig({
     targetExam?: string;
     targetCourse?: string;
   }>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // Carregar dados das universidades para o autocomplete
   useEffect(() => {
@@ -122,8 +123,8 @@ export default function UserConfig({
     }
   }, [setFormData]);
 
-  // Função para salvar no SessionStorage e avisar o componente pai
-  const handleSaveInternal = () => {
+  // Função para salvar no SessionStorage e disparar a chamada à rota /api/user/profile (via onSave)
+  const handleSaveInternal = async () => {
     // Validação antes de salvar
     const errors: { targetExam?: string; targetCourse?: string } = {};
 
@@ -166,7 +167,14 @@ export default function UserConfig({
     };
 
     sessionStorage.setItem("user_profile_data", JSON.stringify(dataToSave));
-    onSave();
+
+    // Dispara a persistência no backend via rota /api/user/profile (onSave = handleSaveProfile)
+    try {
+      setIsSaving(true);
+      await onSave();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Lista de ícones disponíveis organizados por categoria
@@ -435,18 +443,19 @@ export default function UserConfig({
             <div className="pt-6 flex gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <button
                 onClick={handleSaveInternal}
-                disabled={hasErrors}
+                disabled={hasErrors || isSaving}
                 className={`px-6 py-2.5 shadow-lg text-white text-sm font-medium rounded-lg transition-all duration-200 active:scale-95 ${
-                  hasErrors
+                  hasErrors || isSaving
                     ? "bg-gray-400 cursor-not-allowed opacity-70 shadow-none"
                     : "bg-gradient-to-b from-blue-500 to-blue-600 hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 cursor-pointer"
                 }`}
               >
-                Salvar Alterações
+                {isSaving ? "Salvando..." : "Salvar Alterações"}
               </button>
               <button
                 onClick={onCancel}
-                className="px-6 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 cursor-pointer"
+                disabled={isSaving}
+                className="px-6 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancelar
               </button>

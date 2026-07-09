@@ -1,8 +1,8 @@
 "use client";
 
 import React, { ReactNode } from 'react';
-import { getRankFrameStyle, getRankIcon, type RankType } from '@/lib/utils/rankUtils';
-import { cn } from '@/lib/utils';
+import { getRankFrameStyle, getRankIcon, type RankType } from '@/lib/ranking/rankUtils';
+import { cn } from '@/lib/core/utils';
 
 interface RankAvatarFrameProps {
   rank: RankType | null;

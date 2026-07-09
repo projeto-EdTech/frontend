@@ -117,7 +117,7 @@ export async function GET() {
     // --- AUTENTICAÇÃO E BUSCA DE DADOS ---
   // Obtém a sessão real do NextAuth (API Route Handler)
   const { getServerSession } = await import("next-auth");
-  const { authOptions } = await import("@/lib/auth");
+  const { authOptions } = await import("@/lib/core/auth");
   const session = await getServerSession(authOptions);
   const userId = session?.user?.email || "Usuário não autenticado";
   const sessionName = session?.user?.name || "Sessão desconhecida";

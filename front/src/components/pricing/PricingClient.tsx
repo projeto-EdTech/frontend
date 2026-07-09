@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { 
-  Check, CreditCard, Smartphone, FileText, Shield, Sparkles, 
-  ArrowRight, Lock, Rocket, Library, Activity, 
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import {
+  Check, CreditCard, Smartphone, FileText, Shield, Sparkles,
+  ArrowRight, Lock, Rocket, Library, Activity,
   GraduationCap, Headset, ArrowLeft, Cpu, Lightbulb, BarChart3,
   User, Mail, Fingerprint, MapPin
 } from "lucide-react";
@@ -14,6 +14,9 @@ import CreditCardForm from "@/components/payment/CreditCardForm";
 import PixForm from "@/components/payment/PixForm";
 import BoletoForm from "@/components/payment/BoletoForm";
 import { type Plano } from "@/app/service/pricing.service";
+import type { PaymentGatewayType } from "@/app/service/payment/payment-gateway.types";
+
+const StripeCardForm = lazy(() => import("@/components/payment/StripeCardForm"));
 
 // Icon mapping helper
 const getIcon = (name: string) => {
@@ -52,14 +55,25 @@ interface PricingClientProps {
 }
 
 export function PricingClient({ initialPlans, initialSession }: PricingClientProps) {
-  // Initialize Mercado Pago
+  const [cardGateway, setCardGateway] = useState<PaymentGatewayType>('stripe');
+  const [gatewayChecked, setGatewayChecked] = useState(false);
+
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_MERCADO_PAGO_KEY) {
-      initMercadoPago(process.env.NEXT_PUBLIC_MERCADO_PAGO_KEY, {
-        locale: 'pt-BR',
-      });
-    }
+    fetch('/api/gateway-health')
+      .then(r => r.json())
+      .then(health => {
+        setCardGateway(health.creditCard ?? 'stripe');
+      })
+      .catch(() => setCardGateway('stripe'))
+      .finally(() => setGatewayChecked(true));
   }, []);
+
+  // Initialize MP SDK only when MP is the active CC gateway (fallback scenario)
+  useEffect(() => {
+    if (cardGateway === 'mercadopago' && process.env.NEXT_PUBLIC_MERCADO_PAGO_KEY) {
+      initMercadoPago(process.env.NEXT_PUBLIC_MERCADO_PAGO_KEY, { locale: 'pt-BR' });
+    }
+  }, [cardGateway]);
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   
@@ -172,7 +186,7 @@ export function PricingClient({ initialPlans, initialSession }: PricingClientPro
 
   const selectedPlan = initialPlans.find(p => p.id === planoSelecionado);
 
-  async function processPayment(cardFormData: any) {
+  async function submitCreditCardPayment(token: string, gatewayHint: PaymentGatewayType, extraFields?: Record<string, unknown>) {
     setLoading(true);
     const nomeCompleto = formData.nomeCompleto.split(' ');
     const firstName = nomeCompleto[0];
@@ -183,11 +197,10 @@ export function PricingClient({ initialPlans, initialSession }: PricingClientPro
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: cardFormData.token,
-          issuer_id: cardFormData.issuer_id,
-          payment_method_id: cardFormData.payment_method_id,
+          token,
           transaction_amount: selectedPlan?.precoTotal,
-          installments: cardFormData.installments,
+          planId: planoSelecionado,
+          gatewayHint,
           payer: {
             email: formData.email,
             first_name: firstName,
@@ -195,9 +208,9 @@ export function PricingClient({ initialPlans, initialSession }: PricingClientPro
             identification: {
               type: 'CPF',
               number: formData['CPF/CNPJ'].replace(/\D/g, ''),
-            }
+            },
           },
-          planId: planoSelecionado,
+          ...extraFields,
         }),
       });
 
@@ -205,12 +218,26 @@ export function PricingClient({ initialPlans, initialSession }: PricingClientPro
       if (!response.ok) throw new Error(result.message || 'Erro ao processar a assinatura.');
 
       setStep(3);
-      setCurrentPage("payment-success"); 
+      setCurrentPage("payment-success");
     } catch (error: any) {
       alert(`Falha no pagamento: ${error.message}`);
     } finally {
       setLoading(false);
     }
+  }
+
+  // Handler for Stripe Elements form (receives PM ID)
+  async function processStripePayment(pmId: string) {
+    await submitCreditCardPayment(pmId, 'stripe');
+  }
+
+  // Handler for MercadoPago Brick form (fallback)
+  async function processPayment(cardFormData: any) {
+    await submitCreditCardPayment(cardFormData.token, 'mercadopago', {
+      issuer_id: cardFormData.issuer_id,
+      payment_method_id: cardFormData.payment_method_id,
+      installments: cardFormData.installments,
+    });
   }
 
   const processPixPayment = async () => {
@@ -314,14 +341,25 @@ export function PricingClient({ initialPlans, initialSession }: PricingClientPro
                 {formData.paymentType === "boleto" && "Boleto Bancário"}
               </h2>
 
-              {formData.paymentType === "cartao" && (
-                <CreditCardForm
-                  key={payerData.identification.number}
-                  selectedPlan={selectedPlan}
-                  onSubmit={processPayment}
-                  onError={(err: any) => alert(err.message)}
-                  payerData={payerData}
-                />
+              {formData.paymentType === "cartao" && gatewayChecked && (
+                cardGateway === 'stripe' ? (
+                  <Suspense fallback={<div className="h-64 animate-pulse bg-[#f5f5f7] rounded-2xl" />}>
+                    <StripeCardForm
+                      selectedPlan={selectedPlan}
+                      onSubmit={processStripePayment}
+                      onError={(msg) => alert(msg)}
+                      payerEmail={formData.email}
+                    />
+                  </Suspense>
+                ) : (
+                  <CreditCardForm
+                    key={payerData.identification.number}
+                    selectedPlan={selectedPlan}
+                    onSubmit={processPayment}
+                    onError={(err: any) => alert(err.message)}
+                    payerData={payerData}
+                  />
+                )
               )}
               {formData.paymentType === "Pix" && <PixForm pixData={pixData} loading={loadingPix} />}
               {formData.paymentType === "boleto" && (
