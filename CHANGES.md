@@ -1,5 +1,83 @@
 # CHANGES
 
+## [Feature/payment] Payment Gateway Router — MercadoPago + Stripe com Failover Automático
+
+Implementação de roteador de gateway de pagamento com failover automático entre MercadoPago e Stripe. Objetivo: tornar o fluxo de pagamento resiliente a instabilidades de gateway, sem impacto para o usuário.
+
+### Estratégia de Roteamento
+
+| Método | Gateway Principal | Fallback |
+| --- | --- | --- |
+| Cartão de Crédito | **Stripe** | MercadoPago |
+| PIX | MercadoPago | Stripe |
+| Boleto | MercadoPago | Stripe |
+
+### Lógica de Failover
+
+- Timeout de **15 segundos** por tentativa via `AbortController`
+- Fallback **apenas** em erros retryable: `AbortError` (timeout), `TypeError` (rede), `GatewayError` com status HTTP 5xx
+- Erros 4xx (dados inválidos) **não** acionam fallback — erro retornado imediatamente ao usuário
+- Cartão de crédito **não usa router server-side**: tokens Stripe (`pm_...`) e MercadoPago são incompatíveis entre si. Solução: health check pré-renderização decide qual form exibir; campo `gatewayHint` no body indica ao backend qual gateway usar
+
+### Health Check
+
+Endpoint `GET /api/gateway-health` faz ping leve em ambas as gateways (5s timeout cada), retorna qual gateway está ativo por método. Cache ISR de 30 segundos. `PricingClient` consome no mount para renderizar o form de cartão correto.
+
+### Novos Arquivos
+
+| Arquivo | Propósito |
+|---|---|
+| `front/src/app/service/payment/payment-gateway.types.ts` | Interface `IPaymentGateway`, tipos normalizados (`PixPaymentResult`, `BoletoPaymentResult`, `CreditCardPaymentResult`), classe `GatewayError` com campo `status` |
+| `front/src/app/service/payment/mercadopago.gateway.ts` | Adapter MercadoPago implementando `IPaymentGateway`. Aceita `MercadoPagoConfig` via construtor para injeção de dependência em testes |
+| `front/src/app/service/payment/stripe.gateway.ts` | Adapter Stripe implementando `IPaymentGateway`. Aceita instância `Stripe` via construtor para injeção de dependência. API version: `2026-06-24.dahlia` |
+| `front/src/app/service/payment/payment-router.service.ts` | Router com timeout e fallback. Exporta funções `pixGateways()`, `boletoGateways()`, `creditCardGateways()` com singletons lazy. Re-exporta `GatewayError` |
+| `front/src/app/api/gateway-health/route.ts` | Health check endpoint. Ping MP via `GET /v1/payment_methods`, Stripe via `GET /v1/balance`. Cache `revalidate = 30` |
+| `front/src/app/api/webhooks/stripe/route.ts` | Webhook Stripe com verificação de assinatura (`stripe.webhooks.constructEvent`). Trata `payment_intent.succeeded` → notifica `BACKEND_API_URL/payments/confirm`. Stripe inicializado dentro do handler (não module-level) para evitar falha de build |
+| `front/src/components/payment/StripeCardForm.tsx` | Form de cartão com Stripe Elements (`@stripe/react-stripe-js`). Mesmo visual do `CreditCardForm.tsx`. Chama `stripe.createPaymentMethod()` e retorna PM ID via `onSubmit(token)` |
+| `front/tests/payment-router.test.ts` | 13 testes Vitest: router usa primário quando disponível; fallback em AbortError/TypeError/5xx; sem fallback em 4xx; ambas falham → erro; mapeamento MP PIX; mapeamento Stripe PIX |
+
+### Arquivos Modificados
+
+| Arquivo | O que mudou |
+|---|---|
+| `front/src/app/api/process-subscription/pix/route.ts` | Delega para `routePayment(gw => gw.createPixPayment(...), pixGateways())` em vez de chamar MP diretamente |
+| `front/src/app/api/process-subscription/boleto/route.ts` | Delega para `routePayment(gw => gw.createBoletoPayment(...), boletoGateways())` |
+| `front/src/app/api/process-subscription/credit-card/route.ts` | Usa `gatewayHint` do body para selecionar gateway (`'stripe'` → StripeGateway, `'mercadopago'` → MercadoPagoGateway) |
+| `front/src/components/pricing/PricingClient.tsx` | `useEffect` checa `/api/gateway-health` no mount; estado `cardGateway` controla qual form renderizar; `StripeCardForm` carregado via `React.lazy()`; `initMercadoPago` só chamado quando MP é o gateway ativo; handler unificado `submitCreditCardPayment(token, gatewayHint)` |
+| `front/.env` | Adicionadas variáveis `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (valores `À_PREENCHER`) |
+
+### Dependências Adicionadas
+
+```text
+stripe
+@stripe/stripe-js
+@stripe/react-stripe-js
+```
+
+### Variáveis de Ambiente Necessárias
+
+```bash
+STRIPE_SECRET_KEY=sk_live_...            # chave secreta Stripe (server-side)
+STRIPE_WEBHOOK_SECRET=whsec_...          # segredo de assinatura do webhook
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...  # chave pública (client-side)
+```
+
+### Decisões de Design
+
+- **`GatewayError` em `payment-gateway.types.ts`**: evita dependência circular (gateways importam types, router importa gateways — se `GatewayError` ficasse no router, os gateways não poderiam importá-lo)
+- **Stripe init lazy**: `new Stripe(key)` dentro do handler, não no module-level, porque env vars não estão disponíveis no build do Next.js
+- **Tokens de cartão não são intercambiáveis**: Stripe PM ID (`pm_...`) ≠ token MercadoPago — server-side CC fallback inviável; solução via `gatewayHint`
+- **DI nos construtores**: gateways aceitam cliente SDK opcional para permitir testes com mocks sem `vi.mock()` (que tem problemas de hoisting no Vitest)
+
+### Resultado dos Testes
+
+```text
+Test Files  1 passed (1)
+      Tests  13 passed (13)
+```
+
+---
+
 ## [Feature/profile] Badge "Guerreiro do Discord" (single-tier, social)
 
 Nova badge de conquista exibida no perfil, desbloqueada quando o usuário **vincula a conta do Discord**. Segue a OBS do card do Kanban (Notion): **1 único tier**, **logo do Discord**, **sem lógica de rank/tier**. Cria loop de retenção plataforma ↔ Discord.

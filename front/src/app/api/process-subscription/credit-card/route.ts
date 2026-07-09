@@ -1,45 +1,51 @@
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { NextRequest, NextResponse } from 'next/server';
+import { getMercadoPagoGateway, getStripeGateway } from '@/app/service/payment/payment-router.service';
+import { GatewayError } from '@/app/service/payment/payment-gateway.types';
+import type { PaymentGatewayType } from '@/app/service/payment/payment-gateway.types';
 
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN!,
-});
-
-export async function POST(req: Request) {
+// Credit card tokens are gateway-specific (Stripe PM ID ≠ MP card token).
+// The client sends gatewayHint matching whichever form was rendered based on health check.
+// No server-side gateway fallback here — wrong token format would just fail anyway.
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const cleanedIdentificationNumber = body.payer.identification.number.replace(/\D/g, '');
 
-    const payment = new Payment(client);
-
-    const response = await payment.create({
-      body: {
-        transaction_amount: body.transaction_amount,
-        token: body.token,
-        description: `Plano ${body.planId}`,
-        installments: body.installments,
-        payment_method_id: body.payment_method_id,
-        issuer_id: body.issuer_id,
-        payer: {
-          ...body.payer,
-          identification: {
-            ...body.payer.identification,
-            number: cleanedIdentificationNumber,
-          }
-        },
-      },
-    });
-
-    return new Response(JSON.stringify(response), { status: 200 });
-  } catch (err: unknown) {
-    console.error('ERRO AO PROCESSAR PAGAMENTO:', err);
-
-    if (err instanceof Error) {
-      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    if (!body.token || !body.transaction_amount) {
+      return NextResponse.json(
+        { message: 'Token e valor são obrigatórios.' },
+        { status: 400 },
+      );
     }
 
-    return new Response(
-      JSON.stringify({ error: 'Erro desconhecido ao processar o pagamento.' }),
-      { status: 500 }
-    );
+    const hint: PaymentGatewayType = body.gatewayHint ?? 'stripe';
+    const gw = hint === 'mercadopago' ? getMercadoPagoGateway() : getStripeGateway();
+
+    const result = await gw.createCreditCardPayment({
+      token: body.token,
+      email: body.payer?.email ?? '',
+      amount: Number(body.transaction_amount),
+      planId: body.planId ?? body.description ?? 'mensal',
+      installments: body.installments ?? 1,
+      issuerId: body.issuer_id,
+      paymentMethodId: body.payment_method_id,
+      payer: body.payer,
+      gatewayHint: hint,
+    });
+
+    return NextResponse.json({
+      payment_id: result.paymentId,
+      status: result.status,
+      gateway: result.gateway,
+    }, { status: 200 });
+
+  } catch (err: unknown) {
+    console.error('[credit-card/route] Erro ao processar cartão:', err);
+
+    if (err instanceof GatewayError && err.status < 500) {
+      return NextResponse.json({ message: err.message }, { status: err.status });
+    }
+
+    const message = err instanceof Error ? err.message : 'Erro interno ao processar pagamento.';
+    return NextResponse.json({ message }, { status: 503 });
   }
 }
