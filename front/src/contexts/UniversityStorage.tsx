@@ -23,13 +23,12 @@ export const UniversityStorage: React.FC<UniversityStorageProps> = ({ children }
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
-        const storedToken = localStorage.getItem('user_data');
-        
+        // Sem Authorization: o cookie `user_data` é HttpOnly e acompanha sozinho todo fetch
+        // same-origin. A rota o lê no servidor com `readUserToken`.
         const response = await fetch('/api/universities', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${storedToken}`,
           },
         });
 

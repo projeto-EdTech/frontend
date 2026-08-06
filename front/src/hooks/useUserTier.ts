@@ -1,62 +1,76 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { decodeJWT } from "@/app/service/jwtDecoder";
+import { normalizeTier, isPaidTier, type Tier } from "@/app/service/jwtDecoder";
+import { fetchUserClaims, USER_SYNCED_EVENT } from "@/lib/userClaims";
 
-export type Tier = "FREE" | "SIMULAPRO" | "TEACHER" | "ADMIN";
+export type { Tier };
 
+/**
+ * Tier do aluno logado.
+ *
+ * O tier mora no claim `tipo` do JWT — e o JWT vive só no cookie `user_data` HttpOnly, que o
+ * JavaScript não consegue ler. Quem decodifica é `GET /api/user/me`, no servidor, que já devolve
+ * a grafia normalizada.
+ *
+ * Não há polling: a rota é consultada na montagem e nos dois eventos que significam "a sessão
+ * mudou" — `user_synced` (mesma aba: login, ativação de assinatura) e `storage` (outras abas).
+ * Um `setInterval` aqui viraria uma requisição a cada ciclo, por aba aberta.
+ *
+ * CACHE STRATEGY: no-store — dado de sessão
+ */
 export function useUserTier() {
   const { data: session, status } = useSession();
   const [tier, setTier] = useState<Tier>("FREE");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkTier = () => {
-      // 1. Tente ler do localStorage (prioridade para simulação/dados sincronizados)
-      const storedToken = localStorage.getItem("user_data");
-      if (storedToken) {
-        const decoded = decodeJWT(storedToken);
-        if (decoded && decoded.tipo) {
-          setTier(decoded.tipo as Tier);
-          setLoading(false);
-          return;
-        }
-      }
+  // Fallback quando a rota não responde: a sessão NextAuth pode trazer o tier.
+  const tierDaSessao = normalizeTier(session?.user?.tier);
 
-      // 2. Fallback para a sessão (se disponível)
-      if (session?.user?.tier) {
-        setTier(session.user.tier as Tier);
-      } else {
-        setTier("FREE");
-      }
+  const checkTier = useCallback(
+    async (signal?: AbortSignal) => {
+      const claims = await fetchUserClaims(signal);
+
+      if (signal?.aborted) return;
+
+      setTier(claims ? normalizeTier(claims.tier) : tierDaSessao);
       setLoading(false);
-    };
+    },
+    [tierDaSessao]
+  );
 
-    if (status !== "loading") {
-      checkTier();
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status !== "authenticated") {
+      setTier("FREE");
+      setLoading(false);
+      return;
     }
 
-    // Listener para mudanças no storage (mesma aba ou outras abas)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "user_data") {
-        checkTier();
-      }
-    };
-    
-    // Custom event dispatchado pelo SyncUserEffect (se implementarmos isso) ou apenas polling
-    // Por enquanto, vamos fazer um polling suave ou depender do mount
-    const interval = setInterval(checkTier, 2000); // Verifica a cada 2s para garantir sincronia rápida após login
+    const controller = new AbortController();
 
-    window.addEventListener("storage", handleStorageChange);
+    checkTier(controller.signal);
+
+    // `storage` só dispara em OUTRAS abas. Na mesma aba — caso da ativação de assinatura em
+    // /paidPlan — quem avisa é o CustomEvent.
+    const aoMudarStorage = (e: StorageEvent) => {
+      if (e.key === "user_data") checkTier();
+    };
+    const aoSincronizar = () => checkTier();
+
+    window.addEventListener("storage", aoMudarStorage);
+    window.addEventListener(USER_SYNCED_EVENT, aoSincronizar);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
+      controller.abort();
+      window.removeEventListener("storage", aoMudarStorage);
+      window.removeEventListener(USER_SYNCED_EVENT, aoSincronizar);
     };
-  }, [session, status]);
+  }, [status, checkTier]);
 
-  const isPro = tier === "SIMULAPRO" || tier === "TEACHER" || tier === "ADMIN";
+  const isPro = isPaidTier(tier);
 
   return { tier, isPro, loading };
 }

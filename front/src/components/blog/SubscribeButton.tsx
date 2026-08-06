@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { decodeJWT } from '@/app/service/jwtDecoder';
+import { fetchUserClaims } from '@/lib/userClaims';
 
 export default function SubscribeButton() {
     const { data: session, status } = useSession();
@@ -10,22 +10,22 @@ export default function SubscribeButton() {
     const [message, setMessage] = useState('');
     const [isSubscribed, setIsSubscribed] = useState(false);
 
-    // Carrega o estado inicial do LocalStorage
+    // O estado inicial vem do servidor, que lê o cookie HttpOnly e decodifica o JWT.
+    // O cliente não tem (nem deve ter) o token para decodificar por conta própria.
     useEffect(() => {
-        if (status === 'authenticated') {
-            const storedToken = localStorage.getItem('user_data');
-            if (storedToken) {
-                const decoded = decodeJWT(storedToken);
-                if (decoded) {
-                    setIsSubscribed(!!decoded.newsLetter);
-                }
-            }
-        }
+        if (status !== 'authenticated') return;
+
+        const controller = new AbortController();
+
+        fetchUserClaims(controller.signal).then((claims) => {
+            if (claims) setIsSubscribed(claims.newsletter);
+        });
+
+        return () => controller.abort();
     }, [status]);
 
-    // Nota: updateLocalStorage foi removido pois o JWT no localStorage é imutável
-    // O estado do newsletter será atualizado na próxima sincronização (SyncUserEffect)
-    // ou ao recarregar a página/sessão.
+    // O estado do newsletter só volta a refletir o backend na próxima sincronização
+    // (SyncUserEffect) ou ao recarregar a página: o claim mora no JWT, que é imutável.
 
 
     const handleSubscribe = async () => {
@@ -38,18 +38,14 @@ export default function SubscribeButton() {
         setMessage('');
 
         try {
-            // Pegamos o token do nosso backend que está no localStorage
-            const backendToken = localStorage.getItem('user_data');
-
+            // Sem token no corpo: o JWT sai do cookie `user_data`, lido no servidor. Um token
+            // que o cliente escolhe qual mandar é um token que ele pode trocar pelo de outro.
             const response = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    email: session.user.email,
-                    token: backendToken // Enviamos o token para a nossa API route
-                }), 
+                body: JSON.stringify({ email: session.user.email }),
             });
 
             const data = await response.json();

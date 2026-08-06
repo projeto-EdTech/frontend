@@ -105,7 +105,7 @@ export default async function SimulacaoLoader({
 
   const cookieStore = await cookies();
   const token = cookieStore.get('user_data')?.value;
-  console.log(`${LOG}    Cookie user_data presente: ${token ? 'SIM (primeiros 10 chars: ' + token.substring(0, 10) + '...)' : 'NÃO'}`);
+  console.log(`${LOG}    Cookie user_data presente: ${token ? 'SIM' : 'NÃO'}`);
 
   if (!token) {
     console.warn(`${LOG} ❌ Token ausente. Retornando erro de autenticação.`);

@@ -42,13 +42,9 @@ export class FlashCardGameLogic {
    * Busca as matérias e prepara os dados iniciais com base nas recomendações do backend
    */
   async fetchCards(): Promise<{ cards: FlashCard[]; subjects: string[] }> {
-    const storedToken = localStorage.getItem('user_data');
-
+    // Sem Authorization: o cookie `user_data` HttpOnly acompanha sozinho o fetch same-origin.
     const response = await fetch('/api/games/flash-cards', {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${storedToken}`,
-      },
       cache: 'no-store',
     });
 
@@ -312,17 +308,16 @@ export class FlashCardGameLogic {
    */
   async submitResults(correctIds: number[]): Promise<void> {
     try {
-      const storedToken = localStorage.getItem('user_data');
-
       console.log('[FlashCardLogic] 📤 submitResults — Enviando resultados ao backend:');
       console.log('[FlashCardLogic]    CorrectIds:', correctIds);
-      console.log('[FlashCardLogic]    Token (primeiros 20 chars):', storedToken ? storedToken.substring(0, 20) + '...' : 'não encontrado');
 
+      // Sem Authorization: o cookie `user_data` HttpOnly vai sozinho no fetch same-origin.
+      // ATENÇÃO: `api/games/flash-cards/route.ts` exporta só `GET` — este POST responde 405 e
+      // os acertos nunca chegaram ao backend. Bug de escopo próprio.
       const response = await fetch('/api/games/flash-cards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${storedToken}`,
         },
         body: JSON.stringify({ correctIds }),
       });

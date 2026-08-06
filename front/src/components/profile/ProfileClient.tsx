@@ -18,11 +18,9 @@ import useSWR from 'swr';
 import NotaCorteConsulta from "@/components/Simula_PRO/NotaCorteConsulta";
 import UserConfig from "@/components/profile/UserConfig";
 
+// Sem Authorization: o cookie `user_data` HttpOnly acompanha sozinho todo fetch same-origin.
 const fetcher = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('user_data') : '';
-  const res = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Falha ao carregar os dados do perfil.');
   return res.json();
 };
@@ -217,12 +215,10 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
       
       const fetchCutoff = async () => {
         try {
-          const storedToken = localStorage.getItem('user_data');
           const response = await fetch('/api/Nota-corte', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${storedToken}`,
             },
             body: JSON.stringify({ 
               userScore: profileData.stats.percentagem, 

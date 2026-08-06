@@ -236,12 +236,11 @@ const NotaCorteConsulta: React.FC<Props> = ({ userScore, defaultTargetCourse }) 
     setHasSearched(true);
     setError(null);
     try {
-      const storedToken = localStorage.getItem('user_data');
+      // Sem Authorization: o cookie `user_data` HttpOnly vai sozinho no fetch same-origin.
       const apiResponse = await fetch('/api/Nota-corte', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${storedToken}`,
         },
         body: JSON.stringify({
           userScore: userScore,

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { decodeJWT } from '@/app/service/jwtDecoder';
+import { readUserToken } from '@/app/service/sessionToken';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const transformExternalData = (geralData: any, performanceData: any[]) => {
@@ -34,8 +35,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const authHeader = request.headers.get('Authorization');
-    const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    // Header ou cookie `user_data` — ver `src/app/service/sessionToken.ts`.
+    const userToken = readUserToken(request);
 
     if (!userToken) {
       console.warn('[API_USER_STATS] ❌ Requisição sem token JWT.');

@@ -137,12 +137,13 @@ export default function SimulationQuizClient({
   const saveResultToBackend = useCallback(
     async (summaryData: SummaryData, errorsData: ErroDetalhado[], acertosData: AcertoDetalhado[]) => {
       try {
-        const storedToken = localStorage.getItem('user_data');
+        // Sem Authorization: o cookie `user_data` HttpOnly vai sozinho no fetch same-origin.
+        // ATENÇÃO: `/api/simulations/save-result` não existe no projeto — esta chamada sempre
+        // falhou e o resultado do simulado nunca chegou ao backend. Bug de escopo próprio.
         const response = await fetch("/api/simulations/save-result", {
           method: "POST",
-          headers: { 
+          headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${storedToken}`
           },
           body: JSON.stringify({ 
             summary: summaryData, 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse, CourseResult } from '@/types/nota-corte';
+import { readUserToken } from '@/app/service/sessionToken';
 
 export async function GET(request: Request) {
   const externalApiUrl = process.env.BACKEND_API_URL;
@@ -9,14 +10,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const authHeader = request.headers.get('Authorization');
-    let userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
-
-    if (!userToken) {
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      userToken = cookieStore.get('user_data')?.value || null;
-    }
+    // Header ou cookie `user_data`, lidos do próprio `Request` — o parser à mão com
+    // `next/headers` saiu daqui e virou `src/app/service/sessionToken.ts`, um lugar só.
+    const userToken = readUserToken(request);
 
     if (!userToken) {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -71,14 +67,9 @@ export async function POST(request: Request) {
 
   try {
     // 1. Lê o token JWT enviado pelo cliente no header Authorization ou via Cookies (para chamadas SWR Client-Side)
-    const authHeader = request.headers.get('Authorization');
-    let userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
-
-    if (!userToken) {
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      userToken = cookieStore.get('user_data')?.value || null;
-    }
+    // Header ou cookie `user_data`, lidos do próprio `Request` — o parser à mão com
+    // `next/headers` saiu daqui e virou `src/app/service/sessionToken.ts`, um lugar só.
+    const userToken = readUserToken(request);
 
     if (!userToken) {
       console.warn('[API_NOTA_CORTE] ❌ Requisição sem token JWT.');
@@ -110,7 +101,6 @@ export async function POST(request: Request) {
 
     console.log('[API_NOTA_CORTE] 📤 Enviando requisição GET ao backend:');
     console.log('[API_NOTA_CORTE]    URL:', backendUrl);
-    console.log('[API_NOTA_CORTE]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
 
     // 4. Faz a requisição ao backend externo com GET
     const apiResponse = await fetch(backendUrl, {
