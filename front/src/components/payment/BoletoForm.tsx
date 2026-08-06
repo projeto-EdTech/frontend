@@ -8,18 +8,23 @@
 import { Copy, Check, Download, Lock, Loader2, AlertCircle } from "lucide-react";
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { PENDING_PAYMENT_KEY } from '@/app/service/pendingPayment';
 
-// Dados do pagador que o componente recebe de fora (via props)
+// Dados do pagador que o componente recebe de fora (via props).
+// Sem e-mail de propósito: o titular da cobrança é o dono da sessão, resolvido no BFF Java.
+// Mesmo shape das rotas de cartão e PIX — um contrato só para os três métodos de pagamento.
 interface PayerData {
-    email: string;
-    firstName: string;
-    lastName: string;
-    docType: string; // Ex: 'CPF'
-    docNumber: string;
+    first_name: string;
+    last_name: string;
+    identification: {
+        type: string; // Ex: 'CPF'
+        number: string;
+    };
 }
 
 // Formato dos dados do boleto que esperamos da nossa API
 interface BoletoData {
+    payment_id: number | string;
     boleto_code: string;
     due_date: string;
     boleto_url: string;
@@ -39,10 +44,12 @@ interface AddressData {
 interface BoletoFormProps {
     payerData: PayerData;
     transactionAmount: number;
+    /** Plano comprado. Vai para a metadata do pagamento e é o que o webhook usa para ativar o tier. */
+    planId: string;
 }
 
 
-export default function BoletoForm({ payerData, transactionAmount }: BoletoFormProps) {
+export default function BoletoForm({ payerData, transactionAmount, planId }: BoletoFormProps) {
     // --- ESTADOS INTERNOS DO COMPONENTE ---
     const [address, setAddress] = useState<AddressData>({
         cep: '', rua: '', numero: '', bairro: '', cidade: '', estado: ''
@@ -103,7 +110,10 @@ export default function BoletoForm({ payerData, transactionAmount }: BoletoFormP
 
         try {
             const apiRequestBody = {
-                transaction_amount: transactionAmount,
+                // Valor e e-mail não vão daqui: o BFF Java resolve o preço na gateway e usa o
+                // e-mail da sessão. `transactionAmount` serve apenas para exibição.
+                // Sem o `planId` o webhook não sabe qual tier ativar quando o boleto for pago.
+                planId,
                 payer: {
                     ...payerData,
                     address: {
@@ -117,7 +127,7 @@ export default function BoletoForm({ payerData, transactionAmount }: BoletoFormP
                 }
             };
 
-            const response = await fetch('api/process-subscription/boleto', {
+            const response = await fetch('/api/process-subscription/boleto', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(apiRequestBody)
@@ -130,6 +140,21 @@ export default function BoletoForm({ payerData, transactionAmount }: BoletoFormP
             }
 
             setBoletoData(result);
+
+            // O boleto compensa em dias — o aluno fecha o navegador muito antes. Guardar o id
+            // é o que permite `usePendingPaymentReconciliation` perguntar de novo no próximo
+            // acesso e ativar o tier. Não é credencial: é o mesmo id que aparece na tela, e o
+            // servidor reconsulta o Mercado Pago antes de liberar qualquer coisa.
+            if (result?.payment_id) {
+                localStorage.setItem(
+                    PENDING_PAYMENT_KEY,
+                    JSON.stringify({
+                        gateway: 'mercadopago',
+                        paymentId: String(result.payment_id),
+                        criadoEm: Date.now(),
+                    })
+                );
+            }
 
         } catch (err: unknown) {
             console.error('--- ERRO AO GERAR BOLETO (FRONTEND) ---', err);

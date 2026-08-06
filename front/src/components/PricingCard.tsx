@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Rocket,
@@ -341,11 +341,70 @@ interface PricingPlansProps {
   isDark?: boolean;
 }
 
+/** Item de `/api/plans` — preço resolvido na Stripe. */
+interface PlanPricing {
+  id: string;
+  amountCents: number;
+  billingMode: "payment" | "subscription";
+  interval: "month" | "year" | null;
+  monthlyEquivalentCents: number;
+}
+
+/** Quebra um valor em reais nas partes inteira e decimal usadas pelo card. */
+function splitPreco(reais: number): { main: string; decimal: string } {
+  const [main, decimal] = reais.toFixed(2).split(".");
+  return { main, decimal: `,${decimal}` };
+}
+
 export const PricingPlans: React.FC<PricingPlansProps> = ({
   loading,
   onPlanClick,
   isDark = false,
 }) => {
+  // Os preços exibidos precisam ser os mesmos que a Stripe vai cobrar; os literais
+  // abaixo são apenas fallback caso a rota falhe.
+  const [pricing, setPricing] = useState<PlanPricing[] | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    fetch("/api/plans")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("falha"))))
+      .then((data) => {
+        if (!cancelado && Array.isArray(data?.plans)) setPricing(data.plans);
+      })
+      .catch((error) => console.error("Não foi possível carregar os preços:", error));
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const stripeAnual = pricing?.find((p) => p.id === "anual");
+  const stripeMensal = pricing?.find((p) => p.id === "mensal");
+
+  const anualEquivalenteMes = stripeAnual ? stripeAnual.monthlyEquivalentCents / 100 : 41.5;
+  const anualTotal = stripeAnual ? stripeAnual.amountCents / 100 : 497;
+  const mensalTotal = stripeMensal ? stripeMensal.amountCents / 100 : 50;
+
+  const anualPreco = splitPreco(anualEquivalenteMes);
+  const mensalPreco = splitPreco(mensalTotal);
+
+  // Preço "de" é o custo de 12 meses no plano mensal; só faz sentido se for maior.
+  const anualSemDesconto = mensalTotal * 12;
+  const anualOldPrice =
+    anualSemDesconto > anualTotal ? `R$ ${anualSemDesconto.toFixed(2)}` : undefined;
+
+  const anualCicloInfo =
+    stripeAnual?.billingMode === "payment"
+      ? `Pago anualmente (R$ ${anualTotal.toFixed(2)} à vista)`
+      : `Pago anualmente (R$ ${anualTotal.toFixed(2)}, renova todo ano)`;
+
+  const mensalCicloInfo =
+    stripeMensal?.billingMode === "payment"
+      ? "Cobrança única de 1 mês"
+      : "Cancele quando quiser";
+
   const plansData = [
     {
       title: "Gratuito",
@@ -377,11 +436,11 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
       subtitle: "Treine como um profissional",
       highlighted: true,
       badge: "Mais Popular",
-      oldPrice: "R$ 600",
-      priceMain: "41",
-      priceDecimal: ",50",
+      oldPrice: anualOldPrice,
+      priceMain: anualPreco.main,
+      priceDecimal: anualPreco.decimal,
       priceSuffix: "/mês",
-      billingCycleInfo: "Pago anualmente (R$ 497)",
+      billingCycleInfo: anualCicloInfo,
       icon: <Crown />,
       benefits: [
         {
@@ -419,9 +478,10 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({
     {
       title: "Simula Pro Mensal",
       subtitle: "Flexibilidade total",
-      priceMain: "50",
+      priceMain: mensalPreco.main,
+      priceDecimal: mensalPreco.decimal,
       priceSuffix: "/mês",
-      billingCycleInfo: "Cancele quando quiser",
+      billingCycleInfo: mensalCicloInfo,
       icon: <Gem className="text-gray-700" size={48} />,
       benefits: [
         {

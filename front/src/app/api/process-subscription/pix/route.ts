@@ -1,72 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { NextResponse } from 'next/server';
+import { readUserToken } from '@/app/service/sessionToken';
+import { callBff, sanitizeCheckoutBody, BFF_PAYMENT_PATHS } from '@/app/service/bffPayments';
 
-export async function POST(req: NextRequest) {
-  const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+/**
+ * PIX — proxy fino para o BFF Java.
+ *
+ * Mesmas regras da rota de cartão (`../credit-card`): o navegador manda `planId` e dados de
+ * identificação, o Java resolve o valor e cria a cobrança, e o QR code volta por aqui.
+ *
+ * A confirmação do PIX é assíncrona: `hooks/usePixPaymentStatus` pergunta a
+ * `../../subscriptions/activate` enquanto o QR está na tela, e o webhook direto no Java
+ * reconcilia quem fechou o navegador.
+ *
+ * CACHE STRATEGY: no-store — dados financeiros, sem cache
+ */
 
-  // Verifica se o token de acesso está configurado
-  if (!accessToken) {
-    console.error('ERRO CRÍTICO: MERCADO_PAGO_ACCESS_TOKEN não está definido.');
-    return NextResponse.json(
-      { message: 'A chave de acesso para pagamentos não está configurada no servidor.' },
-      { status: 500 }
-    );
-  }
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-  const client = new MercadoPagoConfig({
-    accessToken: accessToken,
-  });
+export async function POST(req: Request) {
+    const userToken = readUserToken(req);
 
-  try {
-    const bodyRequest = await req.json();
-    const { transaction_amount, payer } = bodyRequest;
-
-    if (!transaction_amount || !payer || !payer.email || !payer.identification?.number) {
-      return NextResponse.json(
-        { message: 'Dados insuficientes para criar o pagamento.' }, 
-        { status: 400 }
-      );
+    if (!userToken) {
+        console.warn('[API_PIX] Requisição sem sessão.');
+        return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
-    const payment = new Payment(client);
-    const paymentBody = {
-      transaction_amount: Number(transaction_amount),
-      description: 'Assinatura Simula Pro',
-      payment_method_id: 'pix',
-      payer: {
-        email: payer.email,
-        first_name: payer.first_name,
-        last_name: payer.last_name,
-        identification: {
-          type: payer.identification.type,
-          number: payer.identification.number,
-        },
-      },
-    };
+    const body = await req.json().catch(() => null);
 
-    const result = await payment.create({ body: paymentBody });
-
-    return NextResponse.json({
-      payment_id: result.id,
-      status: result.status,
-      qr_code: result.point_of_interaction?.transaction_data?.qr_code,
-      qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64,
-    }, { status: 201 });
-
-  } catch (error: unknown) {
-    console.error('--- ERRO AO CRIAR PAGAMENTO PIX ---', error);
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { message: error.message || 'Ocorreu um erro interno no servidor.' },
-        { status: 500 }
-      );
+    if (body === null) {
+        return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { message: 'Erro desconhecido ao criar o pagamento.' },
-      { status: 500 }
-    );
-  }
+    const { status, data } = await callBff(BFF_PAYMENT_PATHS.checkoutPix, {
+        method: 'POST',
+        body: sanitizeCheckoutBody(body),
+        userToken,
+    });
+
+    return NextResponse.json(data, { status });
 }
-
