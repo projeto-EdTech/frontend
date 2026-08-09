@@ -7,7 +7,6 @@ import { NextAuthProvider } from "./providers";
 import { ProfileIconProvider } from "@/contexts/ProfileIconContext";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import SyncUserEffect from "@/components/SyncUserEffect";
-import RankingUpNotification from "@/components/ranking/RankingUpNotification";
 import NavigationSound from "@/components/NavigationSound";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { UniversityStorage } from "@/contexts/UniversityStorage";
@@ -122,9 +121,6 @@ export default function RootLayout({
                   <SkipLink />
                   <Suspense fallback={null}>
                     <SyncUserEffect />
-                  </Suspense>
-                  <Suspense fallback={null}>
-                    <RankingUpNotification />
                   </Suspense>
                     <PHProvider>
                       {children}

@@ -1,5 +1,5 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { NextResponse } from 'next/server';
+import { readUserToken } from '@/app/service/sessionToken';
 
 export async function POST(req: Request) {
   if (!process.env.BACKEND_API_URL) {
@@ -8,12 +8,15 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 1. Pegamos o e-mail e o token que vieram do componente (client-side)
-    const { email, token: userToken } = await req.json();
+    // 1. O JWT sai da sessão (header ou cookie `user_data`), nunca do corpo. Um token que o
+    // cliente escolhe qual mandar é um token que ele pode trocar pelo de outro aluno.
+    const userToken = readUserToken(req);
 
     if (!userToken) {
       return NextResponse.json({ error: 'Não autorizado: Token do backend não encontrado.' }, { status: 401 });
     }
+
+    const { email } = await req.json();
 
     // 2. Enviar o e-mail para o back-end com o Bearer token do nosso backend
     const response = await fetch(`${process.env.BACKEND_API_URL}/usuarios/newsletter`, {

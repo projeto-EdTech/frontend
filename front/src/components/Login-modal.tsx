@@ -106,8 +106,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo, isRequired = f
             <button
               onClick={() => handleLogin("azure-ad")}
               disabled={!agreed || loadingProvider === "azure-ad"}
-              style={{ outline: 'none' }}
-              className="no-focus-ring group relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none outline-none text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] cursor-pointer"
+              className="group relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] cursor-pointer"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-microsoft" viewBox="0 0 16 16">
@@ -120,8 +119,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo, isRequired = f
             <button
               onClick={() => handleLogin("google")}
               disabled={!agreed || loadingProvider === "google"}
-              style={{ outline: 'none' }}
-              className="no-focus-ring group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none outline-none text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-red-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
+              className="group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-red-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" viewBox="0 0 16 16">
@@ -134,8 +132,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo, isRequired = f
             <button
               onClick={() => handleLogin("facebook")}
               disabled={!agreed || loadingProvider === "facebook"}
-              style={{ outline: 'none' }}
-              className="no-focus-ring group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none outline-none text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
+              className="group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" viewBox="0 0 16 16">
@@ -148,8 +145,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo, isRequired = f
             <button
               onClick={() => handleLogin("discord")}
               disabled={!agreed || loadingProvider === "discord"}
-              style={{ outline: 'none' }}
-              className="no-focus-ring group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none outline-none text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
+              className="group cursor-pointer relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-5 shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-discord" viewBox="0 0 16 16">
@@ -166,7 +162,7 @@ export default function LoginModal({ isOpen, onClose, redirectTo, isRequired = f
                 id="terms-agreed"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="peer sr-only outline-none"
+                className="peer sr-only"
               />
               <span className="w-5 h-5 flex items-center justify-center rounded-md border-2 border-purple-500 bg-white dark:bg-gray-900 transition-all duration-200 peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-500 peer-checked:border-transparent shadow-sm peer-checked:shadow-[0_0_0_3px_rgba(168,85,247,0.15)]">
                 <svg

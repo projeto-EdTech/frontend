@@ -1,6 +1,6 @@
 import React from 'react';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/core/auth";
+import { authOptions } from "@/lib/auth";
 
 export default async function UniversitiesCountBadge() {
   const session = await getServerSession(authOptions);
@@ -8,7 +8,7 @@ export default async function UniversitiesCountBadge() {
   let hasError = false;
 
   try {
-    const externalApiUrl = process.env.BACKEND_API_URL;
+    const externalApiUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
     
     // Tentamos buscar do backend diretamente se as variaveis e a sessao existirem
     if (session?.accessToken) {

@@ -1,45 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { routePayment, pixGateways } from '@/app/service/payment/payment-router.service';
-import { GatewayError } from '@/app/service/payment/payment-gateway.types';
+import { NextResponse } from 'next/server';
+import { readUserToken } from '@/app/service/sessionToken';
+import { callBff, sanitizeCheckoutBody, BFF_PAYMENT_PATHS } from '@/app/service/bffPayments';
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { transaction_amount, payer } = body;
+/**
+ * PIX — proxy fino para o BFF Java.
+ *
+ * Mesmas regras da rota de cartão (`../credit-card`): o navegador manda `planId` e dados de
+ * identificação, o Java resolve o valor e cria a cobrança, e o QR code volta por aqui.
+ *
+ * A confirmação do PIX é assíncrona: `hooks/usePixPaymentStatus` pergunta a
+ * `../../subscriptions/activate` enquanto o QR está na tela, e o webhook direto no Java
+ * reconcilia quem fechou o navegador.
+ *
+ * CACHE STRATEGY: no-store — dados financeiros, sem cache
+ */
 
-    if (!transaction_amount || !payer?.email) {
-      return NextResponse.json(
-        { message: 'Dados insuficientes para criar o pagamento PIX.' },
-        { status: 400 },
-      );
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: Request) {
+    const userToken = readUserToken(req);
+
+    if (!userToken) {
+        console.warn('[API_PIX] Requisição sem sessão.');
+        return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
-    const result = await routePayment(
-      gw => gw.createPixPayment({
-        email: payer.email,
-        amount: Number(transaction_amount),
-        planId: body.planId ?? 'mensal',
-        payerIdentification: payer.identification,
-      }),
-      pixGateways(),
-    );
+    const body = await req.json().catch(() => null);
 
-    return NextResponse.json({
-      payment_id: result.paymentId,
-      status: result.status,
-      qr_code: result.qrCode,
-      qr_code_base64: result.qrCodeBase64,
-      gateway: result.gateway,
-    }, { status: 201 });
-
-  } catch (err: unknown) {
-    console.error('[pix/route] Erro ao criar pagamento PIX:', err);
-
-    if (err instanceof GatewayError && err.status < 500) {
-      return NextResponse.json({ message: err.message }, { status: err.status });
+    if (body === null) {
+        return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 });
     }
 
-    const message = err instanceof Error ? err.message : 'Erro interno ao processar pagamento.';
-    return NextResponse.json({ message }, { status: 503 });
-  }
+    const { status, data } = await callBff(BFF_PAYMENT_PATHS.checkoutPix, {
+        method: 'POST',
+        body: sanitizeCheckoutBody(body),
+        userToken,
+    });
+
+    return NextResponse.json(data, { status });
 }

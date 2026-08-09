@@ -76,41 +76,6 @@ export const colorMappings: ColorMappings = {
   "bg-orange-50": { shadow: "rgba(249, 115, 22, 0.25)", background: "#fff7ed", borderHex: "#ffedd5", colorHex: "#c2410c" },
 };
 
-// =============================================================================
-// HELPER VISUAL DE MATÉRIA (fonte única: subjects + colorMappings)
-// =============================================================================
-export interface MateriaVisual {
-  icon: string;
-  bgColor: string;
-  colorHex: string;
-}
-
-// Normaliza para casar nomes independente de acento/caixa/espaços.
-const normalizeMateria = (s: string): string =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .trim()
-    .toLowerCase();
-
-/**
- * Retorna o visual (ícone Enigma + cor) de uma matéria a partir do seu nome.
- * Combina `subjects` (name → icon/bgColor) com `colorMappings` (bgColor → colorHex).
- * Sem correspondência → null (a UI deve usar um fallback genérico, ex.: BookOpen).
- */
-export function getMateriaVisual(materia: string): MateriaVisual | null {
-  if (!materia) return null;
-  const target = normalizeMateria(materia);
-  const subject = subjects.find((s) => normalizeMateria(s.name) === target);
-  if (!subject) return null;
-  const colors = colorMappings[subject.bgColor];
-  return {
-    icon: subject.icon,
-    bgColor: subject.bgColor,
-    colorHex: colors?.colorHex ?? "#374151",
-  };
-}
-
 export const subjects: Subject[] = [
   { id: "matematica", name: "Matemática", icon: "∑", color: "text-blue-700", bgColor: "bg-blue-50", borderColor: "border-blue-100" },
   { id: "fisica", name: "Física", icon: "⚛", color: "text-indigo-700", bgColor: "bg-indigo-50", borderColor: "border-indigo-100" },

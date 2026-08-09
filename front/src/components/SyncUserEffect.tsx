@@ -3,14 +3,33 @@
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { decodeJWT } from "@/app/service/jwtDecoder";
+import { usePendingPaymentReconciliation } from "@/hooks/usePendingPaymentReconciliation";
+import { PENDING_PAYMENT_KEY } from "@/app/service/pendingPayment";
+import { fetchUserClaims, notifyUserSynced } from "@/lib/userClaims";
 // GA4: serviço centralizado de analytics (no-op seguro em dev e SSR)
-import { setUserId, trackLogin, resetAnalytics } from "@/lib/core/analytics";
+import { setUserId, trackLogin, resetAnalytics } from "@/lib/analytics";
+
+/** Cópia legada do JWT no localStorage. Ver a limpeza no efeito de migração abaixo. */
+const CHAVE_LEGADA_DO_JWT = "user_data";
 
 export default function SyncUserEffect() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const syncingRef = useRef(false);
+
+  // Boleto pago dias atrás vira PRO aqui: este componente já roda global e já é o dono do
+  // fluxo de sincronização. Só depois de autenticado — a rota de ativação exige sessão.
+  usePendingPaymentReconciliation(status === "authenticated");
+
+  // Migração: o JWT já foi gravado no localStorage por versões anteriores. Parar de escrever
+  // não apaga o que ficou lá — e enquanto ficar, qualquer script na página consegue lê-lo.
+  // Roda uma vez por carregamento, independente do estado da sessão.
+  useEffect(() => {
+    if (localStorage.getItem(CHAVE_LEGADA_DO_JWT)) {
+      localStorage.removeItem(CHAVE_LEGADA_DO_JWT);
+      console.log("[SyncUserEffect] 🧹 Cópia antiga do JWT removida do localStorage");
+    }
+  }, []);
 
   useEffect(() => {
     // 1. Limpeza ao deslogar
@@ -19,12 +38,16 @@ export default function SyncUserEffect() {
       resetAnalytics();
 
       const keysToClear = [
-        "user_data",
+        // Mantida por segurança: cobre quem ainda tiver a cópia legada gravada.
+        CHAVE_LEGADA_DO_JWT,
+        // Reconciliação de boleto é por aluno: deixar a entrada de um faria a próxima
+        // sessão perguntar pelo pagamento de outro (e levar 403).
+        PENDING_PAYMENT_KEY,
         "flashcard_count",
         "flashcard_last_date",
         "flashcard_daily_stats"
       ];
-      
+
       let cleared = false;
       keysToClear.forEach(key => {
         if (localStorage.getItem(key)) {
@@ -44,77 +67,50 @@ export default function SyncUserEffect() {
 
     // 2. Sincronização ao logar
     if (status === "authenticated") {
-        const email = session?.user?.email || "";
-        // Verifica se já temos o JWT deste usuário no localStorage
-        const storedToken = localStorage.getItem("user_data");
-        let alreadySynced = false;
-
-        if (storedToken) {
-            const decoded = decodeJWT(storedToken);
-            // Verifica se o token pertence ao mesmo usuário, tem ID e usa o campo 'tipo' correto
-            const hasTipo = decoded && typeof decoded.tipo !== "undefined";
-            
-            // Verificação adicional: o cookie 'user_data' também deve existir para que os Server Components funcionem
-            const hasCookie = document.cookie.split(';').some(c => c.trim().startsWith('user_data='));
-
-            if (decoded && decoded.email === email && decoded.id && hasTipo && hasCookie) {
-                alreadySynced = true;
-            }
-        }
-        
-        // Se já sincronizou e tem o cookie necessário, não precisa chamar novamente
-        if (alreadySynced) return;
-        
         if (syncingRef.current) return;
         syncingRef.current = true;
 
         (async () => {
         try {
+            // Já existe JWT deste usuário no cookie? Quem sabe é o servidor, que lê o cookie
+            // HttpOnly — o cliente não tem o token para conferir por conta própria.
+            const claims = await fetchUserClaims();
+            const email = session?.user?.email || "";
+
+            if (claims && claims.email === email && claims.id) {
+                return;
+            }
+
             const res = await fetch("/api/sync-user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
             });
 
-            if (res.ok) {
-                const data = await res.json();
-                // O backend retorna uma string JWT ou { token: "..." }
-                const token = typeof data === 'string' ? data : data.token;
-                
-                if (token) {
-                    localStorage.setItem("user_data", token);
-                    console.log("[SyncUserEffect] JWT do usuário salvo no localStorage");
-
-                    // GA4: identifica o usuário pelo UUID do banco (nunca e-mail/CPF)
-                    // e registra o evento de login para métricas de retenção
-                    const decoded = decodeJWT(token);
-                    if (decoded?.id) {
-                        setUserId(decoded.id, decoded.tipo);
-                        trackLogin('oauth');
-                    }
-
-                    // Sincroniza dados de destino com sessionStorage do perfil
-                    const targetExam = decoded?.prova_alvo || decoded?.targetExam || data?.prova_alvo || data?.targetExam || "";
-                    const targetCourse = decoded?.curso_alvo || decoded?.targetCourse || data?.curso_alvo || data?.targetCourse || "";
-                    const institution = decoded?.instituicao || decoded?.institution || data?.instituicao || data?.institution || "";
-
-                    if (targetExam || targetCourse || institution) {
-                      const profileSettings = {
-                        profileIcon: decoded?.profileIcon || "Avatar/Camaleão_1.png",
-                        useInitialAvatar: decoded?.useInitialAvatar ?? true,
-                        institution,
-                        targetExam,
-                        targetCourse,
-                      };
-                      sessionStorage.setItem("userProfileSettings", JSON.stringify(profileSettings));
-                      sessionStorage.setItem("user_profile_data", JSON.stringify(profileSettings));
-                      console.log("[SyncUserEffect] 🔄 Configurações de destino do usuário sincronizadas do backend:", profileSettings);
-                    }
-                } else {
-                    console.warn("[SyncUserEffect] Token não encontrado na resposta");
-                }
-            } else {
+            if (!res.ok) {
                 console.warn("[SyncUserEffect] Erro na resposta da API:", res.status);
+                return;
             }
+
+            // O JWT não volta no corpo — vai só para o cookie HttpOnly. A resposta traz
+            // apenas o que o cliente usa: identificação para os analytics.
+            const data = await res.json();
+
+            if (!data?.ok) {
+                console.warn("[SyncUserEffect] Backend não devolveu sessão");
+                return;
+            }
+
+            console.log("[SyncUserEffect] Sessão sincronizada (JWT no cookie HttpOnly)");
+
+            // GA4: identifica o usuário pelo UUID do banco (nunca e-mail/CPF)
+            // e registra o evento de login para métricas de retenção
+            if (data.id) {
+                setUserId(data.id, data.tipo);
+                trackLogin('oauth');
+            }
+
+            // Avisa a aba: `useUserTier` refaz a leitura sem esperar reload.
+            notifyUserSynced();
         } catch (e) {
             console.error("Falha ao sincronizar usuário (effect)", e);
         } finally {

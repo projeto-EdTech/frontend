@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingScreen from "@/components/LoadingScreen";
 import LoginModal from "@/components/Login-modal";
-import { minigamesData } from "@/lib/games/games";
+import { minigamesData } from "@/lib/Data_games";
 import { Gamepad2, Trophy, Target, Zap, Crown, Star, Clock, TrendingUp, Lock, SpellCheck, Grid3x3, CircleHelp, } from "lucide-react";
 
 // Helper function para retornar o ícone correto

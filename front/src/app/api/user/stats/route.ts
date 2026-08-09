@@ -1,103 +1,28 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { getCachedStats, setCachedStats, type TransformedStats } from '@/lib/store/userStatsCache';
 import { decodeJWT } from '@/app/service/jwtDecoder';
-import { getDiscordLinked } from '@/lib/core/discordLinked';
-
-// Lê o flag de conta Discord vinculada do JWT user_data (HttpOnly).
-// Decodificação SEMPRE via jwtDecoder (regra de segurança do projeto).
-async function readDiscordLinked(): Promise<number> {
-  const userData = (await cookies()).get('user_data')?.value;
-  return getDiscordLinked(userData ? decodeJWT(userData) : null);
-}
-
-// CACHE STRATEGY: in-memory TTL 5min — user-specific, key=userId from JWT sub/email
-
-function extractUserId(token: string): string | null {
-  try {
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
-    return payload.sub ?? payload.email ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function paginate(data: TransformedStats, page: number, limit: number) {
-  const total = data.recentExams.length;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
-  const start = (page - 1) * limit;
-  const slice = data.recentExams.slice(start, start + limit);
-  return NextResponse.json({
-    ...data,
-    recentExams: slice,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrev: page > 1,
-    },
-  });
-}
+import { readUserToken } from '@/app/service/sessionToken';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const transformExternalData = (apiData: any): TransformedStats => {
-  const createTrendObject = (value: number) => ({
-    value: Math.abs(value),
-    type: value >= 0 ? 'up' : 'down',
-  }) as { value: number; type: 'up' | 'down' };
-
+const transformExternalData = (geralData: any, performanceData: any[]) => {
   return {
     stats: {
-      simulados: apiData.user_statistics?.simulations_completed || 0,
-      questoes: apiData.user_statistics?.questions_answered || 0,
-      acertos: apiData.user_statistics?.correct_answers || 0,
-      percentagem: apiData.user_statistics?.hit_percentage || 0,
-      trend_simulados: createTrendObject(apiData.user_statistics?.simulations_trend || 0),
-      trend_questoes: createTrendObject(apiData.user_statistics?.questions_trend || 0),
-      trend_acertos: createTrendObject(apiData.user_statistics?.answers_trend || 0),
-      trend_percentagem: createTrendObject(apiData.user_statistics?.percentage_trend || 0),
+      simulados: geralData.totalSimulados || 0,
+      questoes: geralData.totalQuestoes || 0,
+      acertos: geralData.totalAcertos || 0,
+      percentagem: geralData.percentualAcertos || 0,
+      trend_simulados: { value: 0, type: 'up' as const },
+      trend_questoes: { value: 0, type: 'up' as const },
+      trend_acertos: { value: 0, type: 'up' as const },
+      trend_percentagem: { value: 0, type: 'up' as const },
     },
+    recentExams: [],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recentExams: (apiData.last_exams || []).map((exam: any) => ({
-      name: exam.exam_name || 'Simulado',
-      date: exam.completed_at || 'Data não informada',
-      score: exam.final_score || 0,
-      totalQuestions: exam.total_questions ?? undefined,
-      correctAnswers: exam.correct_answers ?? undefined,
-      incorrectAnswers: exam.wrong_answers ?? exam.incorrect_answers ?? undefined,
-      timeUsed: exam.time_spent ?? exam.time_used ?? undefined,
-      accuracy: exam.hit_percentage ?? exam.accuracy ?? undefined,
+    subjectPerformance: performanceData.map((item: any) => ({
+      subject: item.nomeMateria || 'Matéria',
+      percentage: item.percentualAcertos || 0,
     })),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    subjectPerformance: (apiData.performance_by_subject || []).map((subject: any) => ({
-      subject: subject.discipline || 'Matéria',
-      percentage: subject.accuracy || 0,
-      icon: subject.image_url || '/default-icon.svg',
-    })),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    monthlyProgress: (apiData.monthly_performance_data || []).map((monthlyPoint: any) => {
-      const date = new Date(monthlyPoint.mes);
-      const label = date.toLocaleString('pt-BR', { month: 'short', year: '2-digit' });
-      const value = Math.round(monthlyPoint.pontuacaoMedia || 0);
-      return { label, value };
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    reviewableQuestions: (apiData.incorrectly_answered_questions || []).map((item: any) => {
-      const nomeProva = item.questao?.prova?.nome || 'Prova';
-      const anoProva = item.questao?.prova?.ano || '';
-      const materia = item.questao?.materia || 'Matéria';
-      const conteudo = item.questao?.conteudo || 'Geral';
-      return {
-        id: item.id || `q-${Math.random()}`,
-        enunciado: item.questao?.enunciado || 'Enunciado não disponível.',
-        suaResposta: item.respostaDoUsuario || 'Não respondeu.',
-        gabarito: item.questao?.gabarito || 'Gabarito não disponível.',
-        displayLabel: `${nomeProva} ${anoProva}`.trim(),
-        displaySubject: `${materia} — ${conteudo}`,
-      };
-    }),
+    monthlyProgress: [],
+    reviewableQuestions: [],
   };
 };
 
@@ -110,80 +35,64 @@ export async function GET(request: Request) {
   }
 
   try {
-    const authHeader = request.headers.get('Authorization');
-    const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    // Header ou cookie `user_data` — ver `src/app/service/sessionToken.ts`.
+    const userToken = readUserToken(request);
 
     if (!userToken) {
       console.warn('[API_USER_STATS] ❌ Requisição sem token JWT.');
       return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const page  = Math.max(1, Number(searchParams.get('page')  ?? 1));
-    const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit') ?? 3)));
+    const decodedToken = decodeJWT(userToken);
+    const userId = decodedToken?.id;
 
-    const userId = extractUserId(userToken);
-    const discordLinked = await readDiscordLinked();
-
-    if (userId) {
-      const cached = getCachedStats(userId);
-      if (cached) {
-        console.log('[API_USER_STATS] ✅ Cache hit para userId:', userId.substring(0, 8) + '...');
-        cached.stats.discordLinked = discordLinked;
-        return paginate(cached, page, limit);
-      }
+    if (!userId) {
+      console.error('[API_USER_STATS] ❌ Não foi possível extrair o UserID do token.');
+      return NextResponse.json({ error: 'Erro ao processar identificação do usuário.' }, { status: 400 });
     }
 
-    const backendUrl = `${externalApiUrl}/user-data`;
+    const authHeaders = { 'Authorization': `Bearer ${userToken}` };
 
-    console.log('[API_USER_STATS] 📤 Enviando requisição ao backend:');
-    console.log('[API_USER_STATS]    URL:', backendUrl);
-    console.log('[API_USER_STATS]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
+    const urlGeral = `${externalApiUrl}/usuarios/${userId}/estatisticas/geral`;
+    const urlPerformance = `${externalApiUrl}/usuarios/${userId}/estatisticas/performance-materia`;
 
-    const apiResponse = await fetch(backendUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${userToken}`,
-      },
-      cache: 'no-store',
-    });
+    console.log('[API_USER_STATS] 📤 Requisição ao backend:');
+    console.log('[API_USER_STATS]    Backend URL (base):', externalApiUrl);
+    console.log('[API_USER_STATS]    UserID:', userId);
+    console.log('[API_USER_STATS]    Endpoint 1:', urlGeral);
+    console.log('[API_USER_STATS]    Endpoint 2:', urlPerformance);
 
-    console.log('[API_USER_STATS] 📥 Resposta recebida do backend:');
-    console.log('[API_USER_STATS]    Status:', apiResponse.status, apiResponse.statusText);
+    const [geralResponse, performanceResponse] = await Promise.all([
+      fetch(urlGeral, { headers: authHeaders, cache: 'no-store' }),
+      fetch(urlPerformance, { headers: authHeaders, cache: 'no-store' }),
+    ]);
 
-    const contentType = apiResponse.headers.get('content-type');
+    console.log('[API_USER_STATS] 📥 Respostas recebidas:');
+    console.log('[API_USER_STATS]    /estatisticas/geral →', geralResponse.status, geralResponse.statusText);
+    console.log('[API_USER_STATS]    /estatisticas/performance-materia →', performanceResponse.status, performanceResponse.statusText);
 
-    let rawData;
-    if (contentType && contentType.includes('application/json')) {
-      rawData = await apiResponse.json();
-      console.log('[API_USER_STATS]    Content-Type: application/json');
-      console.log('[API_USER_STATS]    Dados recebidos (raw):', JSON.stringify(rawData).substring(0, 300) + (JSON.stringify(rawData).length > 300 ? '...' : ''));
-    } else {
-      const textData = await apiResponse.text();
-      console.warn('[API_USER_STATS] ⚠️  Resposta não-JSON do backend:', textData);
-      return NextResponse.json(
-        { error: textData || 'O servidor de destino não enviou uma resposta legível.' },
-        { status: apiResponse.status }
-      );
+    if (!geralResponse.ok) {
+      const errorData = await geralResponse.json().catch(() => ({}));
+      console.error('[API_USER_STATS] ❌ Erro em /estatisticas/geral. Status:', geralResponse.status, '| Body:', JSON.stringify(errorData));
+      return NextResponse.json({ error: errorData?.message || 'Erro ao buscar estatísticas gerais.' }, { status: geralResponse.status });
     }
 
-    if (!apiResponse.ok) {
-      console.error('[API_USER_STATS] ❌ Erro retornado pelo backend. Status:', apiResponse.status, '| Mensagem:', rawData?.message);
-      return NextResponse.json(
-        { error: rawData?.message || 'Ocorreu um erro no servidor de destino.' },
-        { status: apiResponse.status }
-      );
+    if (!performanceResponse.ok) {
+      const errorData = await performanceResponse.json().catch(() => ({}));
+      console.error('[API_USER_STATS] ❌ Erro em /estatisticas/performance-materia. Status:', performanceResponse.status, '| Body:', JSON.stringify(errorData));
+      return NextResponse.json({ error: errorData?.message || 'Erro ao buscar performance por matéria.' }, { status: performanceResponse.status });
     }
 
-    const formattedData = transformExternalData(rawData);
+    const [geralData, performanceData] = await Promise.all([
+      geralResponse.json(),
+      performanceResponse.json(),
+    ]);
 
-    if (userId) {
-      setCachedStats(userId, formattedData);
-    }
+    console.log('[API_USER_STATS] ✅ Dados recebidos:');
+    console.log('[API_USER_STATS]    geral:', JSON.stringify(geralData));
+    console.log('[API_USER_STATS]    performance-materia:', JSON.stringify(performanceData).substring(0, 300) + (JSON.stringify(performanceData).length > 300 ? '...' : ''));
 
-    console.log('[API_USER_STATS] ✅ Sucesso! Dados adaptados e retornando ao frontend.');
-
-    return paginate(formattedData, page, limit);
+    return NextResponse.json(transformExternalData(geralData, performanceData));
 
   } catch (error) {
     console.error('[API_USER_STATS_ERROR] Erro de comunicação com o back-end:', error);

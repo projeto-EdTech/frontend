@@ -1,51 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getMercadoPagoGateway, getStripeGateway } from '@/app/service/payment/payment-router.service';
-import { GatewayError } from '@/app/service/payment/payment-gateway.types';
-import type { PaymentGatewayType } from '@/app/service/payment/payment-gateway.types';
+import { NextResponse } from 'next/server';
+import { readUserToken } from '@/app/service/sessionToken';
+import { callBff, sanitizeCheckoutBody, BFF_PAYMENT_PATHS } from '@/app/service/bffPayments';
 
-// Credit card tokens are gateway-specific (Stripe PM ID ≠ MP card token).
-// The client sends gatewayHint matching whichever form was rendered based on health check.
-// No server-side gateway fallback here — wrong token format would just fail anyway.
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
+/**
+ * Cartão de crédito — proxy fino para o BFF Java.
+ *
+ * Passos 1 a 3 do fluxo de `docs/Pauta_para_reuniao.md` §2: o navegador manda `planId`, o Java
+ * resolve o preço na fonte de verdade, cria a cobrança e devolve o `clientSecret`. Daqui não
+ * sai chamada a gateway nenhuma — preço, idempotência e criação da assinatura vivem no Java.
+ *
+ * O cartão em si nunca toca servidor algum: o Payment Element tokeniza direto com a Stripe no
+ * navegador, usando o `clientSecret` que esta rota apenas repassa (passo 4).
+ *
+ * CACHE STRATEGY: no-store — dados financeiros, sem cache
+ */
 
-    if (!body.token || !body.transaction_amount) {
-      return NextResponse.json(
-        { message: 'Token e valor são obrigatórios.' },
-        { status: 400 },
-      );
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: Request) {
+    // Cobrança é ação de usuário autenticado. Barrar aqui evita uma ida ao BFF, mas quem
+    // realmente valida o JWT é o Java.
+    const userToken = readUserToken(req);
+
+    if (!userToken) {
+        console.warn('[API_CARD] Requisição sem sessão.');
+        return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
-    const hint: PaymentGatewayType = body.gatewayHint ?? 'stripe';
-    const gw = hint === 'mercadopago' ? getMercadoPagoGateway() : getStripeGateway();
+    const body = await req.json().catch(() => null);
 
-    const result = await gw.createCreditCardPayment({
-      token: body.token,
-      email: body.payer?.email ?? '',
-      amount: Number(body.transaction_amount),
-      planId: body.planId ?? body.description ?? 'mensal',
-      installments: body.installments ?? 1,
-      issuerId: body.issuer_id,
-      paymentMethodId: body.payment_method_id,
-      payer: body.payer,
-      gatewayHint: hint,
+    if (body === null) {
+        return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 });
+    }
+
+    const { status, data } = await callBff(BFF_PAYMENT_PATHS.checkoutCard, {
+        method: 'POST',
+        body: sanitizeCheckoutBody(body),
+        userToken,
     });
 
-    return NextResponse.json({
-      payment_id: result.paymentId,
-      status: result.status,
-      gateway: result.gateway,
-    }, { status: 200 });
-
-  } catch (err: unknown) {
-    console.error('[credit-card/route] Erro ao processar cartão:', err);
-
-    if (err instanceof GatewayError && err.status < 500) {
-      return NextResponse.json({ message: err.message }, { status: err.status });
-    }
-
-    const message = err instanceof Error ? err.message : 'Erro interno ao processar pagamento.';
-    return NextResponse.json({ message }, { status: 503 });
-  }
+    return NextResponse.json(data, { status });
 }

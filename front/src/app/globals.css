@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
 /* 
  * TIPOGRAFIA GLOBAL - macOS System Font (San Francisco)
  * Aplicando a fonte do sistema Apple em todos os elementos
@@ -107,8 +105,6 @@ html {
   --button-text: #ffffff;
   --shadow: rgba(0, 0, 0, 0.1);
   --shadow-hover: rgba(0, 0, 0, 0.15);
-  --clay-highlight: rgba(255, 255, 255, 0.6);
-  --clay-shadow: rgba(0, 0, 0, 0.08);
 }
 
 :root[data-theme="dark"] {
@@ -131,8 +127,6 @@ html {
   --button-text: #ffffff;
   --shadow: rgba(0, 0, 0, 0.5);
   --shadow-hover: rgba(0, 0, 0, 0.7);
-  --clay-highlight: rgba(255, 255, 255, 0.1);
-  --clay-shadow: rgba(0, 0, 0, 0.35);
 }
 
 /* Fallback para quando não há tema definido */
@@ -152,40 +146,6 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
-}
-
-/* ===== ESTILOS CLAYMORPHISM ===== */
-.clay-button {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.7),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-[data-theme="dark"] .clay-button {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.25),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.45);
-}
-
-.clay-button:hover {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.75),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.20),
-    0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-[data-theme="dark"] .clay-button:hover {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.3),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.5),
-    0 8px 20px rgba(0, 0, 0, 0.4);
-}
-
-.clay-card {
-  box-shadow: 
-    inset 1px 1px 3px var(--clay-highlight),
-    inset -1px -1px 3px var(--clay-shadow);
 }
 
 /* ===== CLASSES OTIMIZADAS PARA PERFORMANCE ===== */
@@ -2415,19 +2375,6 @@ html.text-spacing-enabled * {
     box-shadow 0.1s ease-in-out;
 }
 
-/* Elements that opt out of focus ring (e.g. login modal social buttons) */
-.no-focus-ring,
-.no-focus-ring:focus,
-.no-focus-ring:focus-visible {
-  outline: none !important;
-}
-
-/* Also override the focus-guide blue box-shadow for opted-out elements */
-:root.focus-guide-enabled .no-focus-ring:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
 /* Estilos para o link "Pular para o Conteúdo" */
 .skip-link {
   position: absolute;
@@ -2771,24 +2718,4 @@ aside ::-webkit-scrollbar-thumb:hover {
 
 .keyboard-row-3 {
   animation-delay: 0.3s;
-}
-
-/* ===== RANK AVATAR FRAME ===== */
-.rank-frame-diamante {
-  box-shadow: 0 0 13px 3px rgba(51, 173, 231, 0.75);
-  border: 2px solid rgba(6, 182, 212, 0.85);
-}
-
-.rank-frame-ouro {
-  box-shadow: 0 0 10px 3px rgba(243, 185, 22, 0.65);
-  border: 2px solid rgba(234, 179, 8, 0.85);
-}
-
-.rank-frame-prata {
-  box-shadow: 0 0 7px 1.5px rgba(176, 188, 205, 0.55);
-  border: 2px solid rgba(148, 163, 184, 0.75);
-}
-
-.rank-frame-bronze {
-  border: 2px solid rgba(194, 120, 60, 0.75);
 }

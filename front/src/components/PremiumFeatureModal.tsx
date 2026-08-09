@@ -110,7 +110,7 @@ export default function PremiumFeatureModal({
                     Desbloqueie o poder da IA
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    O VestIA é exclusivo para assinantes do plano <span className="font-semibold text-purple-600">Simula PRO</span>. 
+                    O VestIA é exclusivo para assinantes do plano <span className="font-semibold text-purple-600">SimulaPRO</span>. 
                     Tenha acesso ilimitado ao seu tutor pessoal de IA.
                   </p>
                 </div>
@@ -146,7 +146,7 @@ export default function PremiumFeatureModal({
                 
                 <div className="relative flex items-center justify-center gap-2">
                   <Crown className="w-5 h-5" />
-                  <span>Fazer Upgrade para Simula PRO</span>
+                  <span>Fazer Upgrade para SimulaPRO</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
               </button>

@@ -1,22 +1,12 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { decodeJWT } from "@/app/service/jwtDecoder";
 
 export async function POST(req: Request) {
   // Obtém o token da sessão (JWT decodificado pelo next-auth)
   // getToken typing expects NextRequest/NextApiRequest; cast via unknown -> NextRequest to avoid 'any'
   const token = await getToken({ req: req as unknown as NextRequest, secret: process.env.NEXTAUTH_SECRET });
-
-  console.log("[sync-user][TOKEN] token completo (decodificado):", JSON.stringify(token, null, 2));
-  console.log("[sync-user][TOKEN] googleAccount:", JSON.stringify(token?.googleAccount, null, 2));
-
-  // JWT bruto completo (string assinada), sem decodificar
-  const rawToken = await getToken({
-    req: req as unknown as NextRequest,
-    secret: process.env.NEXTAUTH_SECRET,
-    raw: true,
-  });
-  console.log("[sync-user][TOKEN] JWT bruto completo:", rawToken);
-
+  
   if (!token?.googleAccount) {
     console.log("[sync-user][ABORT] googleAccount ausente no token");
     return NextResponse.json(
@@ -35,9 +25,6 @@ export async function POST(req: Request) {
 
   try {
     const idToken = (token.googleAccount as any)?.id_token;
-    console.log("[sync-user][GOOGLE] id_token extraído:", idToken);
-    console.log("[sync-user][GOOGLE] access_token:", (token.googleAccount as any)?.access_token);
-    console.log("[sync-user][GOOGLE] refresh_token:", (token.googleAccount as any)?.refresh_token);
 
     if (!idToken) {
       console.log("[sync-user][ABORT] id_token ausente no googleAccount");
@@ -51,9 +38,6 @@ export async function POST(req: Request) {
     const payload = {
       token: idToken
     };
-
-    console.log("[sync-user][BFF] enviando payload:", JSON.stringify(payload, null, 2));
-    console.log("[sync-user][BFF] URL destino:", `${process.env.BACKEND_API_URL}/auth/google`);
 
     // Faz a chamada ao backend na rota especificada
     const response = await fetch(`${process.env.BACKEND_API_URL}/auth/google`, {
@@ -74,25 +58,29 @@ export async function POST(req: Request) {
       backendData = await response.text();
     }
 
-    console.log("[sync-user][BFF] status:", response.status);
-    console.log("[sync-user][BFF] resposta:", JSON.stringify(backendData, null, 2));
-
     if (!response.ok) {
-       return NextResponse.json(
-        {
-          message: "Erro no backend ao sincronizar usuário",
-          details: backendData,
-        },
+      // Sem repassar `backendData`: o corpo do Java pode carregar host, stack ou nome de
+      // classe interna, e esta é a única barreira entre ele e a tela do aluno.
+      console.error("[sync-user][ERROR] Backend respondeu", response.status, backendData);
+      return NextResponse.json(
+        { message: "Não foi possível sincronizar sua conta. Tente novamente." },
         { status: response.status }
       );
     }
 
-    // Retorna a resposta exata do backend. 
-    // Se o backend envia uma string (JWT), backendData será essa string.
-    // Se o backend envia um objeto { token: "..." }, retornamos o objeto.
-    const responseNext = NextResponse.json(backendData, { status: 200 });
-
+    // O backend envia o JWT como string crua ou como { token: "..." }.
     const tokenFromBackend = typeof backendData === "string" ? backendData : backendData?.token;
+
+    // O JWT **não volta no corpo**. Ele vai só para o cookie HttpOnly, que o JavaScript não
+    // consegue ler — é o que impede o navegador de guardar uma segunda cópia no localStorage.
+    // Quem precisa dos claims na tela pergunta a `GET /api/user/me`.
+    const decoded = tokenFromBackend ? decodeJWT(tokenFromBackend) : null;
+
+    const responseNext = NextResponse.json(
+      { ok: Boolean(tokenFromBackend), id: decoded?.id ?? null, tipo: decoded?.tipo ?? null },
+      { status: 200 }
+    );
+
     if (tokenFromBackend) {
       responseNext.cookies.set("user_data", tokenFromBackend, {
         httpOnly: true,
@@ -108,7 +96,7 @@ export async function POST(req: Request) {
   } catch (e) {
     console.error("[sync-user][EXCEPTION]", e);
     return NextResponse.json(
-      { message: "Erro interno ao conectar com backend", error: String(e) },
+      { message: "Erro interno ao conectar com backend" },
       { status: 500 }
     );
   }

@@ -1,8 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Rocket, Library, Activity, Cpu, Lightbulb, GraduationCap, BarChart3, Headset, Gift, Crown, Gem } from "lucide-react";
+import {
+  Rocket,
+  Library,
+  Activity,
+  Cpu,
+  Lightbulb,
+  GraduationCap,
+  BarChart3,
+  Headset,
+  Gift,
+  Crown,
+  Gem,
+} from "lucide-react";
 
 interface Benefit {
   icon: React.ReactNode;
@@ -76,25 +88,44 @@ const PricingCard: React.FC<PricingCardProps> = ({
       )}
 
       <div className="relative z-10 flex flex-col h-full">
-        <div className={`flex justify-center mb-6 ${
-          highlighted ? "text-[#007AFF] drop-shadow-[0_4px_8px_rgba(0,122,255,0.3)]" : isDark ? "text-gray-500" : "text-black/40"
-        }`}>
+        <div
+          className={`flex justify-center mb-6 ${
+            highlighted
+              ? "text-[#007AFF] drop-shadow-[0_4px_8px_rgba(0,122,255,0.3)]"
+              : isDark
+                ? "text-gray-500"
+                : "text-black/40"
+          }`}
+        >
           {highlighted ? (
             <div className="w-[48px] h-[48px] flex items-center justify-center">
-              {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 48 }) : icon}
+              {React.isValidElement(icon)
+                ? React.cloneElement(icon as React.ReactElement<any>, {
+                    size: 48,
+                  })
+                : icon}
             </div>
           ) : (
             <div className="w-[40px] h-[40px] flex items-center justify-center">
-              {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 40 }) : icon}
+              {React.isValidElement(icon)
+                ? React.cloneElement(icon as React.ReactElement<any>, {
+                    size: 40,
+                  })
+                : icon}
             </div>
           )}
         </div>
 
         <h3
           className={`${
-            highlighted ? "text-[22pt] md:text-[26pt]" : "text-[24pt] md:text-[32px]"
+            highlighted
+              ? "text-[22pt] md:text-[26pt]"
+              : "text-[24pt] md:text-[32px]"
           } font-bold mb-2 ${isDark ? "text-white" : "text-[#1d1d1f]"}`}
-          style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+          style={{
+            fontFamily:
+              "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif",
+          }}
         >
           {title}
         </h3>
@@ -102,7 +133,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
           className={`${
             highlighted ? "text-[14px]" : "text-[14px] md:text-[18px]"
           } font-normal mb-8 ${isDark ? "text-gray-400" : "text-black/50"}`}
-          style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+          style={{
+            fontFamily:
+              "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+          }}
         >
           {subtitle}
         </p>
@@ -111,7 +145,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
           <div className="inline-block mx-auto mb-8 px-4 py-2 bg-[#007AFF]/10 rounded-[8px] border border-[#007AFF]/10">
             <span
               className="text-[12pt] md:text-[14pt] font-bold text-[#007AFF]"
-              style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              style={{
+                fontFamily:
+                  "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+              }}
             >
               Economize 20% agora
             </span>
@@ -123,7 +160,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
             <div className="flex items-center justify-center gap-2 mb-1">
               <span
                 className={`text-[14pt] md:text-[16pt] line-through ${isDark ? "text-gray-600" : "text-black/30"}`}
-                style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+                style={{
+                  fontFamily:
+                    "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+                }}
               >
                 {oldPrice}
               </span>
@@ -132,26 +172,41 @@ const PricingCard: React.FC<PricingCardProps> = ({
           <div className="flex items-baseline justify-center">
             <span
               className={`${
-                highlighted ? "text-[26pt] md:text-[34pt]" : "text-[20pt] md:text-[32pt]"
+                highlighted
+                  ? "text-[26pt] md:text-[34pt]"
+                  : "text-[20pt] md:text-[32pt]"
               } font-bold mr-1 ${highlighted ? "text-[#007AFF]" : isDark ? "text-gray-500" : "text-black/40"}`}
-              style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              style={{
+                fontFamily:
+                  "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif",
+              }}
             >
               {pricePrefix}
             </span>
             <span
               className={`${
-                highlighted ? "text-[44pt] md:text-[60pt] font-black" : "text-[36pt] md:text-[64px] font-bold"
+                highlighted
+                  ? "text-[44pt] md:text-[60pt] font-black"
+                  : "text-[36pt] md:text-[64px] font-bold"
               } leading-none ${highlighted ? "text-[#007AFF]" : isDark ? "text-white" : "text-[#1d1d1f]"}`}
-              style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              style={{
+                fontFamily:
+                  "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif",
+              }}
             >
               {priceMain}
             </span>
             {priceDecimal && (
               <span
                 className={`${
-                  highlighted ? "text-[30pt] md:text-[42pt]" : "text-[20pt] md:text-[42pt]"
+                  highlighted
+                    ? "text-[30pt] md:text-[42pt]"
+                    : "text-[20pt] md:text-[42pt]"
                 } font-bold leading-none ${highlighted ? "text-[#007AFF]" : isDark ? "text-white" : "text-[#1d1d1f]"}`}
-                style={{ fontFamily: "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif" }}
+                style={{
+                  fontFamily:
+                    "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif",
+                }}
               >
                 {priceDecimal}
               </span>
@@ -159,9 +214,14 @@ const PricingCard: React.FC<PricingCardProps> = ({
             {priceSuffix && (
               <span
                 className={`${
-                  highlighted ? "text-[16pt] md:text-[20pt]" : "text-[14pt] md:text-[18pt]"
+                  highlighted
+                    ? "text-[16pt] md:text-[20pt]"
+                    : "text-[14pt] md:text-[18pt]"
                 } font-medium ml-1 ${isDark ? "text-gray-500" : "text-black/40"}`}
-                style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+                style={{
+                  fontFamily:
+                    "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+                }}
               >
                 {priceSuffix}
               </span>
@@ -170,21 +230,34 @@ const PricingCard: React.FC<PricingCardProps> = ({
           {billingCycleInfo && (
             <p
               className={`${
-                highlighted ? "text-[11pt] md:text-[13pt]" : "text-[11pt] md:text-[13pt]"
+                highlighted
+                  ? "text-[11pt] md:text-[13pt]"
+                  : "text-[11pt] md:text-[13pt]"
               } font-medium mt-3 ${isDark ? "text-gray-500" : "text-black/40"}`}
-              style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              style={{
+                fontFamily:
+                  "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+              }}
             >
               {billingCycleInfo}
             </p>
           )}
           {!billingCycleInfo && !highlighted && (
-             <p className={`text-[14px] md:text-[17px] font-medium mt-1 ${isDark ? "text-gray-500" : "text-black/40"}`} style={{ fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif' }}>
-             Para sempre
-           </p>
+            <p
+              className={`text-[14px] md:text-[17px] font-medium mt-1 ${isDark ? "text-gray-500" : "text-black/40"}`}
+              style={{
+                fontFamily:
+                  "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+              }}
+            >
+              Para sempre
+            </p>
           )}
         </div>
 
-        <div className={`space-y-[12px] text-left ${highlighted ? "mb-10" : "mb-10"} flex-grow`}>
+        <div
+          className={`space-y-[12px] text-left ${highlighted ? "mb-10" : "mb-10"} flex-grow`}
+        >
           {benefits.map((benefit, index) => (
             <div key={index} className="flex items-center gap-3">
               <div
@@ -192,7 +265,9 @@ const PricingCard: React.FC<PricingCardProps> = ({
                   highlighted ? "w-[34px] h-[34px]" : "w-[32px] h-[32px]"
                 } rounded-full flex items-center justify-center shadow-sm transition-all duration-300`}
                 style={{
-                  backgroundColor: benefit.color ? `${benefit.color}15` : "#34C75915",
+                  backgroundColor: benefit.color
+                    ? `${benefit.color}15`
+                    : "#34C75915",
                   color: benefit.color || "#34C759",
                 }}
               >
@@ -204,7 +279,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
                     ? `font-semibold ${isDark ? "text-white" : "text-[#1d1d1f]"}`
                     : `font-medium ${isDark ? "text-gray-300" : "text-black/60"}`
                 }`}
-                style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+                style={{
+                  fontFamily:
+                    "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+                }}
               >
                 {benefit.text}
               </span>
@@ -217,7 +295,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
             href={buttonLink}
             onClick={onButtonClick}
             className={`h-[46px] w-full bg-transparent border-2 border-[#5856D6]/40 text-[#5856D6] font-semibold text-[15px] rounded-[10px] transition-all duration-200 flex items-center justify-center active:scale-[0.98] ${isDark ? "hover:bg-[#5856D6]/[0.12]" : "hover:bg-[#5856D6]/[0.05]"}`}
-            style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            style={{
+              fontFamily:
+                "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+            }}
           >
             {buttonText}
           </a>
@@ -226,7 +307,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
             href={buttonLink}
             onClick={onButtonClick}
             className="h-[52px] w-full bg-[#007AFF] text-white font-bold text-[17px] rounded-[12px] shadow-[0_8px_20px_rgba(0,122,255,0.4)] hover:bg-[#0051D5] hover:shadow-[0_12px_28px_rgba(0,122,255,0.5)] transition-all duration-200 flex items-center justify-center active:scale-[0.97]"
-            style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            style={{
+              fontFamily:
+                "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+            }}
           >
             {buttonText}
           </a>
@@ -234,7 +318,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
           <button
             onClick={onButtonClick}
             className={`h-[46px] w-full font-semibold text-[15px] rounded-[10px] transition-all duration-200 flex items-center justify-center active:scale-[0.98] ${isDark ? "bg-white/[0.07] border border-white/[0.12] text-gray-400 hover:bg-white/[0.12]" : "bg-black/[0.03] border border-black/[0.08] text-black/50 hover:bg-black/[0.06]"}`}
-            style={{ fontFamily: "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            style={{
+              fontFamily:
+                "SF Pro Text, -apple-system, BlinkMacSystemFont, sans-serif",
+            }}
           >
             {buttonText}
           </button>
@@ -254,74 +341,181 @@ interface PricingPlansProps {
   isDark?: boolean;
 }
 
-export const PricingPlans: React.FC<PricingPlansProps> = ({ loading, onPlanClick, isDark = false }) => {
+/** Item de `/api/plans` — preço resolvido na Stripe. */
+interface PlanPricing {
+  id: string;
+  amountCents: number;
+  billingMode: "payment" | "subscription";
+  interval: "month" | "year" | null;
+  monthlyEquivalentCents: number;
+}
+
+/** Quebra um valor em reais nas partes inteira e decimal usadas pelo card. */
+function splitPreco(reais: number): { main: string; decimal: string } {
+  const [main, decimal] = reais.toFixed(2).split(".");
+  return { main, decimal: `,${decimal}` };
+}
+
+export const PricingPlans: React.FC<PricingPlansProps> = ({
+  loading,
+  onPlanClick,
+  isDark = false,
+}) => {
+  // Os preços exibidos precisam ser os mesmos que a Stripe vai cobrar; os literais
+  // abaixo são apenas fallback caso a rota falhe.
+  const [pricing, setPricing] = useState<PlanPricing[] | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    fetch("/api/plans")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("falha"))))
+      .then((data) => {
+        if (!cancelado && Array.isArray(data?.plans)) setPricing(data.plans);
+      })
+      .catch((error) => console.error("Não foi possível carregar os preços:", error));
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const stripeAnual = pricing?.find((p) => p.id === "anual");
+  const stripeMensal = pricing?.find((p) => p.id === "mensal");
+
+  const anualEquivalenteMes = stripeAnual ? stripeAnual.monthlyEquivalentCents / 100 : 41.5;
+  const anualTotal = stripeAnual ? stripeAnual.amountCents / 100 : 497;
+  const mensalTotal = stripeMensal ? stripeMensal.amountCents / 100 : 50;
+
+  const anualPreco = splitPreco(anualEquivalenteMes);
+  const mensalPreco = splitPreco(mensalTotal);
+
+  // Preço "de" é o custo de 12 meses no plano mensal; só faz sentido se for maior.
+  const anualSemDesconto = mensalTotal * 12;
+  const anualOldPrice =
+    anualSemDesconto > anualTotal ? `R$ ${anualSemDesconto.toFixed(2)}` : undefined;
+
+  const anualCicloInfo =
+    stripeAnual?.billingMode === "payment"
+      ? `Pago anualmente (R$ ${anualTotal.toFixed(2)} à vista)`
+      : `Pago anualmente (R$ ${anualTotal.toFixed(2)}, renova todo ano)`;
+
+  const mensalCicloInfo =
+    stripeMensal?.billingMode === "payment"
+      ? "Cobrança única de 1 mês"
+      : "Cancele quando quiser";
+
   const plansData = [
     {
       title: "Gratuito",
       subtitle: "Para começar a explorar",
       priceMain: "0",
-      icon: <Gift className="text-gray-700" size={48}/>,
+      icon: <Gift className="text-gray-700" size={48} />,
       benefits: [
-        { icon: <Rocket className="w-full h-full p-1.5" />, text: "Acesso ilimitado a simulados" },
-        { icon: <Library className="w-full h-full p-1.5" />, text: "Biblioteca de provas" },
-        { icon: <Activity className="w-full h-full p-1.5" />, text: "Estatística em tempo real" }
+        {
+          icon: <Rocket className="w-full h-full p-1.5" />,
+          text: "Acesso ilimitado a simulados",
+        },
+        {
+          icon: <Library className="w-full h-full p-1.5" />,
+          text: "Biblioteca de provas",
+        },
+        {
+          icon: <Activity className="w-full h-full p-1.5" />,
+          text: "Estatística em tempo real",
+        },
       ],
       buttonText: "Começar Grátis",
       buttonLink: "/library",
       buttonVariant: "secondary" as const,
-      onButtonClick: undefined, // Gratuito usa link direto ou comportamento padrão
-      delay: 0
+      onButtonClick: undefined,
+      delay: 0,
     },
     {
       title: "Simula Pro Anual",
       subtitle: "Treine como um profissional",
       highlighted: true,
       badge: "Mais Popular",
-      oldPrice: "R$ 600",
-      priceMain: "41",
-      priceDecimal: ",50",
+      oldPrice: anualOldPrice,
+      priceMain: anualPreco.main,
+      priceDecimal: anualPreco.decimal,
       priceSuffix: "/mês",
-      billingCycleInfo: "Pago anualmente (R$ 497)",
+      billingCycleInfo: anualCicloInfo,
       icon: <Crown />,
       benefits: [
-        { icon: <Rocket className="w-full h-full p-1.5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
-        { icon: <Library className="w-full h-full p-1.5" />, color: '#007AFF', text: "Biblioteca de provas" },
-        { icon: <Activity className="w-full h-full p-1.5" />, color: '#34C759', text: "Estatística em tempo real" },
-        { icon: <Cpu className="w-full h-full p-1.5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
-        { icon: <Lightbulb className="w-full h-full p-1.5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
-        { icon: <GraduationCap className="w-full h-full p-1.5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
-        { icon: <BarChart3 className="w-full h-full p-1.5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
-        { icon: <Headset className="w-full h-full p-1.5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
+        {
+          icon: <Rocket className="w-full h-full p-1.5" />,
+          color: "#5856D6",
+          text: "Acesso ilimitado a simulados",
+        },
+        {
+          icon: <Library className="w-full h-full p-1.5" />,
+          color: "#007AFF",
+          text: "Biblioteca de provas",
+        },
+        {
+          icon: <Activity className="w-full h-full p-1.5" />,
+          color: "#34C759",
+          text: "Estatística em tempo real",
+        },
+        {
+          icon: <GraduationCap className="w-full h-full p-1.5" />,
+          color: "#FF3B30",
+          text: "Consulta de notas de corte",
+        },
+        {
+          icon: <Headset className="w-full h-full p-1.5" />,
+          color: "#FF9500",
+          text: "Suporte prioritário 24/7",
+        },
       ],
       buttonText: "Assinar Plano Anual",
       buttonLink: "/paidPlan",
       buttonVariant: "primary" as const,
       onButtonClick: onPlanClick,
-      delay: 0.1
+      delay: 0.1,
     },
     {
       title: "Simula Pro Mensal",
       subtitle: "Flexibilidade total",
-      priceMain: "50",
+      priceMain: mensalPreco.main,
+      priceDecimal: mensalPreco.decimal,
       priceSuffix: "/mês",
-      billingCycleInfo: "Cancele quando quiser",
+      billingCycleInfo: mensalCicloInfo,
       icon: <Gem className="text-gray-700" size={48} />,
       benefits: [
-        { icon: <Rocket className="w-full h-full p-1.5" />, color: '#5856D6', text: "Acesso ilimitado a simulados" },
-        { icon: <Library className="w-full h-full p-1.5" />, color: '#007AFF', text: "Biblioteca de provas" },
-        { icon: <Activity className="w-full h-full p-1.5" />, color: '#34C759', text: "Estatística em tempo real" },
-        { icon: <Cpu className="w-full h-full p-1.5" />, color: '#FF2D55', text: "Resolução com IA (PRO)" },
-        { icon: <Lightbulb className="w-full h-full p-1.5" />, color: '#FFCC00', text: "Plano de estudos otimizado" },
-        { icon: <GraduationCap className="w-full h-full p-1.5" />, color: '#FF3B30', text: "Consulta de notas de corte" },
-        { icon: <BarChart3 className="w-full h-full p-1.5" />, color: '#5E5CE6', text: "Estatísticas avançadas" },
-        { icon: <Headset className="w-full h-full p-1.5" />, color: '#FF9500', text: "Suporte prioritário 24/7" }
+        {
+          icon: <Rocket className="w-full h-full p-1.5" />,
+          color: "#5856D6",
+          text: "Acesso ilimitado a simulados",
+        },
+        {
+          icon: <Library className="w-full h-full p-1.5" />,
+          color: "#007AFF",
+          text: "Biblioteca de provas",
+        },
+        {
+          icon: <Activity className="w-full h-full p-1.5" />,
+          color: "#34C759",
+          text: "Estatística em tempo real",
+        },
+        {
+          icon: <GraduationCap className="w-full h-full p-1.5" />,
+          color: "#FF3B30",
+          text: "Consulta de notas de corte",
+        },
+        {
+          icon: <Headset className="w-full h-full p-1.5" />,
+          color: "#FF9500",
+          text: "Suporte prioritário 24/7",
+        },
       ],
       buttonText: "Assinar Agora",
       buttonLink: "/paidPlan",
       buttonVariant: "outline" as const,
       onButtonClick: onPlanClick,
-      delay: 0.2
-    }
+      delay: 0.2,
+    },
   ];
 
   if (loading) {
@@ -344,4 +538,3 @@ export const PricingPlans: React.FC<PricingPlansProps> = ({ loading, onPlanClick
 };
 
 export default PricingCard;
-

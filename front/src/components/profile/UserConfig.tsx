@@ -1,17 +1,11 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { Edit, Settings } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
-
-// Modal carregado sob demanda (regra do projeto p/ modais).
-const DiscordTokenModal = dynamic(() => import("./DiscordTokenModal"), {
-  ssr: false,
-});
 
 interface UserConfigProps {
   formData: {
@@ -23,58 +17,41 @@ interface UserConfigProps {
     profileIcon: string;
     useInitialAvatar: boolean;
   };
-  setFormData: React.Dispatch<
-    React.SetStateAction<{
-      fullName: string;
-      email: string;
-      institution: string;
-      targetExam: string;
-      targetCourse: string;
-      profileIcon: string;
-      useInitialAvatar: boolean;
-    }>
-  >;
-  onSave: () => void | Promise<void>;
+  setFormData: React.Dispatch<React.SetStateAction<{
+    fullName: string;
+    email: string;
+    institution: string;
+    targetExam: string;
+    targetCourse: string;
+    profileIcon: string;
+    useInitialAvatar: boolean;
+  }>>;
+  onSave: () => void;
   onCancel: () => void;
 }
 
-export default function UserConfig({
-  formData,
-  setFormData,
-  onSave,
-  onCancel,
-}: UserConfigProps) {
+export default function UserConfig({ formData, setFormData, onSave, onCancel }: UserConfigProps) {
   const { data: session } = useSession();
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-  const [isDiscordModalOpen, setIsDiscordModalOpen] = useState(false);
-  const [universitiesList, setUniversitiesList] = useState<
-    { name: string; slug: string }[]
-  >([]);
-  const [isLoadingUniversities, setIsLoadingUniversities] = useState(true);
+  const [universitiesList, setUniversitiesList] = useState<{ name: string; slug: string }[]>([]);
   const [coursesList, setCoursesList] = useState<string[]>([]);
   const [filteredExams, setFilteredExams] = useState<string[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<string[]>([]);
   const [showExamAutocomplete, setShowExamAutocomplete] = useState(false);
   const [showCourseAutocomplete, setShowCourseAutocomplete] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{
-    targetExam?: string;
-    targetCourse?: string;
-  }>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{ targetExam?: string; targetCourse?: string }>({});
 
   // Carregar dados das universidades para o autocomplete
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
-        const response = await fetch("/api/universities");
+        const response = await fetch('/api/universities');
         if (response.ok) {
           const data = await response.json();
           setUniversitiesList(data);
         }
       } catch (error) {
         console.error("Erro ao buscar universidades:", error);
-      } finally {
-        setIsLoadingUniversities(false);
       }
     };
     fetchUniversities();
@@ -86,18 +63,11 @@ export default function UserConfig({
       try {
         // Como a rota Nota-corte é POST, podemos ter que adaptar ou usar os dados diretamente se houver um GET.
         // Se não houver GET, buscamos de dataNotaCorte.ts (simulando a API)
-        const storedToken = localStorage.getItem("user_data");
-        const response = await fetch("/api/Nota-corte", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
-        });
+        // Sem Authorization: o cookie `user_data` HttpOnly vai sozinho no fetch same-origin.
+        const response = await fetch('/api/Nota-corte', { method: 'GET' });
         if (response.ok) {
           const data = await response.json();
-          const uniqueCourses = Array.from(
-            new Set(data.allResults.map((r: any) => r.courseName)),
-          ) as string[];
+          const uniqueCourses = Array.from(new Set(data.allResults.map((r: any) => r.courseName))) as string[];
           setCoursesList(uniqueCourses);
         }
       } catch (error) {
@@ -123,32 +93,20 @@ export default function UserConfig({
     }
   }, [setFormData]);
 
-  // Função para salvar no SessionStorage e disparar a chamada à rota /api/user/profile (via onSave)
-  const handleSaveInternal = async () => {
+  // Função para salvar no SessionStorage e avisar o componente pai
+  const handleSaveInternal = () => {
     // Validação antes de salvar
     const errors: { targetExam?: string; targetCourse?: string } = {};
+    
+    const isValidExam = universitiesList.some(uni => uni.name.toLowerCase() === formData.targetExam.toLowerCase());
+    const isValidCourse = coursesList.some(course => course.toLowerCase() === formData.targetCourse.toLowerCase());
 
-    if (
-      formData.targetExam &&
-      !isLoadingUniversities &&
-      universitiesList.length > 0
-    ) {
-      const isValidExam = universitiesList.some(
-        (uni) => uni.name.toLowerCase() === formData.targetExam.toLowerCase(),
-      );
-      if (!isValidExam) {
-        errors.targetExam = "Por favor, selecione uma universidade válida.";
-      }
+    if (formData.targetExam && !isValidExam) {
+      errors.targetExam = "Por favor, selecione uma universidade válida.";
     }
 
-    if (formData.targetCourse && coursesList.length > 0) {
-      const isValidCourse = coursesList.some(
-        (course) =>
-          course.toLowerCase() === formData.targetCourse.toLowerCase(),
-      );
-      if (!isValidCourse) {
-        errors.targetCourse = "Por favor, selecione um curso válido.";
-      }
+    if (formData.targetCourse && !isValidCourse) {
+      errors.targetCourse = "Por favor, selecione um curso válido.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -165,55 +123,37 @@ export default function UserConfig({
       profileIcon: formData.profileIcon,
       useInitialAvatar: formData.useInitialAvatar,
     };
-
+    
     sessionStorage.setItem("user_profile_data", JSON.stringify(dataToSave));
-
-    // Dispara a persistência no backend via rota /api/user/profile (onSave = handleSaveProfile)
-    try {
-      setIsSaving(true);
-      await onSave();
-    } finally {
-      setIsSaving(false);
-    }
+    onSave();
   };
 
   // Lista de ícones disponíveis organizados por categoria
   const availableIcons = {
     Avatar: Array.from({ length: 21 }, (_, i) => ({
       path: `Avatar/Camaleão_${i + 1}.png`,
-      name: `Avatar ${i + 1}`,
-    })),
+      name: `Avatar ${i + 1}`
+    }))
   };
 
   // Total de ícones disponíveis
-  const totalIcons = Object.values(availableIcons).reduce(
-    (acc, arr) => acc + arr.length,
-    0,
-  );
+  const totalIcons = Object.values(availableIcons).reduce((acc, arr) => acc + arr.length, 0);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
-    // Converte para maiúsculo se for o campo Prova Alvo
-    const finalValue = name === "targetExam" ? value.toUpperCase() : value;
-
-    setFormData((prev) => ({ ...prev, [name]: finalValue }));
-
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    
     // Limpar o erro do campo quando o usuário digita
     if (validationErrors[name as keyof typeof validationErrors]) {
-      setValidationErrors((prev) => ({ ...prev, [name]: undefined }));
+      setValidationErrors(prev => ({ ...prev, [name]: undefined }));
     }
 
     // Lógica específica para o autocomplete da Prova Alvo
-    if (name === "targetExam") {
-      if (finalValue.length > 0) {
+    if (name === 'targetExam') {
+      if (value.length > 0) {
         const filtered = universitiesList
-          .filter((uni) =>
-            uni.name.toLowerCase().includes(finalValue.toLowerCase()),
-          )
-          .map((uni) => uni.name);
+          .filter(uni => uni.name.toLowerCase().includes(value.toLowerCase()))
+          .map(uni => uni.name);
         setFilteredExams(filtered);
         setShowExamAutocomplete(true);
       } else {
@@ -223,11 +163,10 @@ export default function UserConfig({
     }
 
     // Lógica específica para o autocomplete do Curso Alvo
-    if (name === "targetCourse") {
-      if (finalValue.length > 0) {
-        const filtered = coursesList.filter((course) =>
-          course.toLowerCase().includes(finalValue.toLowerCase()),
-        );
+    if (name === 'targetCourse') {
+      if (value.length > 0) {
+        const filtered = coursesList
+          .filter(course => course.toLowerCase().includes(value.toLowerCase()));
         setFilteredCourses(filtered);
         setShowCourseAutocomplete(true);
       } else {
@@ -238,45 +177,56 @@ export default function UserConfig({
   };
 
   const selectExam = (examName: string) => {
-    setFormData((prev) => ({ ...prev, targetExam: examName.toUpperCase() }));
+    setFormData(prev => ({ ...prev, targetExam: examName }));
     setShowExamAutocomplete(false);
-    setValidationErrors((prev) => ({ ...prev, targetExam: undefined }));
+    setValidationErrors(prev => ({ ...prev, targetExam: undefined }));
   };
 
   const selectCourse = (courseName: string) => {
-    setFormData((prev) => ({ ...prev, targetCourse: courseName }));
+    setFormData(prev => ({ ...prev, targetCourse: courseName }));
     setShowCourseAutocomplete(false);
-    setValidationErrors((prev) => ({ ...prev, targetCourse: undefined }));
+    setValidationErrors(prev => ({ ...prev, targetCourse: undefined }));
   };
 
   const handleIconSelect = (iconPath: string) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       profileIcon: iconPath,
-      useInitialAvatar: false,
+      useInitialAvatar: false
     }));
     setIsIconModalOpen(false);
   };
 
   const handleUseInitialAvatar = () => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      useInitialAvatar: true,
+      useInitialAvatar: true
     }));
     setIsIconModalOpen(false);
   };
 
-  const hasErrors =
-    !!validationErrors.targetExam || !!validationErrors.targetCourse;
+  const hasErrors = !!validationErrors.targetExam || !!validationErrors.targetCourse;
 
   return (
     <>
       <div className="bg-white backdrop-blur-xl border border-gray-200 rounded-xl p-8 shadow-2xl relative overflow-hidden">
+        {/* Mascote assistente no canto */}
+        <div className="absolute top-25 right-8 opacity-90 hidden xl:block animate-in fade-in slide-in-from-right-4 duration-700">
+          <Image 
+            src="/Mascote/banners/Camaleão_18.png" 
+            alt="Assistente" 
+            width={120}
+            height={120}
+            className="object-contain drop-shadow-xl transform hover:scale-110 transition-transform duration-300"
+          />
+          <div className="bg-gray-50 rounded-lg px-3 py-2 shadow-sm border border-gray-200 text-xs font-medium text-gray-700 mt-2 max-w-[120px] text-center">
+            Configure seu perfil! 📝
+          </div>
+        </div>
+        
         <div className="flex items-center gap-3 mb-8 relative z-10 pb-4 border-b border-gray-200/80">
           <Settings size={22} className="text-gray-500" />
-          <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">
-            Configurações da Conta
-          </h3>
+          <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">Configurações da Conta</h3>
         </div>
 
         <div className="flex flex-col xl:flex-row gap-12 items-start">
@@ -331,13 +281,9 @@ export default function UserConfig({
 
             {/* Target Exam */}
             <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-400 relative">
-              <label
-                className={`block text-xs font-medium mb-2 uppercase tracking-wide transition-colors duration-200 ${
-                  validationErrors.targetExam
-                    ? "text-red-500 font-bold"
-                    : "text-gray-600"
-                }`}
-              >
+              <label className={`block text-xs font-medium mb-2 uppercase tracking-wide transition-colors duration-200 ${
+                validationErrors.targetExam ? 'text-red-500 font-bold' : 'text-gray-600'
+              }`}>
                 Prova Alvo
               </label>
               <input
@@ -346,27 +292,22 @@ export default function UserConfig({
                 placeholder="Ex: FUVEST, ENEM, UNICAMP"
                 value={formData.targetExam}
                 onChange={handleInputChange}
-                onBlur={() =>
-                  setTimeout(() => setShowExamAutocomplete(false), 200)
-                }
+                onBlur={() => setTimeout(() => setShowExamAutocomplete(false), 200)}
                 onFocus={() => {
-                  if (formData.targetExam.length > 0)
-                    setShowExamAutocomplete(true);
+                  if (formData.targetExam.length > 0) setShowExamAutocomplete(true);
                 }}
                 className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white transition-all duration-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-400 ${
-                  validationErrors.targetExam
-                    ? "border-red-500 ring-1 ring-red-500/20"
-                    : "border-gray-300"
+                  validationErrors.targetExam ? 'border-red-500 ring-1 ring-red-500/20' : 'border-gray-300'
                 }`}
                 autoComplete="off"
               />
-
+              
               {validationErrors.targetExam && (
                 <p className="text-red-500 text-[10px] mt-1 font-semibold animate-in fade-in slide-in-from-top-1">
                   {validationErrors.targetExam}
                 </p>
               )}
-
+              
               {/* Autocomplete Suggestions */}
               {showExamAutocomplete && filteredExams.length > 0 && (
                 <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
@@ -386,13 +327,9 @@ export default function UserConfig({
 
             {/* Target Course */}
             <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-400 relative">
-              <label
-                className={`block text-xs font-medium mb-2 uppercase tracking-wide transition-colors duration-200 ${
-                  validationErrors.targetCourse
-                    ? "text-red-500 font-bold"
-                    : "text-gray-600"
-                }`}
-              >
+              <label className={`block text-xs font-medium mb-2 uppercase tracking-wide transition-colors duration-200 ${
+                validationErrors.targetCourse ? 'text-red-500 font-bold' : 'text-gray-600'
+              }`}>
                 Curso Alvo
               </label>
               <input
@@ -401,17 +338,12 @@ export default function UserConfig({
                 placeholder="Ex: Medicina, Engenharia, Direito"
                 value={formData.targetCourse}
                 onChange={handleInputChange}
-                onBlur={() =>
-                  setTimeout(() => setShowCourseAutocomplete(false), 200)
-                }
+                onBlur={() => setTimeout(() => setShowCourseAutocomplete(false), 200)}
                 onFocus={() => {
-                  if (formData.targetCourse.length > 0)
-                    setShowCourseAutocomplete(true);
+                  if (formData.targetCourse.length > 0) setShowCourseAutocomplete(true);
                 }}
                 className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white transition-all duration-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-400 ${
-                  validationErrors.targetCourse
-                    ? "border-red-500 ring-1 ring-red-500/20"
-                    : "border-gray-300"
+                  validationErrors.targetCourse ? 'border-red-500 ring-1 ring-red-500/20' : 'border-gray-300'
                 }`}
                 autoComplete="off"
               />
@@ -439,43 +371,18 @@ export default function UserConfig({
               )}
             </div>
 
-            {/* Save button */}
-            <div className="pt-6 flex gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <button
-                onClick={handleSaveInternal}
-                disabled={hasErrors || isSaving}
-                className={`px-6 py-2.5 shadow-lg text-white text-sm font-medium rounded-lg transition-all duration-200 active:scale-95 ${
-                  hasErrors || isSaving
-                    ? "bg-gray-400 cursor-not-allowed opacity-70 shadow-none"
-                    : "bg-gradient-to-b from-blue-500 to-blue-600 hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 cursor-pointer"
-                }`}
-              >
-                {isSaving ? "Salvando..." : "Salvar Alterações"}
-              </button>
-              <button
-                onClick={onCancel}
-                disabled={isSaving}
-                className="px-6 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-
-          {/* Lado direito: Ícone de Perfil e Integração Discord empilhados verticalmente */}
-          <div className="flex-1 w-full xl:max-w-md flex flex-col gap-8 items-start animate-in fade-in slide-in-from-right-4 duration-700">
             {/* Profile Icon Selector */}
-            <div className="w-full space-y-4">
+            <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-500">
               <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
                 Ícone de Perfil
               </label>
-
+              
               {/* Preview do ícone atual */}
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative group">
                   {formData.useInitialAvatar ? (
-                    <UserAvatar
-                      name={formData.fullName || session?.user?.name || "U"}
+                    <UserAvatar 
+                      name={formData.fullName || session?.user?.name || 'U'}
                       className="w-20 h-20 text-2xl"
                     />
                   ) : (
@@ -494,7 +401,7 @@ export default function UserConfig({
                 <button
                   type="button"
                   onClick={() => setIsIconModalOpen(true)}
-                  className="px-5 py-2.5 bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-95"
+                  className="px-5 py-2.5 bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 cursor-pointer"
                 >
                   <Edit size={16} />
                   Alterar Ícone
@@ -505,67 +412,49 @@ export default function UserConfig({
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">
-                    {formData.useInitialAvatar
-                      ? "Usando avatar com inicial"
-                      : "Usando mascote"}
+                    {formData.useInitialAvatar ? 'Usando avatar com inicial' : 'Usando mascote'}
                   </span>
                   <button
                     type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        useInitialAvatar: !prev.useInitialAvatar,
-                      }))
-                    }
+                    onClick={() => setFormData(prev => ({ ...prev, useInitialAvatar: !prev.useInitialAvatar }))}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 cursor-pointer ${
-                      formData.useInitialAvatar ? "bg-blue-500" : "bg-gray-300"
+                      formData.useInitialAvatar ? 'bg-blue-500' : 'bg-gray-300'
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${
-                        formData.useInitialAvatar
-                          ? "translate-x-6"
-                          : "translate-x-1"
+                        formData.useInitialAvatar ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  {formData.useInitialAvatar
-                    ? "Avatar colorido com a inicial do seu nome (Padrão)"
-                    : "Escolha entre 50 mascotes diferentes"}
+                  {formData.useInitialAvatar 
+                    ? 'Avatar colorido com a inicial do seu nome (Padrão)' 
+                    : 'Escolha entre 50 mascotes diferentes'}
                 </p>
               </div>
             </div>
 
-            {/* Integração com Discord */}
-            <div className="w-full space-y-4">
-              <label className="block text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">
-                Integração com Discord
-              </label>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col gap-4">
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Gere um token de uso único para vincular sua conta ao bot do
-                  Discord. Válido por 5 minutos.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setIsDiscordModalOpen(true)}
-                  className="px-5 py-2.5 bg-gradient-to-b from-indigo-500 to-indigo-600 text-white shadow-lg hover:shadow-xl hover:shadow-indigo-500/30 hover:from-indigo-600 hover:to-indigo-700 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 cursor-pointer w-full justify-center active:scale-95"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    className="bi bi-discord"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612" />
-                  </svg>
-                  Integrar com o Discord
-                </button>
-              </div>
+            {/* Save button */}
+            <div className="pt-6 flex gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <button 
+                onClick={handleSaveInternal}
+                disabled={hasErrors}
+                className={`px-6 py-2.5 shadow-lg text-white text-sm font-medium rounded-lg transition-all duration-200 active:scale-95 ${
+                  hasErrors 
+                    ? 'bg-gray-400 cursor-not-allowed opacity-70 shadow-none' 
+                    : 'bg-gradient-to-b from-blue-500 to-blue-600 hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-blue-700 cursor-pointer'
+                }`}
+              >
+                Salvar Alterações
+              </button>
+              <button 
+                onClick={onCancel}
+                className="px-6 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 cursor-pointer"
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
@@ -582,9 +471,7 @@ export default function UserConfig({
                   <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
                     Escolha seu Ícone de Perfil
                   </h2>
-                  <p className="text-gray-600 mt-1 text-sm">
-                    Use sua inicial ou escolha um dos nossos mascotes!
-                  </p>
+                  <p className="text-gray-600 mt-1 text-sm">Use sua inicial ou escolha um dos nossos mascotes!</p>
                 </div>
               </div>
             </div>
@@ -600,21 +487,17 @@ export default function UserConfig({
                   onClick={handleUseInitialAvatar}
                   className={`w-full p-4 rounded-lg border transition-all duration-200 flex items-center gap-4 ${
                     formData.useInitialAvatar
-                      ? "border-blue-500 bg-white shadow-sm"
-                      : "border-gray-300 bg-white hover:border-blue-300 hover:bg-gray-50"
+                      ? 'border-blue-500 bg-white shadow-sm'
+                      : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-gray-50'
                   }`}
                 >
-                  <UserAvatar
-                    name={formData.fullName || session?.user?.name || "U"}
+                  <UserAvatar 
+                    name={formData.fullName || session?.user?.name || 'U'}
                     className="w-16 h-16 text-xl flex-shrink-0"
                   />
                   <div className="text-left">
-                    <p className="font-semibold text-gray-700 text-sm">
-                      Avatar Padrão
-                    </p>
-                    <p className="text-xs text-gray-700">
-                      Usa a primeira letra do seu nome
-                    </p>
+                    <p className="font-semibold text-gray-700 text-sm">Avatar Padrão</p>
+                    <p className="text-xs text-gray-700">Usa a primeira letra do seu nome</p>
                   </div>
                 </button>
               </div>
@@ -623,8 +506,7 @@ export default function UserConfig({
               {Object.entries(availableIcons).map(([category, icons]) => (
                 <div key={category} className="mb-6">
                   <h3 className="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                    {category} ({icons.length}{" "}
-                    {icons.length === 1 ? "ícone" : "ícones"})
+                    {category} ({icons.length} {icons.length === 1 ? 'ícone' : 'ícones'})
                   </h3>
                   <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
                     {icons.map((icon) => (
@@ -632,10 +514,9 @@ export default function UserConfig({
                         key={icon.path}
                         onClick={() => handleIconSelect(icon.path)}
                         className={`aspect-square rounded-lg border p-2 transition-all duration-200 ${
-                          !formData.useInitialAvatar &&
-                          formData.profileIcon === icon.path
-                            ? "border-blue-500 bg-blue-50 shadow-sm scale-105"
-                            : "border-gray-300 bg-white hover:border-blue-300 hover:shadow-sm"
+                          !formData.useInitialAvatar && formData.profileIcon === icon.path
+                            ? 'border-blue-500 bg-blue-50 shadow-sm scale-105'
+                            : 'border-gray-300 bg-white hover:border-blue-300 hover:shadow-sm'
                         }`}
                         title={icon.name}
                       >
@@ -656,9 +537,7 @@ export default function UserConfig({
             {/* Footer do Modal */}
             <div className="bg-white p-4 border-t border-gray-200">
               <div className="flex items-center justify-between text-sm text-gray-600">
-                <span className="font-medium">
-                  Total de {totalIcons} mascotes disponíveis
-                </span>
+                <span className="font-medium">Total de {totalIcons} mascotes disponíveis</span>
                 <button
                   onClick={() => setIsIconModalOpen(false)}
                   className="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-md text-md font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 cursor-pointer"
@@ -670,12 +549,6 @@ export default function UserConfig({
           </div>
         </div>
       )}
-
-      {/* Modal de token do Discord */}
-      <DiscordTokenModal
-        isOpen={isDiscordModalOpen}
-        onClose={() => setIsDiscordModalOpen(false)}
-      />
     </>
   );
 }

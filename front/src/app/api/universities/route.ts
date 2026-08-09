@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readUserToken } from '@/app/service/sessionToken';
 
 export async function GET(request: Request) {
   const externalApiUrl = process.env.BACKEND_API_URL;
@@ -8,8 +9,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const authHeader = request.headers.get('Authorization');
-    const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    // Header ou cookie `user_data`: o cookie é HttpOnly e acompanha sozinho todo fetch
+    // same-origin, então o cliente não precisa (nem deve) montar o Bearer a partir do JWT.
+    const userToken = readUserToken(request);
 
     if (!userToken) {
        return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });

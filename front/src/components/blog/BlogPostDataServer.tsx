@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/core/auth";
+import { authOptions } from "@/lib/auth";
 import BlogPostClient from "@/components/blog/BlogPostClient";
 import { Post, PostPreview } from "@/types";
 
 export default async function BlogPostDataServer({ slug, articleId }: { slug: string, articleId?: string }) {
   try {
-    const externalApiUrl = process.env.BACKEND_API_URL;
+    const externalApiUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
     const session = await getServerSession(authOptions);
     const userToken = session?.accessToken || "";
 

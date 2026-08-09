@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/core/auth";
+import { authOptions } from "@/lib/auth";
 import BlogClient from "./BlogClient";
 import { PostPreview } from "@/types";
 
 async function fetchBlogPosts(): Promise<PostPreview[]> {
   try {
-    const externalApiUrl = process.env.BACKEND_API_URL;
+    const externalApiUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
     const session = await getServerSession(authOptions);
     const userToken = session?.accessToken || "";
 

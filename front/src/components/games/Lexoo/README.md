@@ -18,7 +18,7 @@
 
 ## 🎮 Visão Geral
 
-**LEXOO** é um jogo de palavras educativo inspirado no Wordle, desenvolvido em React/TypeScript para a plataforma vestibuline. O jogo desafia os usuários a descobrir palavras de 5 letras em português, oferecendo dois modos distintos de jogo.
+**LEXOO** é um jogo de palavras educativo inspirado no Wordle, desenvolvido em React/TypeScript para a plataforma Simulavest. O jogo desafia os usuários a descobrir palavras de 5 letras em português, oferecendo dois modos distintos de jogo.
 
 ### Características Principais
 
