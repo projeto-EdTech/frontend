@@ -31,7 +31,7 @@ import {
   usePixPaymentStatus,
   type PixActivationResponse,
 } from "@/hooks/usePixPaymentStatus";
-import { notifyUserSynced } from "@/lib/userClaims";
+import { notifyUserSynced } from "@/lib/core/userClaims";
 
 /**
  * Cartão de crédito é processado pela Stripe; PIX e boleto seguem no Mercado Pago.

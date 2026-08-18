@@ -1,6 +1,6 @@
 import React from 'react';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/core/auth";
 
 export default async function UniversitiesCountBadge() {
   const session = await getServerSession(authOptions);

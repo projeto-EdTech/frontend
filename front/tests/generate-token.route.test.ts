@@ -5,7 +5,7 @@
  * Vitest. Validação real por ora via `npm run build`.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { POST } from '../src/app/api/users/generate-token/route';
+import { POST } from '../src/app/api/user/generate-token/route';
 import * as service from '../src/app/service/discordToken.service';
 
 // JWT helper: monta um token com payload arbitrário (assinatura irrelevante p/ decode).

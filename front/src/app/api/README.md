@@ -76,7 +76,7 @@ if (!userToken) {
 | `/api/user/me` | `GET` | — (só decodifica) | cookie/header |
 | `/api/user/stats` | `GET` | `GET /usuarios/{id}/estatisticas/geral` + `/performance-materia` | obrigatória |
 
-**`/api/auth/[...nextauth]`** — núcleo do NextAuth. Configuração em [`src/lib/auth.ts`](../../lib/auth.ts):
+**`/api/auth/[...nextauth]`** — núcleo do NextAuth. Configuração em [`src/lib/core/auth.ts`](../../lib/core/auth.ts):
 Google (com escopo de calendar para o planner), Azure AD, Facebook e Discord. Renovação de token
 no callback `jwt`.
 
@@ -96,7 +96,7 @@ decodifica com [`jwtDecoder.ts`](../service/jwtDecoder.ts) e devolve **apenas os
 
 `tier` já vem normalizado (`FREE` | `SIMULAPRO` | `TEACHER` | `ADMIN`). Nunca devolve `token`,
 `exp`, `iat` nem o payload cru. 401 sem cookie, com token ilegível ou com `exp` vencido.
-Consumida por [`src/lib/userClaims.ts`](../../lib/userClaims.ts), que é quem os componentes usam.
+Consumida por [`src/lib/core/userClaims.ts`](../../lib/core/userClaims.ts), que é quem os componentes usam.
 
 **`/api/user/stats`** — desempenho do aluno para o dashboard do perfil. Extrai o `id` do JWT e
 busca as duas fontes do Java **em paralelo** (`Promise.all`), sem cascata: estatísticas gerais e
@@ -209,7 +209,7 @@ tolerando variações de nome e slug (`PUC-SP` vs `pucsp`).
 | Rota | Quem chama |
 |---|---|
 | `/api/sync-user` | `components/SyncUserEffect.tsx` |
-| `/api/user/me` | `lib/userClaims.ts` → `hooks/useUserTier.ts`, `components/blog/SubscribeButton.tsx`, `components/SyncUserEffect.tsx` |
+| `/api/user/me` | `lib/core/userClaims.ts` → `hooks/useUserTier.ts`, `components/blog/SubscribeButton.tsx`, `components/SyncUserEffect.tsx` |
 | `/api/user/stats` | `components/profile/ProfileClient.tsx` (SWR) |
 | `/api/subscribe` | `components/blog/SubscribeButton.tsx` |
 | `/api/plans` | `components/PricingCard.tsx`, `app/paidPlan/page.tsx` |

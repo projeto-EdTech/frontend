@@ -22,6 +22,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import React, { Suspense } from "react";
 import UniversitiesCountBadge from "@/components/UniversitiesCountBadge";
 import UniversitiesCountSkeleton from "@/components/Skeletons/UniversitiesCountSkeleton";
+import { seededInt } from "@/lib/core/seededRandom";
 
 // Dados das features para o carrossel 3D da Hero Section
 const HERO_FEATURES = [
@@ -609,7 +610,7 @@ export default function Home() {
                                     {/* Overlay com estatísticas no hover */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-end justify-center pb-2">
                                       <div className="text-white text-xs font-bold">
-                                        {Math.floor(Math.random() * 500) + 100}+
+                                        {seededInt(`${subject.name}:questoes`, 100, 600)}+
                                         questões
                                       </div>
                                     </div>
@@ -629,7 +630,7 @@ export default function Home() {
                                 {/* Indicador de popularidade - oculto em telas muito pequenas */}
                                 <div className="hidden sm:flex items-center justify-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                   <div className="text-xs themed-text-secondary">
-                                    {Math.floor(Math.random() * 1000) + 500}{" "}
+                                    {seededInt(`${subject.name}:estudantes`, 500, 1500)}{" "}
                                     estudantes
                                   </div>
                                 </div>
@@ -637,8 +638,11 @@ export default function Home() {
                                 {/* Barra de progresso de dificuldade - responsiva */}
                                 <div className="flex gap-0.5 sm:gap-1 mt-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                   {Array.from({ length: 5 }).map((_, i) => {
-                                    const difficulty =
-                                      Math.floor(Math.random() * 5) + 1;
+                                    const difficulty = seededInt(
+                                      `${subject.name}:dificuldade`,
+                                      1,
+                                      5,
+                                    );
                                     return (
                                       <div
                                         key={i}
@@ -947,7 +951,7 @@ export default function Home() {
                                       {/* Overlay com estatísticas no hover */}
                                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-end justify-center pb-2">
                                         <div className="text-white text-xs font-bold">
-                                          {Math.floor(Math.random() * 500) + 100}+
+                                          {seededInt(`${subject.name}:questoes`, 100, 600)}+
                                           questões
                                         </div>
                                       </div>
@@ -967,7 +971,7 @@ export default function Home() {
                                   {/* Indicador de popularidade */}
                                   <div className="hidden sm:flex items-center justify-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                     <div className="text-xs themed-text-secondary">
-                                      {Math.floor(Math.random() * 1000) + 500}{" "}
+                                      {seededInt(`${subject.name}:estudantes`, 500, 1500)}{" "}
                                       estudantes
                                     </div>
                                   </div>
@@ -975,8 +979,11 @@ export default function Home() {
                                   {/* Barra de progresso de dificuldade */}
                                   <div className="flex gap-0.5 sm:gap-1 mt-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                     {Array.from({ length: 5 }).map((_, i) => {
-                                      const difficulty =
-                                        Math.floor(Math.random() * 5) + 1;
+                                      const difficulty = seededInt(
+                                        `${subject.name}:dificuldade`,
+                                        1,
+                                        5,
+                                      );
                                       return (
                                         <div
                                           key={i}
