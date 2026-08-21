@@ -31,7 +31,7 @@ import {
   usePixPaymentStatus,
   type PixActivationResponse,
 } from "@/hooks/usePixPaymentStatus";
-import { notifyUserSynced } from "@/lib/userClaims";
+import { notifyUserSynced } from "@/lib/core/userClaims";
 
 /**
  * Cartão de crédito é processado pela Stripe; PIX e boleto seguem no Mercado Pago.
@@ -1189,8 +1189,8 @@ export default function ModernPaidPlan() {
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             }}
           >
-            Transforme sua preparação com inteligência artificial e alcance seus
-            objetivos mais rápido
+            Simulados reais das principais bancas e acompanhamento de
+            desempenho para você chegar pronto no dia da prova
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-8 text-sm font-medium">

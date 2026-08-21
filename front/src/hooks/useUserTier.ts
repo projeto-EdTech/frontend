@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { normalizeTier, isPaidTier, type Tier } from "@/app/service/jwtDecoder";
-import { fetchUserClaims, USER_SYNCED_EVENT } from "@/lib/userClaims";
+import { fetchUserClaims, USER_SYNCED_EVENT } from "@/lib/core/userClaims";
 
 export type { Tier };
 

@@ -52,6 +52,14 @@ export default function SummaryPage() {
     const [showAcertos, setShowAcertos] = useState(false);
     const [showErros, setShowErros] = useState(false);
 
+    // Data de realização. Fica em state preenchido só na montagem: o servidor
+    // renderiza em UTC e o navegador no fuso local, então formatar direto no
+    // render produziria HTML divergente e quebraria a hidratação.
+    const [dataRealizacao, setDataRealizacao] = useState('');
+    useEffect(() => {
+        setDataRealizacao(new Date().toLocaleDateString('pt-BR'));
+    }, []);
+
     // Crie a referência para a seção de erros e um controle para o primeiro carregamento
     const errosSectionRef = useRef<HTMLDivElement>(null);
     const acertosSectionRef = useRef<HTMLDivElement>(null);
@@ -484,7 +492,7 @@ export default function SummaryPage() {
                         <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-600 font-medium text-sm">Data de Realização</span>
-                                <span className="text-gray-900 font-bold">{new Date().toLocaleDateString('pt-BR')}</span>
+                                <span className="text-gray-900 font-bold">{dataRealizacao}</span>
                             </div>
                         </div>
                     </div>
@@ -549,7 +557,7 @@ export default function SummaryPage() {
                                 </tr>
                                 <tr className="hover:bg-gray-50 transition-colors duration-200">
                                     <td className="py-4 px-6 text-gray-700 font-semibold">Data de Realização</td>
-                                    <td className="py-4 px-6 text-gray-900 font-semibold">{new Date().toLocaleDateString('pt-BR')}</td>
+                                    <td className="py-4 px-6 text-gray-900 font-semibold">{dataRealizacao}</td>
                                 </tr>
                             </tbody>
                         </table>

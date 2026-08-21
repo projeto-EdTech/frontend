@@ -7,8 +7,6 @@ import Header from "@/components/Header"
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useUniversityStorage } from "@/contexts/UniversityStorage";
 import GeneralStats, { SkeletonCard, type ProfileStats } from "@/components/profile/GeneralStats";
 import StatsUser from "@/components/profile/StatsUser";

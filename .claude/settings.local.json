@@ -1,8 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)",
-      "Bash(git diff *)"
+      "mcp__obsidian__obsidian_simple_search",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend remote -v)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend branch -a)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend log --oneline -5)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend config --local --list)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend status --short)",
+      "PowerShell(gh auth status)",
+      "PowerShell(git ls-remote --heads https://github.com/projeto-EdTech/frontend.git)",
+      "Bash(git symbolic-ref *)",
+      "Bash(sed 's/^ D //')"
     ]
   }
 }

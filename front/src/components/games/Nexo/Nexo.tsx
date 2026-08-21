@@ -36,6 +36,19 @@ export default function Nexo() {
   const [currentSuccessCategory, setCurrentSuccessCategory] = useState<Categoria | null>(null);
   // Estado para controlar se os cards estão embaralhando
   const [isShuffling, setIsShuffling] = useState(false);
+  // Data de hoje. Preenchida só na montagem: o servidor renderiza em UTC e o
+  // navegador no fuso local, então formatar no render divergiria na hidratação.
+  const [dataHoje, setDataHoje] = useState("");
+
+  useEffect(() => {
+    setDataHoje(
+      new Date().toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+      }),
+    );
+  }, []);
 
   // Atualiza o contador regressivo até a meia-noite quando o modal de resultado aparece
   useEffect(() => {
@@ -473,11 +486,7 @@ export default function Nexo() {
           <div className="w-full grid grid-cols-3 items-center">
             <div className="flex flex-col">
               <p className="text-lg text-gray-700 font-bold">
-                {new Date().toLocaleDateString("pt-BR", {
-                  day: "numeric",
-                  month: "numeric",
-                  year: "numeric",
-                })}
+                {dataHoje}
               </p>
             </div>
             <div className="flex items-center justify-center">

@@ -1,61 +1,70 @@
-import dynamic from 'next/dynamic';
-import { ComponentType } from 'react';
-import { flashCardsData } from '../../components/games/flash-card_game/lib/flash-cardData';
-
-// --- Configuração dos Jogos ---
-
-// Importação dinâmica dos componentes de UI dos jogos
-const FlashCardGame = dynamic(
-  () => import('../../components/games/flash-card_game/Flash-card')
-);
-const LexooGame = dynamic(
-  () => import('../../components/games/Lexoo/Lexoo')
-);
-
-const NexoGame = dynamic(
-  () => import('../../components/games/Nexo/Nexo')
-);
-
-const EnigmaGame = dynamic(
-  () => import('../../components/games/Enigma/enigma')
-);
-
-// --- Tipagens ---
-export interface GameComponentProps {
-  onComplete?: (score: { correct: number; total: number }) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+export interface MinigameData {
+  id: number;
+  title: string;
+  slug: string; // URL-friendly name
+  description: string;
+  iconName: 'zap' | 'spellcheck' | 'Grid3x3' | 'CircleHelp';
+  difficulty: string;
+  color: string;
+  bgGlow: string;
+  borderColor: string;
+  status: 'available' | 'premium' | 'coming-soon';
+  featured: boolean;
 }
 
-// --- Mapeamento (Slug -> Componente) ---
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const gameComponents: Record<string, ComponentType<any>> = {
-  'flash-cards': FlashCardGame,
-  'lexoo': LexooGame,
-  'nexo': NexoGame,
-  'enigma': EnigmaGame,
-};
-
-// Função auxiliar para obter o componente pelo slug
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getGameComponent = (slug: string): ComponentType<any> | null => {
-  return gameComponents[slug] || null;
-};
-
-// --- Helpers de Dados ---
-
-export const getGameData = (slug: string) => {
-  switch (slug) {
-    case 'flash-cards':
-      return { cards: flashCardsData };
-    case 'lexoo':
-      // Lexoo não precisa de dados estáticos, retorna vazio
-      return {};
-    case 'nexo':
-      return {};
-    case 'enigma':
-      return {};
-    default:
-      return {};
-  }
-};
+export const minigamesData: MinigameData[] = [
+  {
+    id: 1,
+    title: "Flash Cards",
+    slug: "flash-cards",
+    description: "Responda perguntas rápidas através de cartões interativos",
+    iconName: "zap",
+    difficulty: "Fácil",
+    color: "from-yellow-400 to-orange-500",
+    bgGlow: "bg-yellow-400/20",
+    borderColor: "border-yellow-400",
+    status: "available",
+    // Destaque adicionado
+    featured: true,
+  },
+  {
+    id: 2,
+    title: "Lexoo",
+    slug: "lexoo",
+    description: "Um jogo diário de palavras para expandirem seu vocabulário de forma divertida.",
+    iconName: "spellcheck",
+    difficulty: "Médio",
+    color: "from-blue-500 to-indigo-600",
+    bgGlow: "bg-indigo-500/20",
+    borderColor: "border-indigo-500",
+    status: "available",
+    featured: true,
+  },
+  {
+    id: 3,
+    title: "Nexo",
+    slug: "nexo",
+    description: "Encontre as conexões entre 16 palavras e organize-as em 4 grupos temáticos.",
+    iconName: "Grid3x3",
+    difficulty: "Médio",
+    color: "from-purple-500 to-pink-600",
+    bgGlow: "bg-purple-500/20",
+    borderColor: "border-purple-500",
+    status: "available",
+    featured: false,
+  },
+  {
+    id: 4,
+    title: "Enigma",
+    slug: "enigma",
+    description: "Descubra qual é o conteúdo oculto de vestibular.",
+    iconName: "CircleHelp",
+    difficulty: "Difícil",
+    color: "from-purple-700 to-blue-700",
+    bgGlow: "bg-purple-700/20",
+    borderColor: "border-purple-600",
+    status: "available",
+    featured: false,
+  },
+  // Outros jogos podem ser adicionados aqui
+];

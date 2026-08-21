@@ -241,7 +241,6 @@ export default function BlogPostClient({
                 </div>
               </article>
 
-              {/* Sidebar */}
               <aside className="w-full lg:w-80 space-y-8">
                 {/* Widget de métricas rápidas */}
                 <div className="bg-white backdrop-blur-xl rounded-3xl p-6 sticky top-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow duration-300">

@@ -5,7 +5,8 @@ import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/core/utils"
+import { seededInt } from "@/lib/core/seededRandom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -644,10 +645,10 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  // Largura variada entre 50% e 90%. Derivada do useId (estável entre servidor
+  // e cliente) em vez de Math.random(), que quebraria a hidratação.
+  const id = React.useId()
+  const width = React.useMemo(() => `${seededInt(id, 50, 90)}%`, [id])
 
   return (
     <div

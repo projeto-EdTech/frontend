@@ -7,7 +7,7 @@ import {
     isPendingPaymentExpired,
     shouldClearOnStatus,
 } from "@/app/service/pendingPayment";
-import { notifyUserSynced } from "@/lib/userClaims";
+import { notifyUserSynced } from "@/lib/core/userClaims";
 
 /**
  * Pergunta, no próximo acesso do aluno, se aquela cobrança pendente já compensou.

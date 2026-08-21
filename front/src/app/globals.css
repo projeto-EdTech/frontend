@@ -142,7 +142,9 @@ html {
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
@@ -943,51 +945,6 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* Sidebar com suporte a tema */
-.sidebar-themed {
-  background-color: var(--bg-secondary) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  transition: all 0.3s ease;
-}
-
-/* Sidebar aprimorada para tema escuro */
-[data-theme="dark"] .sidebar-themed {
-  background: linear-gradient(135deg, var(--bg-secondary), #2a2a2a) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* Override para elementos específicos da sidebar */
-[data-theme="dark"] .sidebar-themed .text-gray-900 {
-  color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .text-gray-500 {
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .text-gray-400 {
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .bg-white\/50,
-[data-theme="dark"] .sidebar-themed .bg-gray-50 {
-  background-color: var(--card-bg) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .bg-gray-100 {
-  background-color: var(--bg-primary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .border-gray-100,
-[data-theme="dark"] .sidebar-themed .border-gray-200 {
-  border-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .hover\:bg-blue-50\/50:hover {
-  background-color: var(--bg-primary) !important;
-}
-
 /* Footer com suporte a tema */
 .footer-themed {
   background-color: var(--header-bg);
@@ -1342,76 +1299,6 @@ body {
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #4a4a4a, #555555);
-}
-
-/* Sidebar premium section - preservar cores originais independente do tema */
-.sidebar-premium {
-  background: linear-gradient(
-    to right,
-    rgb(250 245 255),
-    rgb(253 242 248)
-  ) !important;
-  border: 1px solid rgb(196 181 253) !important;
-}
-
-.sidebar-premium h4 {
-  color: rgb(107 33 168) !important; /* purple-800 */
-}
-
-.sidebar-premium p {
-  color: rgb(147 51 234) !important; /* purple-600 */
-}
-
-.sidebar-premium button {
-  background: linear-gradient(
-    to right,
-    rgb(168 85 247),
-    rgb(236 72 153)
-  ) !important;
-  color: white !important;
-}
-
-.sidebar-premium button:hover {
-  background: linear-gradient(
-    to right,
-    rgb(147 51 234),
-    rgb(219 39 119)
-  ) !important;
-}
-
-/* Garantir que o tema escuro não afete o container premium */
-[data-theme="dark"] .sidebar-premium {
-  background: linear-gradient(
-    to right,
-    rgb(250 245 255),
-    rgb(253 242 248)
-  ) !important;
-  border: 1px solid rgb(196 181 253) !important;
-}
-
-[data-theme="dark"] .sidebar-premium h4 {
-  color: rgb(107 33 168) !important;
-}
-
-[data-theme="dark"] .sidebar-premium p {
-  color: rgb(147 51 234) !important;
-}
-
-[data-theme="dark"] .sidebar-premium button {
-  background: linear-gradient(
-    to right,
-    rgb(168 85 247),
-    rgb(236 72 153)
-  ) !important;
-  color: white !important;
-}
-
-[data-theme="dark"] .sidebar-premium button:hover {
-  background: linear-gradient(
-    to right,
-    rgb(147 51 234),
-    rgb(219 39 119)
-  ) !important;
 }
 
 /* Themed sections - About Us and similar sections */
@@ -2450,11 +2337,15 @@ html.text-spacing-enabled * {
 
 /* Tipografia com fonte do sistema Apple (San Francisco) */
 .prose {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 .prose p {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 .prose h1,
@@ -2463,16 +2354,22 @@ html.text-spacing-enabled * {
 .prose h4,
 .prose h5,
 .prose h6 {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 /* Garanta que o conteúdo markdown dentro de cards temáticos use a fonte do sistema */
 .force-themed-card .prose {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 .force-themed-card .prose p {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 /* ===== SCROLLBAR CUSTOMIZADO PARA RELATÓRIO DE IA ===== */
@@ -2695,7 +2592,8 @@ aside ::-webkit-scrollbar-thumb:hover {
 
 /* Animação de pulso para teclas */
 @keyframes keyPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4);
   }
   50% {

@@ -354,9 +354,11 @@ const useDeviceDetection = (): DeviceInfo => {
     orientation: "portrait",
     isTouchDevice: false,
     hasNotch: false,
-    screenWidth: typeof window !== "undefined" ? window.innerWidth : 1024,
-    screenHeight: typeof window !== "undefined" ? window.innerHeight : 768,
-    pixelRatio: typeof window !== "undefined" ? window.devicePixelRatio : 1,
+    // Sem ler window aqui: o branch servidor/cliente daria um valor no HTML do
+    // SSR e outro na hidratação. O detectDevice abaixo preenche na montagem.
+    screenWidth: 1024,
+    screenHeight: 768,
+    pixelRatio: 1,
   });
 
   useEffect(() => {

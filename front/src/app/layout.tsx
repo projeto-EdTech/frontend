@@ -75,10 +75,26 @@ export default function RootLayout({
        *     do GA4, distorcendo métricas de usuários e sessões.
        *   • O script só é injetado quando NODE_ENV === 'production'.
        *
+       * Por quê dentro do <body> e não de um <head> escrito à mão?
+       *   • No App Router quem monta <html>/<head>/<body> é o Next; um <head>
+       *     autoral desloca o preâmbulo do documento e o <div hidden> que o
+       *     Next injeta como primeiro filho do body para a metadata em
+       *     streaming — o que aparece como erro de hidratação nesse nó.
+       *   • next/script posiciona o script sozinho, independente de onde a
+       *     tag é declarada na árvore.
+       *
        * ID de medição: definido em NEXT_PUBLIC_GA_ID (.env)
        * ─────────────────────────────────────────────────────────────────────
        */}
-      <head>
+      {/*
+       * suppressHydrationWarning no <body>: extensões de navegador injetam
+       * atributos e nós no topo do body antes do React hidratar, e isso é
+       * contabilizado como divergência servidor/cliente.
+       */}
+      <body
+        suppressHydrationWarning={true}
+        className={`${geistSans.variable} ${geistMono.variable} ${openDyslexic.variable} antialiased`}
+      >
         {isProd && (
           <>
             <Script
@@ -108,10 +124,7 @@ export default function RootLayout({
             `}
           </Script>
         )}
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${openDyslexic.variable} antialiased`}
-      >
+
         <NextAuthProvider>
           <ThemeProviderWrapper>
             <ProfileIconProvider>

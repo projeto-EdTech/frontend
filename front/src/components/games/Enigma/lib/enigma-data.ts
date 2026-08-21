@@ -90,6 +90,41 @@ export const subjects: Subject[] = [
 ];
 
 // =============================================================================
+// HELPER VISUAL DE MATÉRIA (fonte única: subjects + colorMappings)
+// =============================================================================
+export interface MateriaVisual {
+  icon: string;
+  bgColor: string;
+  colorHex: string;
+}
+
+// Normaliza para casar nomes independente de acento/caixa/espaços.
+const normalizeMateria = (s: string): string =>
+  s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+
+/**
+ * Retorna o visual (ícone Enigma + cor) de uma matéria a partir do seu nome.
+ * Combina `subjects` (name → icon/bgColor) com `colorMappings` (bgColor → colorHex).
+ * Sem correspondência → null (a UI deve usar um fallback genérico, ex.: BookOpen).
+ */
+export function getMateriaVisual(materia: string): MateriaVisual | null {
+  if (!materia) return null;
+  const target = normalizeMateria(materia);
+  const subject = subjects.find((s) => normalizeMateria(s.name) === target);
+  if (!subject) return null;
+  const colors = colorMappings[subject.bgColor];
+  return {
+    icon: subject.icon,
+    bgColor: subject.bgColor,
+    colorHex: colors?.colorHex ?? "#374151",
+  };
+}
+
+// =============================================================================
 // GAME DATA (Entidades e Labels)
 // =============================================================================
 export const attributeLabels: { [key: string]: string } = {

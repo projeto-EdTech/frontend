@@ -187,6 +187,13 @@ export default function Header() {
     ...(isAuthenticated
       ? [
           {
+            name: "Criar Simulado",
+            href: "/create",
+            icon: Library,
+            description: "Crie seu próprio simulado",
+            color: "from-orange-500 to-red-500",
+          },
+          {
             name: "Arena",
             href: "/Arena",
             icon: Gamepad2,
@@ -213,7 +220,7 @@ export default function Header() {
       <header className="themed-header sticky top-0 z-50 backdrop-blur-md shadow-sm transition-all duration-300">
         <div className="absolute inset-0 bg-white"></div>
         <div className="container mx-auto px-4 relative">
-          <div className="flex items-center justify-between h-16 lg:h-18">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center h-16 lg:h-18">
             <div className="flex items-center h-16 lg:h-18 overflow-hidden">
               <Link
                 href="/"
@@ -233,7 +240,7 @@ export default function Header() {
               </Link>
             </div>
 
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="hidden md:flex justify-self-center items-center space-x-1">
               {navigationItems.map((item) => (
                 <Link
                   key={item.name}
@@ -254,7 +261,7 @@ export default function Header() {
               ))}
             </nav>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-self-end space-x-3">
               <button
                 onClick={toggleMobileMenu}
                 className={`relative md:hidden p-2.5 rounded-lg transition-all duration-200 ${

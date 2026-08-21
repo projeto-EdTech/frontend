@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { fetchUserClaims } from '@/lib/userClaims';
+import { fetchUserClaims } from '@/lib/core/userClaims';
 
 export default function SubscribeButton() {
     const { data: session, status } = useSession();

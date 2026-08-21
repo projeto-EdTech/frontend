@@ -76,9 +76,9 @@ if (!userToken) {
 | `/api/user/me` | `GET` | — (só decodifica) | cookie/header |
 | `/api/user/stats` | `GET` | `GET /usuarios/{id}/estatisticas/geral` + `/performance-materia` | obrigatória |
 
-**`/api/auth/[...nextauth]`** — núcleo do NextAuth. Configuração em [`src/lib/auth.ts`](../../lib/auth.ts):
-Google (com escopo de calendar para o planner), Azure AD, Facebook e Discord. Renovação de token
-no callback `jwt`.
+**`/api/auth/[...nextauth]`** — núcleo do NextAuth. Configuração em [`src/lib/core/auth.ts`](../../lib/core/auth.ts):
+Google (escopo só de `userinfo.profile` e `userinfo.email`), Azure AD, Facebook e Discord.
+Renovação de token no callback `jwt`.
 
 **`/api/sync-user`** — primeira ponte após o login OAuth. Pega o `id_token` do Google da sessão
 NextAuth, manda ao Java, e **grava o JWT devolvido no cookie `user_data` HttpOnly**.
@@ -96,7 +96,7 @@ decodifica com [`jwtDecoder.ts`](../service/jwtDecoder.ts) e devolve **apenas os
 
 `tier` já vem normalizado (`FREE` | `SIMULAPRO` | `TEACHER` | `ADMIN`). Nunca devolve `token`,
 `exp`, `iat` nem o payload cru. 401 sem cookie, com token ilegível ou com `exp` vencido.
-Consumida por [`src/lib/userClaims.ts`](../../lib/userClaims.ts), que é quem os componentes usam.
+Consumida por [`src/lib/core/userClaims.ts`](../../lib/core/userClaims.ts), que é quem os componentes usam.
 
 **`/api/user/stats`** — desempenho do aluno para o dashboard do perfil. Extrai o `id` do JWT e
 busca as duas fontes do Java **em paralelo** (`Promise.all`), sem cascata: estatísticas gerais e
@@ -209,7 +209,7 @@ tolerando variações de nome e slug (`PUC-SP` vs `pucsp`).
 | Rota | Quem chama |
 |---|---|
 | `/api/sync-user` | `components/SyncUserEffect.tsx` |
-| `/api/user/me` | `lib/userClaims.ts` → `hooks/useUserTier.ts`, `components/blog/SubscribeButton.tsx`, `components/SyncUserEffect.tsx` |
+| `/api/user/me` | `lib/core/userClaims.ts` → `hooks/useUserTier.ts`, `components/blog/SubscribeButton.tsx`, `components/SyncUserEffect.tsx` |
 | `/api/user/stats` | `components/profile/ProfileClient.tsx` (SWR) |
 | `/api/subscribe` | `components/blog/SubscribeButton.tsx` |
 | `/api/plans` | `components/PricingCard.tsx`, `app/paidPlan/page.tsx` |
@@ -234,7 +234,7 @@ próprio — **não invente a rota sem antes conferir o contrato com o time Java
 |---|---|
 | `POST /api/simulations/save-result` (`Simula_PRO/SimulationQuizClient.tsx`) | **a rota não existe** — o resultado do simulado nunca chegou ao backend |
 | `POST /api/games/flash-cards` (`flash-card_game/functions/flash-cardlogic.ts`) | a rota exporta **só `GET`** → responde 405; os acertos nunca foram salvos |
-| `POST /api/generate-explanation` (`profile/ProfileClient.tsx`) | **a rota não existe** |
+| `POST /api/generate-explanation` (`profile/ProfileClient.tsx`) | a rota **existe** e funciona (Gemini, streaming). O que falta é a UI: `Simula_PRO/Questoes_Gemini.tsx` não é montado por nenhuma tela, então `handleSubmit` nunca é disparado |
 
 Outros pontos abertos: [`src/lib/simulationStore.ts`](../../lib/simulationStore.ts) não é
 importado por ninguém, e a grafia do claim de newsletter diverge (`newsletter` na interface do
