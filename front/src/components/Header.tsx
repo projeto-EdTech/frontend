@@ -18,6 +18,7 @@ import {
   Newspaper,
   ChevronRight,
   Gamepad2,
+  PlusCircle,
 } from "lucide-react";
 import LoginModal from "./Login-modal";
 import { useRouter } from "next/navigation";
@@ -189,7 +190,7 @@ export default function Header() {
           {
             name: "Criar Simulado",
             href: "/create",
-            icon: Library,
+            icon: PlusCircle,
             description: "Crie seu próprio simulado",
             color: "from-orange-500 to-red-500",
           },

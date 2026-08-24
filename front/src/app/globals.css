@@ -2328,6 +2328,27 @@ html.text-spacing-enabled * {
   color: #90cdf4; /* Cor de destaque para o nome da seção */
 }
 
+/* ===== LOGIN MODAL — botões de provedor OAuth =====
+   No modo de alto contraste do SO (forced-colors), o navegador descarta gradiente
+   e box-shadow e repinta o botão com cores de sistema — o retângulo resultante não
+   herda o border-radius, então vaza como barra nas bordas e nos cantos.
+   forced-color-adjust: none mantém a paleta própria do botão. */
+.login-provider-btn {
+  forced-color-adjust: none;
+}
+
+@media (forced-colors: active) {
+  .login-provider-btn {
+    forced-color-adjust: none;
+    border: 1px solid transparent;
+  }
+
+  .login-provider-btn:focus-visible {
+    outline: 2px solid ButtonText;
+    outline-offset: 2px;
+  }
+}
+
 @keyframes slide-in {
   to {
     opacity: 1;
