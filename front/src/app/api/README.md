@@ -73,7 +73,7 @@ if (!userToken) {
 |---|---|---|---|
 | `/api/auth/[...nextauth]` | `GET` `POST` | — | — |
 | `/api/sync-user` | `POST` | `POST /auth/google` | NextAuth |
-| `/api/user/me` | `GET` | — (só decodifica) | cookie/header |
+| `/api/user/me` | `GET` | — (só decodifica) | `user_data`, com fallback na sessão NextAuth |
 | `/api/user/stats` | `GET` | `GET /usuarios/{id}/estatisticas/geral` + `/performance-materia` | obrigatória |
 
 **`/api/auth/[...nextauth]`** — núcleo do NextAuth. Configuração em [`src/lib/core/auth.ts`](../../lib/core/auth.ts):
@@ -81,11 +81,29 @@ Google (escopo só de `userinfo.profile` e `userinfo.email`), Azure AD, Facebook
 Renovação de token no callback `jwt`.
 
 **`/api/sync-user`** — primeira ponte após o login OAuth. Pega o `id_token` do Google da sessão
-NextAuth, manda ao Java, e **grava o JWT devolvido no cookie `user_data` HttpOnly**.
+NextAuth, manda ao Java, e **grava o JWT devolvido no cookie `user_data` HttpOnly**. É o único
+ponto do fluxo que escreve esse cookie: se falhar, toda a aplicação se comporta como deslogada.
 
 > O JWT **não volta no corpo**. A resposta é `{ ok, id, tipo }` — só o que o cliente usa para
 > identificar o usuário nos analytics. Devolver o token daria ao navegador como guardá-lo, que é
 > exatamente o que esta arquitetura evita.
+
+Aceita o JWT do Java em cinco grafias — `string` crua, `{ token }`, `{ accessToken }`, `{ jwt }` e
+`{ data: { token } }` — apara o prefixo `Bearer` e só grava o cookie se `decodeJWT()` devolver
+payload válido. Timeout próprio de **8s** (`AbortSignal.timeout`), abaixo dos 10s do undici.
+
+Os modos de falha são distinguíveis **no log do servidor**, porque na tela são idênticos:
+
+| Log | Significado | Status |
+|---|---|---|
+| `[sync-user][ABORT]` | sessão NextAuth sem `googleAccount` ou sem `id_token` | 401 |
+| `[sync-user][NET]` | não alcançou o BFF — rede, firewall, host errado | **504** |
+| `[sync-user][BFF]` | o Java respondeu, mas com erro | relay do status |
+| `[sync-user][SHAPE]` | respondeu OK, sem JWT utilizável no corpo | **502** |
+| `[sync-user][BUG]` | exceção nossa | 500 |
+
+Um 401 persistente em `/api/user/me` quase sempre começa aqui — ver a seção de conectividade com
+o BFF no [`README.md`](../../../../README.md) da raiz antes de suspeitar da rota `me`.
 
 **`/api/user/me`** — o substituto de decodificar o JWT no navegador. Lê o cookie no servidor,
 decodifica com [`jwtDecoder.ts`](../service/jwtDecoder.ts) e devolve **apenas os claims de tela**:
@@ -95,8 +113,31 @@ decodifica com [`jwtDecoder.ts`](../service/jwtDecoder.ts) e devolve **apenas os
 ```
 
 `tier` já vem normalizado (`FREE` | `SIMULAPRO` | `TEACHER` | `ADMIN`). Nunca devolve `token`,
-`exp`, `iat` nem o payload cru. 401 sem cookie, com token ilegível ou com `exp` vencido.
+`exp`, `iat` nem o payload cru.
 Consumida por [`src/lib/core/userClaims.ts`](../../lib/core/userClaims.ts), que é quem os componentes usam.
+
+Tem **duas fontes de sessão**, e só responde 401 quando as duas faltam:
+
+| Ordem | Cookie | Traz | Quando entra |
+|---|---|---|---|
+| 1 | `user_data` | tudo | sempre que existe e decodifica |
+| 2 | `next-auth.session-token` | `nome`, `email`, `tier` — `id` é `null` e `newsletter` é `false` | `user_data` ausente, ilegível ou vencido |
+
+A fonte 2 existe porque um `sync-user` que falha deixa o aluno autenticado no OAuth mas sem
+`user_data` — e sem ela a aplicação inteira o trata como deslogado. O header
+**`X-Claims-Source`** (`user_data` | `next-auth`) diz qual respondeu; `next-auth` é sinal de que
+o problema está no `/api/sync-user`.
+
+Esse cookie do NextAuth chega **fragmentado** (`next-auth.session-token.0`, `.1`, …) porque o
+callback `jwt` guarda o `account` inteiro do Google. Quem remonta é
+`readNextAuthSessionToken(req)` de [`sessionToken.ts`](../service/sessionToken.ts), ordenando
+pelo sufixo **numérico** e reconhecendo também o nome `__Secure-` de produção. E ele é um **JWE
+cifrado**, não um JWT: `jwt-decode` não o lê — quem abre é o `decode` do `next-auth/jwt` com a
+`NEXTAUTH_SECRET`. A regra "só o `jwtDecoder` lê JWT" continua valendo: ela é sobre o token do
+Java, e o token do NextAuth não é JWT.
+
+O `id` do fallback é **sempre `null`**, nunca o `sub` do NextAuth: `SyncUserEffect` só pula a
+sincronização quando `claims.id` é truthy, então preenchê-lo faria o `user_data` nunca ser gravado.
 
 **`/api/user/stats`** — desempenho do aluno para o dashboard do perfil. Extrai o `id` do JWT e
 busca as duas fontes do Java **em paralelo** (`Promise.all`), sem cascata: estatísticas gerais e

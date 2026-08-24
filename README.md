@@ -223,6 +223,24 @@ Tiers: `FREE` · `SIMULAPRO` · `TEACHER` · `ADMIN`.
 
 O hook [`useUserTier`](front/src/hooks/useUserTier.ts) consome isso via `lib/core/userClaims.ts`. **Não há polling:** a rota é consultada na montagem e em dois eventos — `user_synced` (mesma aba: login, ativação de assinatura) e `storage` (outras abas).
 
+### As duas fontes de sessão de `/api/user/me`
+
+Quando `/api/sync-user` falha, o cookie `user_data` **nunca é gravado** — e um aluno que atravessou o OAuth inteiro aparecia como deslogado na aplicação toda. Por isso a rota tem duas fontes, nesta ordem:
+
+| Ordem | Cookie | Traz | Quando entra |
+|---|---|---|---|
+| 1 | `user_data` | tudo: `id`, `nome`, `email`, `tier`, `newsletter` | sempre que existe e decodifica |
+| 2 | `next-auth.session-token` | `nome`, `email`, `tier` (`id` = `null`, `newsletter` = `false`) | fallback: `user_data` ausente, ilegível ou expirado |
+
+O header **`X-Claims-Source`** (`user_data` \| `next-auth`) diz qual respondeu. `next-auth` significa que o problema está no `/api/sync-user`, não nesta rota.
+
+Duas particularidades do cookie do NextAuth, ambas tratadas em [`sessionToken.ts`](front/src/app/service/sessionToken.ts) e [`user/me/route.ts`](front/src/app/api/user/me/route.ts):
+
+- **É fragmentado.** O NextAuth fatia o cookie acima de ~3900 bytes, e neste projeto ele passa disso porque o callback `jwt` de `lib/core/auth.ts` guarda o objeto `account` inteiro do Google. Chega como `next-auth.session-token.0`, `.1`, … e só o valor concatenado — **na ordem numérica do sufixo** — é legível. `readNextAuthSessionToken(req)` faz a remontagem, e também reconhece o nome `__Secure-next-auth.session-token` usado quando a `NEXTAUTH_URL` é HTTPS.
+- **É cifrado, não assinado.** É um JWE (`dir` + `A256GCM`), não um JWT: `jwt-decode` devolveria `null`. Quem o abre é o `decode` do `next-auth/jwt`, com a `NEXTAUTH_SECRET`. A regra "só o `jwtDecoder` lê JWT" segue intacta — ele cuida do token do Java, e o token do NextAuth não é JWT.
+
+O `id` **nunca** é preenchido com o `sub` do NextAuth: `SyncUserEffect` só pula a sincronização quando `claims.id` é truthy, então isso faria a sessão parecer sincronizada e o `user_data` nunca seria gravado. O `tier` do fallback é o mesmo que `useUserTier` já usava pela sessão do cliente — não expõe nada novo ao navegador.
+
 ---
 
 ## Estrutura de Pastas
@@ -334,7 +352,7 @@ front/
 | --- | --- | --- | --- |
 | `/api/auth/[...nextauth]` | GET · POST | — | — |
 | `/api/sync-user` | POST | `POST /auth/google` | NextAuth |
-| `/api/user/me` | GET | — (só decodifica o cookie) | cookie/header |
+| `/api/user/me` | GET | — (só decodifica o cookie) | `user_data`, com fallback na sessão NextAuth |
 | `/api/user/stats` | GET | `/usuarios/{id}/estatisticas/geral` + `/performance-materia` | obrigatória |
 | `/api/user/profile` | POST | perfil do aluno | obrigatória |
 | `/api/user/generate-token` | POST | token OTP `VEST-XXXXX` p/ vincular o Discord | obrigatória |
@@ -446,7 +464,7 @@ GA4 e Microsoft Clarity são injetados por `next/script` com `strategy="afterInt
 
 | Hook | Descrição |
 | --- | --- |
-| `useUserTier` | Tier via `GET /api/user/me`; sem polling — reage a `user_synced` e `storage` |
+| `useUserTier` | Tier via `GET /api/user/me` (cookie do BFF ou, na falta dele, sessão NextAuth); sem polling — reage a `user_synced` e `storage` |
 | `usePixPaymentStatus` | Polling do PIX enquanto o QR está na tela (até 30 min) |
 | `usePendingPaymentReconciliation` | Reconcilia boleto pendente no acesso seguinte |
 | `use-mobile` | Detecta viewport mobile |
@@ -760,6 +778,32 @@ Arquivos sem nenhum importador, todos de features que a Fase 1 lança — limpez
 | `contexts/LoadingContext.tsx` | Fora do provider stack |
 | Componentes de perfil | `ProfileHeroCard` · `UserRanking` · `AchievementCarousel` · `SimulationModal` |
 | Avulsos | `ThemeToggle` · `DemoModal` · `mockups/EstatisticasMockup` · `Library/UniversityDataServer` · `Skeletons/` não referenciados |
+
+### Conectividade com o BFF em desenvolvimento
+
+`BACKEND_API_URL` aponta para **outra máquina, via Radmin VPN** — não para `localhost`. Quando esse peer sai do ar, ou a porta está bloqueada no firewall dele, o `fetch` de `/api/sync-user` falha, o cookie `user_data` nunca é gravado e **a aplicação inteira se comporta como deslogado**: 401 em `/api/user/me` e em todas as telas de sessão, sem nada na interface indicando problema de rede.
+
+Antes de investigar código de autenticação, teste o alcance do host:
+
+```powershell
+Test-NetConnection -ComputerName <host-do-BACKEND_API_URL> -Port <porta>   # precisa vir TcpTestSucceeded : True
+```
+
+`TcpTestSucceeded=False` significa peer fora do ar, porta bloqueada ou IP mudado — não bug no front. Do lado do backend: conferir o bind com `netstat -ano | findstr :<porta>` (`127.0.0.1` só aceita loopback; precisa de `server.address=0.0.0.0`) e liberar a porta inbound no Windows Firewall.
+
+Desde a correção de `/api/sync-user`, esse cenário devolve **504** em ~8s com `[sync-user][NET]` no terminal, nomeando `cause.code` e o host — não mais um 500 opaco em 10,6s.
+
+E desde o fallback de `/api/user/me`, o aluno deixa de aparecer como deslogado nesse cenário: nome, e-mail e tier passam a vir da sessão do NextAuth. Continua faltando o que só o BFF tem — `id` do aluno e `newsletter`. O header `X-Claims-Source: next-auth` na resposta é o sinal de que o `user_data` não chegou.
+
+**Cuidado ao diagnosticar:** com VPN ligada e backend rodando, um 401 persistente em `/api/user/me` **não é** problema de rede. Olhe a tag no terminal do `npm run dev`. Três suspeitas levantadas e ainda não fechadas: `/api/sync-user` chama `${BACKEND_API_URL}/auth/google` enquanto as rotas que funcionam usam `${BACKEND_API_URL}/api/...`; o `scope` do Google em `lib/core/auth.ts` não inclui `openid`; e `refreshAccessToken` renova `accessToken` mas **não** o `id_token` guardado em `googleAccount`, que vence em ~1h.
+
+### Cookie de sessão do NextAuth fragmentado
+
+O callback `jwt` de `lib/core/auth.ts` guarda o objeto `account` inteiro do Google, o que empurra o cookie de sessão acima de ~3900 bytes e faz o NextAuth fatiá-lo em `next-auth.session-token.0`, `.1`, … `/api/user/me` já remonta e lê esses pedaços, mas a fragmentação em si continua: guardar só o `id_token` resolveria na origem.
+
+### Rotas do BFF sem timeout
+
+Só `/api/sync-user` tem timeout próprio (`AbortSignal.timeout(8000)`). `Nota-corte`, `user/stats`, `universities`, `subscribe` e `games/flash-cards` continuam dependendo do connect timeout padrão do undici — **10s pendurados por requisição** quando o BFF está inalcançável. Dívida consciente, deixada fora do escopo daquela correção.
 
 ### Outros
 

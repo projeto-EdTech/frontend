@@ -1,5 +1,130 @@
 # CHANGES
 
+## [Feat/auth] `GET /api/user/me` — fallback para a sessão do NextAuth, com remontagem do cookie fragmentado
+
+`GET /api/user/me` tinha uma única fonte de sessão: o cookie `user_data`, o JWT do BFF Java. Quando `/api/sync-user` falha — BFF fora do ar, endpoint divergente, `id_token` ausente —, esse cookie **nunca é gravado**, e a rota respondia 401 em toda navegação. O aluno atravessava o OAuth inteiro, tinha sessão NextAuth válida no navegador, e a aplicação o tratava como deslogado.
+
+A rota passa a ter **duas fontes**, nesta ordem, e só devolve 401 quando as duas faltam.
+
+### Diagnóstico
+
+O cookie presente no navegador nesse estado é o do NextAuth, e ele chega **fragmentado**: `next-auth.session-token.0` e `next-auth.session-token.1`. O NextAuth fatia o cookie quando o valor passa de ~3900 bytes (o teto de 4096 por cookie nos navegadores, menos a estimativa de overhead — `ALLOWED_COOKIE_SIZE`/`CHUNK_SIZE` em `next-auth/core/lib/cookie.js`). Neste projeto ele passa porque o callback `jwt` de `lib/core/auth.ts` guarda o objeto `account` inteiro do Google — `id_token`, `access_token`, `refresh_token`, scopes. É a dívida registrada na entrega anterior, em *Fora de escopo*.
+
+Dois fatos determinaram a implementação:
+
+1. **Nenhum pedaço isolado é legível.** Só o valor concatenado, na ordem numérica do sufixo, é um token válido.
+2. **O valor remontado não é um JWT — é um JWE cifrado** (`dir` + `A256GCM`, `next-auth/jwt/index.js`). `jwt-decode` lê base64 do segundo segmento; num JWE esse segmento é chave cifrada, não JSON. Concatenar e passar ao `decodeJWT` devolveria `null`, e o 401 continuaria igual. Quem abre esse cookie é o `decode` do próprio `next-auth/jwt`, com a `NEXTAUTH_SECRET`.
+
+### O que mudou em `front/src/app/service/sessionToken.ts`
+
+Nova função exportada **`readNextAuthSessionToken(req)`**: devolve o cookie de sessão do NextAuth já remontado, ou `null`.
+
+- Reconhece **os dois nomes**: `next-auth.session-token` e `__Secure-next-auth.session-token`, o prefixo que o NextAuth usa quando a `NEXTAUTH_URL` é HTTPS. Só o nome curto funcionaria em `localhost` e falharia calado no deploy.
+- Aceita tanto o cookie inteiro (sessão pequena, sem sufixo) quanto os pedaços.
+- Ordena por **`Number(sufixo)`, não por texto**. Com onze ou mais pedaços, ordenar como string põe `.10` logo depois de `.1`; o valor sai embaralhado e a falha aparece como "token inválido", não como "ordem errada" — e só quando a sessão cresce.
+- Descarta sufixo não-numérico, para não concatenar um cookie alheio que por acaso comece igual.
+
+A remontagem mora aqui, e não na rota, porque este arquivo é o único parser de sessão do projeto (regra do `CLAUDE.md`).
+
+O parsing de cookie do arquivo foi unificado num `parseCookies(req)` que devolve `Map`, usado tanto por `readUserToken` quanto pela função nova. `decodeURIComponent` passou a ser tolerante a falha: um pedaço de cookie fragmentado pode terminar no meio de um `%XX`, e nesse caso o valor cru já é o correto. Comportamento de `readUserToken` inalterado.
+
+### O que mudou em `front/src/app/api/user/me/route.ts`
+
+A rota virou duas funções de leitura mais um `responder()`:
+
+| Fonte | Origem | Quando entra |
+|---|---|---|
+| `user_data` | JWT do BFF Java, gravado por `/api/sync-user` | sempre que existe e decodifica |
+| `next-auth.session-token` | sessão do NextAuth, remontada e decifrada | fallback: `user_data` ausente, ilegível ou expirado |
+
+O que a fonte 2 entrega e o que não entrega:
+
+| Campo | Valor no fallback | Motivo |
+|---|---|---|
+| `id` | sempre `null` | o `sub` do NextAuth é a conta Google, não o aluno no banco. **Preencher com ele quebraria o login**: `SyncUserEffect` só pula o sync quando `claims.id` é truthy, então a sessão pareceria sincronizada e o `user_data` nunca seria gravado |
+| `newsletter` | sempre `false` | o claim não existe na sessão do NextAuth |
+| `nome`, `email` | `token.user`, com `token.name`/`token.email` de reserva | é o que `lib/core/auth.ts` grava |
+| `tier` | `token.tier` normalizado por `normalizeTier` | mesmo valor que `useUserTier` **já usava** como fallback pela sessão do cliente (`session?.user?.tier`); não expõe nada que o navegador não tivesse antes. Grafia desconhecida segue caindo para `FREE` |
+
+Falha ao decifrar — chunk faltando, segredo trocado, sessão expirada, `NEXTAUTH_SECRET` ausente — responde **401**, não 500: é ausência de sessão válida, não erro do servidor.
+
+Novo header de resposta **`X-Claims-Source`**: `user_data` ou `next-auth`. Existe para o diagnóstico não depender de adivinhação — `next-auth` na resposta significa que o `user_data` não chegou, ou seja, que o problema está no `/api/sync-user` e não nesta rota.
+
+Contrato preservado: a resposta segue com os mesmos cinco campos de `UserClaims`, nenhum token volta no corpo, e `Cache-Control: no-store` vale nas duas fontes. `lib/core/userClaims.ts`, `hooks/useUserTier.ts` e `components/SyncUserEffect.tsx` não precisaram mudar.
+
+### Novo arquivo
+
+| Arquivo | Propósito |
+|---|---|
+| `front/tests/user-me.route.test.ts` | 21 specs Vitest, ambiente node. Cifra de verdade com o `encode` do `next-auth/jwt` em vez de dublar o `decode` — dublar esconderia justamente o que os testes provam. Cobre: 401 sem cookie e com cookies alheios; precedência do `user_data`; remontagem de `.0`+`.1`; cookie inteiro sem sufixo; chunks fora de ordem no header; ordenação numérica com mais de dez pedaços; nome `__Secure-`; 401 (e não 500) em chunk faltando, segredo errado, sessão expirada e `NEXTAUTH_SECRET` ausente; fallback quando o `user_data` não decodifica; `id` sempre `null`; `newsletter` sempre `false`; tier desconhecido virando `FREE`; os cinco campos exatos em ambas as fontes; nenhum token no corpo nem no log; `no-store` nas duas fontes |
+
+### Verificação
+
+`npx vitest run tests/user-me.route.test.ts` — **21/21 passando**. `tsc --noEmit` sem erro nos arquivos alterados.
+
+Suíte completa: 125 passando, 1 falhando e 5 arquivos sem coletar — todos **pré-existentes** e alheios a esta entrega (`generate-token.route.test.ts` chama `cookies()` de `next/headers` fora de contexto de request; `badge-cohesion`, `guerreiro-discord-badge`, `ranking-up`, `materiaVisualIconBg` e `user-profile` importam `@/lib/ranking/rankUtils` e `@/lib/badges/*`, removidos no alinhamento à Fase 1). Nenhum deles importa os arquivos alterados aqui. `eslint` não roda no projeto (`TypeError: Converting circular structure to JSON` ao carregar a config) — dívida pré-existente.
+
+### Fora de escopo
+
+- Enxugar o cookie do NextAuth para ele parar de ser fragmentado — guardar só `id_token` em vez do `account` inteiro em `lib/core/auth.ts`. Esta entrega faz o fragmentado funcionar; não elimina a fragmentação
+- A causa raiz do `user_data` não ser gravado (`/api/sync-user` falhando). O fallback tira o aluno da tela de deslogado, mas o `id` e o `newsletter` só chegam pelo BFF. Suspeitas levantadas e não fechadas: `sync-user` chama `${BACKEND_API_URL}/auth/google` enquanto as rotas que funcionam usam `${BACKEND_API_URL}/api/...`; o scope do Google em `lib/core/auth.ts` não inclui `openid`; e `refreshAccessToken` não renova o `id_token` guardado em `googleAccount`
+
+---
+
+## [Fix/auth] `POST /api/sync-user` — timeout explícito e diagnóstico dos três modos de falha
+
+Correção do login quebrado: `GET /api/user/me` respondia **401 em toda navegação** e o cookie `user_data` não existia em `Application > Cookies`. A rota `me` não tinha defeito — ela apenas relatava a ausência de sessão. O cookie nunca chegava a ser gravado.
+
+### Diagnóstico
+
+`/api/sync-user` é o **único** ponto do fluxo de login que escreve `user_data`. A cadeia real:
+
+1. A rota faz `fetch` em `${BACKEND_API_URL}/auth/google`
+2. O host do BFF não aceitava conexão TCP a partir da máquina do front — `Test-NetConnection` com `TcpTestSucceeded=False` e ping sem resposta, com o adaptador Radmin VPN local **Up**
+3. Sem timeout próprio, o `fetch` estourava no **connect timeout padrão do undici (10s)**: `POST /api/sync-user 500 in 10.6s`, vindo do `catch` genérico
+4. `cookies.set("user_data", ...)` nunca executava
+5. `readUserToken()` devolvia `null` → 401 permanente em `/api/user/me` e nas 15 telas e rotas que dependem do cookie
+
+O sintoma apontava para autenticação; a causa era conectividade. O código não ajudava a perceber isso — e escondia ainda um segundo modo de falha silencioso, descrito abaixo.
+
+### O que mudou em `front/src/app/api/sync-user/route.ts`
+
+**Timeout explícito.** `signal: AbortSignal.timeout(8000)` no `fetch` do BFF. Corta antes dos 10s do undici, e a falha passa a ser nossa e nomeável em vez de um `TypeError: fetch failed` genérico.
+
+**Os três modos de falha, separados no log.** O `catch` único virou classificação por causa. `AbortSignal.timeout` lança `DOMException` com `name === 'TimeoutError'`; o undici lança `TypeError` com `cause.code` (`UND_ERR_CONNECT_TIMEOUT`, `ECONNREFUSED`, `ENOTFOUND`).
+
+| Log | Significado | Status |
+|---|---|---|
+| `[sync-user][NET]` | não alcançou o BFF (rede, firewall, host errado) | **504** |
+| `[sync-user][BFF]` | o Java respondeu, mas com erro | relay do status |
+| `[sync-user][SHAPE]` | respondeu OK, em formato inesperado | **502** |
+| `[sync-user][BUG]` | exceção nossa | 500 |
+
+O log de `[NET]` nomeia `error.name`, `cause.code`, `cause.message`, o host de `BACKEND_API_URL` e a dica de testar `Test-NetConnection` antes de procurar bug de autenticação. O corpo devolvido ao navegador segue sanitizado nos quatro casos — nada de host, stack ou nome de classe interna do Java atravessa a rota.
+
+**Fim do 200 silencioso.** A versão anterior lia o JWT só como `string` crua ou `{ token }`. Qualquer outra grafia deixava `tokenFromBackend` como `undefined`, o `cookies.set` era **pulado** e a rota ainda respondia **200 com `{ ok: false }`** — backend saudável, front preso em 401, e nenhum sinal de erro em lugar nenhum. Agora a função `extrairJwt()` aceita `string`, `{ token }`, `{ accessToken }`, `{ jwt }` e `{ data: { token } }`, apara o prefixo `Bearer` e espaços, e rejeita qualquer valor que não seja string. Sem JWT utilizável, a rota responde **502** e loga o formato recebido.
+
+**Validação antes de gravar o cookie.** O cookie só é escrito se `decodeJWT()` de `jwtDecoder.ts` — o único lugar do projeto autorizado a ler JWT — devolver payload não-nulo. Impede que `[object Object]`, string truncada ou token de outro formato virem uma sessão morta.
+
+**Cabeçalho `CACHE STRATEGY`.** O arquivo não tinha o comentário exigido pelo `CLAUDE.md`. Adicionado, junto da tabela de modos de falha e da nota de por que o JWT não volta no corpo.
+
+Nada mudou em `SyncUserEffect.tsx`: ele já trata `!res.ok`, e 502/504 caem no mesmo ramo que o 500 de antes.
+
+### Novo arquivo
+
+| Arquivo | Propósito |
+|---|---|
+| `front/tests/sync-user.route.test.ts` | 21 specs Vitest. Segue o padrão de `generate-token.route.test.ts`: `getToken` do NextAuth via `vi.mock`, `fetch` global via `vi.stubGlobal`, helper `makeJwt()`. Cobre 401 sem `googleAccount` e sem `id_token`; 500 sem `BACKEND_API_URL`; 504 em erro de rede e em timeout; `AbortSignal` presente no `fetch`; relay de status do BFF com corpo sanitizado; cookie gravado com `httpOnly`/`sameSite=lax`/`path=/`/`maxAge` 30d nas cinco grafias aceitas; 502 em formato desconhecido, em token-objeto e em JWT que não decodifica; e a garantia de que nem o JWT do BFF nem o `id_token` do Google aparecem em `console.*` |
+
+### Fora de escopo (por decisão do usuário)
+
+- Timeout e tratamento uniforme nas demais rotas que falam com o BFF — `Nota-corte`, `user/stats`, `universities`, `subscribe`, `games/flash-cards`. Nenhuma tem timeout hoje; todas penduram 10s quando o BFF cai
+- Qualquer aviso de conexão na tela do aluno — a falha segue silenciosa no cliente, por opção
+- Mover o JWT do Java para dentro do token do NextAuth, eliminando `user_data` e `/api/user/me`
+- Enxugar o cookie do NextAuth, hoje partido em `.0`/`.1` por guardar o objeto `account` inteiro em `lib/core/auth.ts`
+
+---
+
 ## [Chore/scope] Alinhamento do repositório à Fase 1 — Lançamento Core (JAN 2027)
 
 Remoção do que sobrou de features das Fases 2 e 3 no repositório, conforme `Fase 1 - Lançamento Core (JAN 2027)`. O grosso do código dessas features já havia saído; o que restava eram rotas órfãs, componentes órfãos, escopo OAuth e dependências npm sem consumidor — além de copy de marketing prometendo IA que não estará no ar no dia 1.
