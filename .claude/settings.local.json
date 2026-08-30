@@ -17,7 +17,11 @@
       "Bash(node \"C:/Users/fegro/AppData/Local/Temp/claude/d--GitHub-frontend/8eeecd7d-4f34-4d81-b21c-5efaef6a9906/scratchpad/inspect-posts.js\")",
       "Bash(node \"C:/Users/fegro/AppData/Local/Temp/claude/d--GitHub-frontend/8eeecd7d-4f34-4d81-b21c-5efaef6a9906/scratchpad/fix-posts.js\")",
       "Bash(cmd //c dir /b \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\lib\")",
-      "Bash(cmd //c dir /b \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\lib\\\\Games\")"
+      "Bash(cmd //c dir /b \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\lib\\\\Games\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('next',p.dependencies.next,'| next-auth',p.dependencies['next-auth']\\)\")",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__get_runtime_logs"
     ]
   }
 }

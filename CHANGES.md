@@ -1,5 +1,38 @@
 # CHANGES
 
+## [Chore/infra] Remoção do gate de IP — o site passa a ser público
+
+O *proxy* do Next 16 (`front/src/proxy.ts`) devolvia **404 sem corpo** para todo IP fora da allowlist de `ALLOWED_IPS`, cobrindo inclusive `/_next/static` e `public/`, com exceção de `/api/webhooks/*`. Esse gate foi removido a pedido: a aplicação agora responde para qualquer origem, sem filtro de IP.
+
+### O que saiu
+
+| Arquivo | Ação |
+|---|---|
+| `front/src/proxy.ts` | **removido** — era o único conteúdo do arquivo; sem ele o Next 16 não instala nenhum proxy |
+| `front/tests/proxy.test.ts` | **removido** — as specs cobriam só o gate e quebrariam com o módulo ausente |
+
+Deletar o arquivo em vez de transformá-lo em *pass-through* evita manter uma camada que roda em toda requisição sem fazer nada. Para reativar o gate, basta restaurar os dois arquivos pelo histórico do git.
+
+### O que ficou
+
+`front/src/lib/core/ip-allowlist.ts` (`parseAllowlist`, `isAllowed`, `normalizeIp`, `ipToBits`) **continua no repositório**, junto com `tests/ip-allowlist.test.ts`, que segue passando. A lib é pura, não tem efeito colateral em import e ninguém mais a consome — vira código órfão, mantido para o caso de o gate voltar. Pode ser removida numa limpeza futura.
+
+### Impacto operacional
+
+- A env `ALLOWED_IPS` deixou de ter consumidor. Pode sair do `.env` e das variáveis de ambiente do deploy; se ficar, é ignorada.
+- A exceção de `/api/webhooks/*` perde o propósito — os webhooks de Stripe e Mercado Pago já chegavam por ela e continuam chegando.
+- **Nenhuma outra proteção mudou.** Autenticação por cookie `user_data` (HttpOnly), `readUserToken` nas rotas e as regras do `CLAUDE.md` seguem intactas. O que se perdeu foi apenas a camuflagem do deploy: o domínio agora é alcançável por qualquer pessoa.
+
+### Documentação
+
+`README.md` da raiz: seção **Gate de IP (`proxy.ts`)** removida, sumário renumerado (13–21), `ALLOWED_IPS` retirado do bloco de variáveis de ambiente e a linha de `proxy.test.ts` tirada da tabela de specs.
+
+### Testes
+
+`npm test` → **11 arquivos passando, 114 testes**. As 4 falhas restantes (`badge-cohesion.test.ts`, `user-profile.test.ts` sem suite; `materiaVisualIconBg.test.ts` apontando para `Questoes_Gemini.tsx` inexistente; `generate-token.route.test.ts` com `cookies` fora do request scope) são **anteriores a esta entrega** e não têm relação com o proxy.
+
+---
+
 ## [Feat/auth] `GET /api/user/me` — fallback para a sessão do NextAuth, com remontagem do cookie fragmentado
 
 `GET /api/user/me` tinha uma única fonte de sessão: o cookie `user_data`, o JWT do BFF Java. Quando `/api/sync-user` falha — BFF fora do ar, endpoint divergente, `id_token` ausente —, esse cookie **nunca é gravado**, e a rota respondia 401 em toda navegação. O aluno atravessava o OAuth inteiro, tinha sessão NextAuth válida no navegador, e a aplicação o tratava como deslogado.

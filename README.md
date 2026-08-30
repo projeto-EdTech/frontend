@@ -21,16 +21,15 @@ Interface web da plataforma Vestibuline: preparação para vestibulares com simu
 10. [Camada de Serviço](#camada-de-serviço)
 11. [Contextos, Hooks e Stores](#contextos-hooks-e-stores)
 12. [Sistema de Pagamentos](#sistema-de-pagamentos)
-13. [Gate de IP (`proxy.ts`)](#gate-de-ip-proxyts)
-14. [Setup Local](#setup-local)
-15. [Scripts](#scripts)
-16. [Variáveis de Ambiente](#variáveis-de-ambiente)
-17. [Testes](#testes)
-18. [Padrões e Convenções](#padrões-e-convenções)
-19. [Segurança](#segurança)
-20. [Estado Atual e Dívidas Conhecidas](#estado-atual-e-dívidas-conhecidas)
-21. [Fluxo de Contribuição](#fluxo-de-contribuição)
-22. [Licença](#licença)
+13. [Setup Local](#setup-local)
+14. [Scripts](#scripts)
+15. [Variáveis de Ambiente](#variáveis-de-ambiente)
+16. [Testes](#testes)
+17. [Padrões e Convenções](#padrões-e-convenções)
+18. [Segurança](#segurança)
+19. [Estado Atual e Dívidas Conhecidas](#estado-atual-e-dívidas-conhecidas)
+20. [Fluxo de Contribuição](#fluxo-de-contribuição)
+21. [Licença](#licença)
 
 ---
 
@@ -522,19 +521,6 @@ src/components/payment/
 
 ---
 
-## Gate de IP (`proxy.ts`)
-
-[`front/src/proxy.ts`](front/src/proxy.ts) é o *proxy* do Next 16 (sucessor do middleware). Quando `ALLOWED_IPS` está definido, tudo que vem de fora da allowlist recebe **404 sem corpo** — o domínio precisa parecer deploy inexistente, não site protegido.
-
-- O gate liga pela **presença** da env, não pelo tamanho da lista: se todas as regras forem inválidas (typo), tudo vira 404 em vez de abrir o site
-- O IP vem de `x-vercel-forwarded-for` (escrito pela borda da Vercel, não forjável), com `x-real-ip` e `x-forwarded-for` como fallback
-- O matcher cobre **tudo**, inclusive `/_next/static` e `public/`, para que nem os chunks provem que o app existe
-- **Exceção:** `/api/webhooks/*` fica fora — as notificações chegam dos servidores da Stripe e do Mercado Pago, que nunca estarão na allowlist
-
-Sem `ALLOWED_IPS`, o gate fica desligado e o app responde normalmente.
-
----
-
 ## Setup Local
 
 ### Pré-requisitos
@@ -635,9 +621,6 @@ NEXT_PUBLIC_POSTHOG_HOST=
 NEXT_PUBLIC_EMAILJS_SERVICE_ID=
 NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=
 NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=
-
-# Gate de IP (opcional — define se o site fica público)
-ALLOWED_IPS=                         # lista separada por vírgula; vazio = gate desligado
 ```
 
 **Regra:** prefixo `NEXT_PUBLIC_` apenas para identificadores públicos não-secretos. Segredos, JWTs e credenciais ficam server-side.
@@ -665,8 +648,7 @@ Os testes vivem em `front/tests/` (não em `src/`) para o projeto manter um úni
 | Arquivo | O que testa |
 | --- | --- |
 | `payment-router.test.ts` | Router de gateway: primário, failover em timeout/rede/5xx, 4xx sem fallback, mapeamento dos adapters |
-| `proxy.test.ts` | Gate de IP: allowlist, matcher, exceção dos webhooks |
-| `ip-allowlist.test.ts` | `normalizeIp` e `ipToBits` — parsing de IPv4/IPv6 e CIDR |
+| `ip-allowlist.test.ts` | `normalizeIp` e `ipToBits` — parsing de IPv4/IPv6 e CIDR (lib sem consumidor desde a remoção do gate) |
 | `parseSubjectKey.test.ts` | Parse de `"Matéria — Conteúdo"` e `buildSubjectTree` |
 | `materiaVisualIconBg.test.ts` | `getMateriaVisual` — ícone e cor por matéria |
 | `universityLogo.test.ts` | Resolver de logo por slug/nome, case-insensitive |
