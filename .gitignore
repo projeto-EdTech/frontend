@@ -47,3 +47,4 @@ npm install --legacy-peer-deps
 CLAUDE.md
 GEMINI.md
 .claude/
+.vercel

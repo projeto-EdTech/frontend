@@ -10,7 +10,9 @@
       "PowerShell(gh auth status)",
       "PowerShell(git ls-remote --heads https://github.com/projeto-EdTech/frontend.git)",
       "Bash(git symbolic-ref *)",
-      "Bash(sed 's/^ D //')"
+      "Bash(sed 's/^ D //')",
+      "Bash(git -C d:/GitHub/frontend ls-files front/src/lib/badges/)",
+      "Bash(git -C d:/GitHub/frontend check-ignore -v front/src/lib/badges/badges.json front/src/lib/badges/badgeUtils.ts)"
     ]
   }
 }
