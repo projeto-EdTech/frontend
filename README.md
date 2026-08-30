@@ -1,7 +1,6 @@
 # Vestibuline — Front-End
 
 Interface web da plataforma Vestibuline: preparação para vestibulares com simulados de provas reais, consulta de nota de corte, mini-games educativos, estatísticas de desempenho, ranking e checkout do plano Simula PRO.
-
 [Reportar Bug](https://github.com/projeto-EdTech/frontend/issues) · [Solicitar Melhoria](https://github.com/projeto-EdTech/frontend/issues)
 
 > **AVISO:** Repositório PRIVADO — uso exclusivo da equipe Vestibuline. Nenhum trecho de código deve ser compartilhado externamente sem aprovação formal.
