@@ -12,7 +12,10 @@
       "Bash(git symbolic-ref *)",
       "Bash(sed 's/^ D //')",
       "Bash(git -C d:/GitHub/frontend ls-files front/src/lib/badges/)",
-      "Bash(git -C d:/GitHub/frontend check-ignore -v front/src/lib/badges/badges.json front/src/lib/badges/badgeUtils.ts)"
+      "Bash(git -C d:/GitHub/frontend check-ignore -v front/src/lib/badges/badges.json front/src/lib/badges/badgeUtils.ts)",
+      "Bash(grep -n \"^  {$\\\\|^    id:\\\\|^    slug:\\\\|^    readingTime:\\\\|^    popularity:\\\\|^    category:\\\\|^    stats: {\\\\|^    views:\\\\|^    likes:\\\\|^    readingTime\\\\|^    }$\\\\|^  }\" src/lib/data/posts.ts)",
+      "Bash(node \"C:/Users/fegro/AppData/Local/Temp/claude/d--GitHub-frontend/8eeecd7d-4f34-4d81-b21c-5efaef6a9906/scratchpad/inspect-posts.js\")",
+      "Bash(node \"C:/Users/fegro/AppData/Local/Temp/claude/d--GitHub-frontend/8eeecd7d-4f34-4d81-b21c-5efaef6a9906/scratchpad/fix-posts.js\")"
     ]
   }
 }
