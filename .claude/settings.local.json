@@ -21,7 +21,8 @@
       "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('next',p.dependencies.next,'| next-auth',p.dependencies['next-auth']\\)\")",
       "mcp__claude_ai_Vercel__list_teams",
       "mcp__claude_ai_Vercel__list_projects",
-      "mcp__claude_ai_Vercel__get_runtime_logs"
+      "mcp__claude_ai_Vercel__get_runtime_logs",
+      "mcp__claude_ai_Vercel__get_project"
     ]
   }
 }
