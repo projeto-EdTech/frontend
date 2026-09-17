@@ -109,6 +109,10 @@ Com a config funcionando, o ESLint apontou **103 erros** (e 79 avisos). Resultad
 - `npm ci --legacy-peer-deps --dry-run` → ok
 - `npm run build` → ok (o CI não roda build; checado à mão por causa do checklist do README)
 
+### Correção depois da primeira execução do CI
+
+`DiscordTokenModal.test.tsx` fazia `Object.assign(navigator, …)` no `beforeEach`. O global `navigator` só existe a partir do **Node 21**: passava na máquina local (Node 24) e quebrava no runner (Node 20) com `ReferenceError: navigator is not defined`. Trocado por `vi.stubGlobal('navigator', …)` com `vi.unstubAllGlobals()` no `afterEach`. Reproduzido localmente rodando a suíte com o global removido: 14 arquivos, 107 testes passando.
+
 ### Fora de escopo
 
 - 29 × `set-state-in-effect` (acima).

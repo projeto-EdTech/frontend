@@ -23,7 +23,10 @@ describe('formato do token OTP', () => {
 
 describe('DiscordTokenModal — comportamento (pseudo, requer Testing Library)', () => {
   beforeEach(() => {
-    Object.assign(navigator, {
+    // `navigator` só existe como global a partir do Node 21 — no Node 20 do CI,
+    // `Object.assign(navigator, …)` estoura com "navigator is not defined".
+    vi.stubGlobal('navigator', {
+      ...(globalThis.navigator ?? {}),
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
     });
     vi.stubGlobal(
@@ -33,6 +36,7 @@ describe('DiscordTokenModal — comportamento (pseudo, requer Testing Library)',
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
