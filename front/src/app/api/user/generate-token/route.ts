@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server';
 import { generateDiscordToken } from '@/app/service/discordToken.service';
+import { readUserToken } from '@/app/service/sessionToken';
+import { decodeJWT } from '@/app/service/jwtDecoder';
 
 // CACHE STRATEGY: no-store — token OTP single-use/sensível
 
-// Extrai o ID do usuário a partir do token JWT (mesmo padrão de /api/planner e /api/user/stats).
+// Extrai o ID do usuário do JWT — decode sempre via jwtDecoder (ponto único).
 function extractUserId(token: string): string | null {
-  try {
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
-    return payload.id ?? payload.sub ?? payload.email ?? null;
-  } catch {
-    return null;
-  }
+  const payload = decodeJWT(token);
+  return payload?.id ?? payload?.sub ?? payload?.email ?? null;
 }
 
 /**
@@ -22,14 +20,9 @@ function extractUserId(token: string): string | null {
 export async function POST(request: Request) {
   try {
     // 1. Obter o token JWT (Header Authorization ou cookie user_data).
-    const authHeader = request.headers.get('Authorization');
-    let userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
-
-    if (!userToken) {
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      userToken = cookieStore.get('user_data')?.value || null;
-    }
+    //    readUserToken lê do próprio Request — `cookies()` de next/headers lançava fora
+    //    do escopo de request e transformava o 401 em 500.
+    const userToken = readUserToken(request);
 
     if (!userToken) {
       return NextResponse.json({ error: 'Não autorizado: token não fornecido.' }, { status: 401 });
