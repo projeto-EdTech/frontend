@@ -1,5 +1,82 @@
 # CHANGES
 
+## [Chore/ci] GitHub Actions (lint + test), README enxuto e lint/testes verdes
+
+Entram o workflow de CI e o novo `README.md`, que passa a apontar para a documentação técnica em [`projeto-EdTech/docs`](https://github.com/projeto-EdTech/docs/blob/main/architecture/frontend.md). Antes do commit, rodar os passos do CI localmente mostrou que ele nasceria **vermelho**: `npm run lint` não existia mais e 4 arquivos de teste falhavam. Esta entrega corrige os dois.
+
+### CI — `.github/workflows/ci.yml` (novo)
+
+- Dispara em `pull_request` contra `main`; `concurrency` por número do PR com `cancel-in-progress`.
+- Job único **Lint & Test** em `ubuntu-latest`, `working-directory: front`.
+- Node 20 com cache npm por `front/package-lock.json` → `npm ci --legacy-peer-deps` → `npm run lint` → `npm run test`.
+- Verificado localmente: `npm ci --legacy-peer-deps --dry-run` com o lockfile atual passa (lockfile em sincronia com o `package.json`), e todos os `engines.node` do lockfile aceitam Node 20.19.
+
+### README
+
+- `README.md` da raiz substituído pela versão enxuta: visão geral, setup, scripts, fluxo de contribuição e licença. Stack detalhada, estrutura de pastas, rotas, camada de serviço, variáveis de ambiente e convenções agora moram em `projeto-EdTech/docs/architecture/frontend.md`; decisões de arquitetura em `projeto-EdTech/docs/adr/`.
+- Divergências corrigidas contra o código: a linha do script `lint` diz `eslint .` (não `next lint`).
+- `front/.env.example` **criado** — o README manda `cp .env.example .env`, e o arquivo não existia. Traz só as chaves efetivamente lidas (`process.env.*` em `front/src/`, mais `NEXTAUTH_URL`, lida pelo next-auth). `NEXT_PUBLIC_MERCADO_PAGO_KEY` e `STRIPE_WEBHOOK_SECRET`, listadas no README antigo, ficaram de fora: nenhum consumidor no código.
+- `.gitignore`: exceção `!front/.env.example` sob `front/.env*`. O `.env` real continua ignorado.
+
+### Lint — `next lint` removido no Next 16
+
+| Arquivo | Mudança |
+|---|---|
+| `front/package.json` | script `lint`: `next lint` → `eslint .` |
+| `front/eslint.config.mjs` | `FlatCompat` (quebrava com `Converting circular structure to JSON`) → flat config nativo: `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript` via `defineConfig`, com `globalIgnores` para `.next`, `out`, `build`, `coverage`, `next-env.d.ts` e `tests/escalabilidade_K6` |
+
+Com a config funcionando, o ESLint apontou **103 erros** (e 79 avisos). Resultado final: **0 erros, 106 avisos**.
+
+**Corrigidos no código (74):**
+
+- **63 × `@typescript-eslint/no-explicit-any`** — tipos locais para o que o BFF devolve, sem mudar mapeamento nenhum:
+  - `CursoBackend` em `api/Nota-corte/route.ts` e `Simula_PRO/NotaCorteResultados.tsx`
+  - `ArtigoBackend` em `api/blog/route.ts`, `blog/BlogDataServer.tsx` e `blog/BlogPostDataServer.tsx`
+  - `QuestaoBruta`/`ProvaBruta` em `Simula_PRO/SimulacaoLoader.tsx` e `Simulation/SimulacaoLoader.tsx`; `formatApiData` passa a devolver `Question[]`
+  - `{ conteudo; percentual }` em `api/estatisticas/[subject]/route.ts` e `Estatisticas/EstatisticasDados.tsx`
+  - `NotaCorteResultadosClient` tipado com `CourseResult` (`@/types/nota-corte`)
+  - `SimulationQuizClient` (as duas cópias): `text as any` → `text as ComplexEnunciado`
+  - `stripe.gateway.ts`: casts removidos — `pix_display_qr_code` e `boleto_display_details` já são tipados no SDK
+  - `mercadopago.gateway.ts`: `barcode` via cast estreito (campo real da resposta, ausente no tipo do SDK)
+  - `jwtDecoder.ts`: index signature de `JWTPayload` `any` → `unknown`
+  - `MateriaRecomendada` em `flash-cardlogic.ts`; `QuestaoMockup` em `mockups/QuestoesIAMockup.tsx`
+  - `analytics.ts`: `gtag`/`clarity` com `unknown[]`; `payment-router.test.ts`: mock via `ConstructorParameters<typeof StripeGateway>[1]`
+- **4 × `react/no-unescaped-entities`** — `app/page.tsx`: `"pagar para ver"` → `&ldquo;…&rdquo;`
+- **1 × `@typescript-eslint/ban-ts-comment`** — `Lexoo.tsx`: `@ts-ignore` → `@ts-expect-error`
+- **Regras do React Compiler (`eslint-plugin-react-hooks` 7):**
+  - `purity` (2) — `NotaCorteResultados.tsx`: `Date.now()`/`Math.random()` em render → ids determinísticos (`api-result-<curso>-<instituição>`, `curso-<índice>`)
+  - `immutability` (1) — `NavigationSound.tsx`: o `Audio` saiu de `useMemo` (que não pode ser mutado) para um `useRef` criado num efeito de montagem
+  - `static-components` (1) — `ArenaGameClient.tsx`: `getGameComponent(slug)` em render → lookup direto em `gameComponents[slug]`
+  - `preserve-manual-memoization` (1) — `simulation/[university]/summary/page.tsx`: `universities` (do contexto) entrou nas deps do `useMemo`
+  - `error-boundaries` (2) — `Simulation/SimulacaoLoader.tsx` e `Simula_PRO/NotaCorteResultados.tsx`: JSX saiu de dentro do `try/catch`; o `try` só busca dados e o render vem depois. As mensagens de erro exibidas são as mesmas
+
+**Rebaixado para aviso (29) — dívida consciente:** `react-hooks/set-state-in-effect`. Boa parte é padrão de hidratação (`setMounted(true)`, `ThemeContext`, `useUserTier`, `use-mobile`, `SkipLink`); refatorar muda comportamento de renderização e exige teste visual tela a tela. A regra está como `warn` em `eslint.config.mjs`, com comentário apontando para esta entrada.
+
+### Testes — 4 arquivos falhando
+
+| Arquivo | Causa | Correção |
+|---|---|---|
+| `generate-token.route.test.ts` | a rota lia o cookie com `cookies()` de `next/headers`, que lança fora do request scope → 500 no lugar de 401 | **rota corrigida**: `readUserToken(request)` de `service/sessionToken.ts` e decode via `decodeJWT` de `service/jwtDecoder.ts` — o parser e o decode manuais violavam as regras do `CLAUDE.md`. +2 specs: JWT pelo cookie `user_data` e 401 para JWT sem `id`/`sub`/`email` |
+| `badge-cohesion.test.ts` | script com `assert` e chamada solta — "No test suite found" | convertido para `describe`/`it`, mesmas asserções |
+| `user-profile.test.ts` | idem | convertido para `describe`/`it`, mesmas asserções |
+| `materiaVisualIconBg.test.ts` | o bloco `Questoes_Gemini` lia `Simula_PRO/Questoes_Gemini.tsx`, **apagado no commit `83575da`** | bloco removido; os 4 testes de `getMateriaVisual` seguem. A "exceção deliberada" do README antigo não vale mais: o componente não existe neste checkout |
+
+### Verificação
+
+- `npm test` → **14 arquivos, 107 testes, todos passando**
+- `npm run lint` → **0 erros**, 106 avisos
+- `npx tsc --noEmit` → **0 erros**
+- `npm ci --legacy-peer-deps --dry-run` → ok
+- `npm run build` → ok (o CI não roda build; checado à mão por causa do checklist do README)
+
+### Fora de escopo
+
+- 29 × `set-state-in-effect` (acima).
+- Logs com prefixo de JWT em `api/questions/[university]/route.ts` (10 caracteres) e `api/blog/route.ts` (20 caracteres), contra a regra "nada de JWT em log". As duas rotas também leem só o header `Authorization`, sem `readUserToken`.
+- `enigma.tsx` compara o tier com `"Simula PRO"`, mas os tiers são `FREE`/`SIMULAPRO`/…: todo mundo cai no limite FREE. O comportamento foi mantido — na Fase 1 isso pode ser o desejado.
+
+---
+
 ## [Chore/infra] Remoção do gate de IP — o site passa a ser público
 
 O *proxy* do Next 16 (`front/src/proxy.ts`) devolvia **404 sem corpo** para todo IP fora da allowlist de `ALLOWED_IPS`, cobrindo inclusive `/_next/static` e `public/`, com exceção de `/api/webhooks/*`. Esse gate foi removido a pedido: a aplicação agora responde para qualquer origem, sem filtro de IP.
