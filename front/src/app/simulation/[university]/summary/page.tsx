@@ -153,7 +153,7 @@ export default function SummaryPage() {
 
         // A busca agora é feita no array 'universities' importado, usando o 'slug'
         return universities.find(u => u.slug === summaryData.university) || { name: "Unknown", year: "2023", logo: "/placeholder.svg" };
-    }, [summaryData])
+    }, [summaryData, universities])
 
     // Memoizar função de formatação de tempo
     const formatTimeSpent = useCallback((seconds: number) => {

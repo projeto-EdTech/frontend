@@ -13,6 +13,12 @@ import {
   flashCardsData // Importando os dados locais
 } from '../lib/flash-cardData';
 
+// Formato de /flashcards/recomendacao no BFF
+interface MateriaRecomendada {
+  nome: string;
+  topicos: { nome: string }[];
+}
+
 /**
  * Hook personalizado para gerenciar toda a lógica do jogo Flash Card
  */
@@ -54,17 +60,17 @@ export class FlashCardGameLogic {
     }
 
     const data = await response.json();
-    const recommendedMaterias = data.materias || [];
+    const recommendedMaterias: MateriaRecomendada[] = data.materias || [];
 
     const filteredCards: FlashCard[] = [];
     const subjectsSet = new Set<string>();
 
     // Filtra o banco de dados local baseado no que o backend recomendou
-    recommendedMaterias.forEach((recMateria: any) => {
+    recommendedMaterias.forEach((recMateria) => {
       const actualSubject = flashCardsData.find(s => s.subject.toLowerCase() === recMateria.nome.toLowerCase());
       
       if (actualSubject) {
-        recMateria.topicos.forEach((recTopic: any) => {
+        recMateria.topicos.forEach((recTopic) => {
           const actualTopic = actualSubject.topics.find(t => t.name.toLowerCase() === recTopic.nome.toLowerCase());
           
           if (actualTopic) {

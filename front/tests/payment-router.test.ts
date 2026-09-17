@@ -248,7 +248,7 @@ describe('StripeGateway — mapeamento PIX', () => {
           },
         }),
       },
-    } as any;
+    } as unknown as ConstructorParameters<typeof StripeGateway>[1];
 
     const gw = new StripeGateway('sk_test_fake', mockStripe);
     const result = await gw.createPixPayment(PIX_REQ);

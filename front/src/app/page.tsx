@@ -761,7 +761,7 @@ export default function Home() {
                       itemHeight={550}
                       autoRotateInterval={5000}
                       itemSpacing={150}
-                      renderItem={(feature: any) => {
+                      renderItem={(feature) => {
                         const props = { isDark };
                         const renderContent = () => {
                           switch (feature.id) {
@@ -1211,7 +1211,7 @@ export default function Home() {
                           </h3>
                           <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Simule se você passaria ou não nos vestibulares, sem
-                            precisar "pagar para ver".
+                            precisar &ldquo;pagar para ver&rdquo;.
                           </p>
                         </div>
                       </motion.div>
@@ -1291,7 +1291,7 @@ export default function Home() {
                           </h3>
                           <p className="text-gray-600 font-medium leading-relaxed text-sm">
                             Simule se você passaria ou não nos vestibulares, sem
-                            precisar "pagar para ver".
+                            precisar &ldquo;pagar para ver&rdquo;.
                           </p>
                         </div>
                       </motion.div>

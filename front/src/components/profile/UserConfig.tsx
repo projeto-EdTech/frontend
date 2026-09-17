@@ -67,7 +67,7 @@ export default function UserConfig({ formData, setFormData, onSave, onCancel }: 
         const response = await fetch('/api/Nota-corte', { method: 'GET' });
         if (response.ok) {
           const data = await response.json();
-          const uniqueCourses = Array.from(new Set(data.allResults.map((r: any) => r.courseName))) as string[];
+          const uniqueCourses = Array.from(new Set(data.allResults.map((r: { courseName: string }) => r.courseName))) as string[];
           setCoursesList(uniqueCourses);
         }
       } catch (error) {

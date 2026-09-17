@@ -8,7 +8,7 @@ const DynamicMarkdown = dynamic(() => import('@/components/Simula_PRO/DynamicMar
   ssr: false,
   loading: () => <span className="animate-pulse bg-gray-200 text-transparent rounded w-full inline-block">Carregando formato...</span>
 });
-import { type Question, type University } from "@/types/university";
+import { type ComplexEnunciado, type Question, type University } from "@/types/university";
 import { useUniversityStorage } from "@/contexts/UniversityStorage";
 import QuestionCarousel from '@/components/QuestionCarousel';
 import LoadingScreen from "@/components/LoadingScreen";
@@ -377,9 +377,9 @@ export default function SimulationQuizClient({
               ) : (
                 <div className="space-y-3 sm:space-y-4">
                   <DynamicMarkdown>
-                    {(questions[currentQuestion]?.text as any)?.principal || ""}
+                    {(questions[currentQuestion]?.text as ComplexEnunciado)?.principal || ""}
                   </DynamicMarkdown>
-                  {(questions[currentQuestion]?.text as any)?.subItens?.map((item: any, index: number) => (
+                  {(questions[currentQuestion]?.text as ComplexEnunciado)?.subItens?.map((item, index: number) => (
                     <div key={index} className="p-3 sm:p-4 bg-gray-100 rounded-lg">
                       <p className="font-medium text-gray-800 text-sm sm:text-base">{item.titulo}</p>
                       <div className="italic text-gray-600 ml-2 sm:ml-4 text-sm sm:text-base">
@@ -389,10 +389,10 @@ export default function SimulationQuizClient({
                       </div>
                     </div>
                   ))}
-                  {(questions[currentQuestion]?.text as any)?.contextoAdicional && (
+                  {(questions[currentQuestion]?.text as ComplexEnunciado)?.contextoAdicional && (
                     <div className="p-3 sm:p-4 bg-blue-50/60 border border-blue-200 rounded-lg">
                       <DynamicMarkdown>
-                        {(questions[currentQuestion]?.text as any)?.contextoAdicional}
+                        {(questions[currentQuestion]?.text as ComplexEnunciado)?.contextoAdicional ?? ""}
                       </DynamicMarkdown>
                     </div>
                   )}

@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import { ApiResponse, CourseResult } from '@/types/nota-corte';
 import { readUserToken } from '@/app/service/sessionToken';
 
+// Campos que o BFF pode devolver para cada curso (nomes variam entre endpoints)
+interface CursoBackend {
+  id?: string | number;
+  curso?: string;
+  nomeCurso?: string;
+  sigla?: string;
+  instituicao?: string;
+  notaCorte?: number;
+  area?: string;
+}
+
 export async function GET(request: Request) {
   const externalApiUrl = process.env.BACKEND_API_URL;
 
@@ -34,12 +45,12 @@ export async function GET(request: Request) {
        return NextResponse.json({ allResults: [], availableAreas: [] });
     }
 
-    const data = await apiResponse.json();
-    
+    const data: unknown = await apiResponse.json();
+
     // Formata a resposta do backend para o que o frontend espera no UserConfig.tsx
     // Esperado: { allResults: [ { courseName, ... } ], availableAreas: [] }
     const formattedData = {
-        allResults: Array.isArray(data) ? data.map((item: any) => ({
+        allResults: Array.isArray(data) ? (data as CursoBackend[]).map((item) => ({
             id: item.id || Math.random().toString(),
             courseName: item.curso || item.nomeCurso || "Curso Desconhecido",
             institution: item.sigla || item.instituicao || "Instituição",

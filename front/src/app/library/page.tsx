@@ -100,7 +100,7 @@ export default function LibraryPage() {
     if (!u) return false;
 
     // Adaptação para suportar tanto 'name' quanto 'sigla' (caso a API tenhas mudado)
-    const uAny = u as any;
+    const uAny = u as University & { sigla?: string };
     const universityName = u.name || uAny.sigla || "";
 
     const matchesSearch =

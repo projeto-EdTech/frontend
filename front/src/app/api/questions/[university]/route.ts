@@ -32,7 +32,7 @@ interface QuestaoFormatada {
     year: number;
     text: {
       principal: string;
-      subItens: any[];
+      subItens: unknown[];
     };
     options: string[];
     correctAnswer: number;
@@ -112,13 +112,13 @@ function formatLatexExpressions(text: string | null): string {
  * @param jsonData O JSON bruto recebido da API.
  * @returns Um array de questões formatadas.
  */
-function formatApiData(jsonData: any): QuestaoFormatada[] {
+function formatApiData(jsonData: { prova?: ProvaBruta } & Partial<ProvaBruta>): QuestaoFormatada[] {
     // Ajuste para suportar array de provas ou prova única
     // Se jsonData for array, pegamos o primeiro ou iteramos?
     // O código original assumia `jsonData.prova || jsonData`.
     // Vamos assumir que API retorna uma prova ou lista de questões.
     
-    const provaData: ProvaBruta = jsonData.prova || jsonData;
+    const provaData = (jsonData.prova || jsonData) as ProvaBruta;
 
     if (!provaData || !Array.isArray(provaData.questoes)) {
         console.warn("Estrutura do JSON inesperada. O array 'questoes' não foi encontrado.");
@@ -226,7 +226,7 @@ export async function POST(
 
   try {
     // 1. EXTRAINDO DADOS DO CORPO DA REQUISIÇÃO
-    let body: any = {};
+    let body: { year?: string | number } = {};
     try {
       body = await request.json();
       console.log(`${LOG}    Body parseado com sucesso:`, JSON.stringify(body));

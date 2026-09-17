@@ -687,7 +687,8 @@ export default function EnigmaLobby() {
   const MAX_LIVES = 8;
   const FREE_DAILY_LIMIT = 1;
   const { data: session } = useSession();
-  const plan: "FREE" | "Simula PRO" = (session?.user as any)?.tier === "Simula PRO" ? "Simula PRO" : "FREE";
+  const tier: string | undefined = session?.user?.tier;
+  const plan: "FREE" | "Simula PRO" = tier === "Simula PRO" ? "Simula PRO" : "FREE";
   const [mode, setMode] = useState<GameMode>("lobby");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [playedSubjects, setPlayedSubjects] = useState<string[]>([]);

@@ -1,6 +1,7 @@
 import React from "react";
 import SimulationQuizClient from "@/components/Simula_PRO/SimulationQuizClient";
 import { cookies } from "next/headers";
+import { type Question } from "@/types/university";
 
 function formatLatexExpressions(text: string | null): string {
     if (typeof text !== 'string') return "";
@@ -32,21 +33,38 @@ function formatLatexExpressions(text: string | null): string {
     }).replace(/\$\s*\$/g, ' '); 
 }
 
-function formatApiData(jsonData: any): any[] {
+// Formato bruto de POST /api/prova/instituicao no BFF
+interface QuestaoBruta {
+    numeroEnunciado?: number | null;
+    enunciado?: string | null;
+    alternativas?: { letra: string; texto: string }[] | null;
+    opcaoCorreta?: string | null;
+    conteudo?: unknown[] | null;
+    dia?: number | null;
+    imageNames?: string[];
+}
+
+interface ProvaBruta {
+    siglaUniversidade?: string;
+    ano?: number;
+    questoes?: QuestaoBruta[];
+}
+
+function formatApiData(jsonData: ProvaBruta & { prova?: ProvaBruta }): Question[] {
     const provaData = jsonData.prova || jsonData;
     if (!provaData || !Array.isArray(provaData.questoes)) return [];
-    
-    const questoesValidas = provaData.questoes.filter((q: any) => q.opcaoCorreta !== null);
-    return questoesValidas.map((questao: any) => {
+
+    const questoesValidas = provaData.questoes.filter((q) => q.opcaoCorreta !== null);
+    return questoesValidas.map((questao) => {
         const correctAnswerIndex = (questao.opcaoCorreta?.toString().toUpperCase().charCodeAt(0) ?? 65) - 65;
         let options: string[] = ["A", "B", "C", "D", "E"];
         if (Array.isArray(questao.alternativas) && questao.alternativas.length > 0) {
-            options = questao.alternativas.map((alt: any) => formatLatexExpressions(alt.texto));
+            options = questao.alternativas.map((alt) => formatLatexExpressions(alt.texto));
         }
         const materias = new Set<string>();
         const conteudos: string[] = [];
         if (Array.isArray(questao.conteudo)) {
-            questao.conteudo.forEach((item: any) => {
+            questao.conteudo.forEach((item) => {
                 if (typeof item === 'string') {
                     const parts = item.split(' – ').map((s: string) => s.trim());
                     if (parts[0]) materias.add(parts[0]);
@@ -55,7 +73,7 @@ function formatApiData(jsonData: any): any[] {
             });
         }
         
-        let images = [];
+        let images: string[] = [];
         if (questao.imageNames && questao.imageNames.length > 0) {
             const uniId = (provaData.siglaUniversidade || "").toUpperCase().replace(/-/g, '');
             const qYear = provaData.ano || new Date().getFullYear();
@@ -69,7 +87,7 @@ function formatApiData(jsonData: any): any[] {
             id: questao.numeroEnunciado || 0,
             university: (provaData.siglaUniversidade || "").toLowerCase(),
             year: provaData.ano || new Date().getFullYear(),
-            text: { principal: formatLatexExpressions(questao.enunciado), subItens: [] },
+            text: { principal: formatLatexExpressions(questao.enunciado ?? null), subItens: [] },
             options,
             correctAnswer: correctAnswerIndex,
             materia: Array.from(materias),
@@ -120,7 +138,7 @@ export default async function SimulacaoLoader({
   console.log(`${LOG}    URL: ${backendUrl}`);
   console.log(`${LOG}    Payload: ${JSON.stringify(payload)}`);
 
-  let result = [];
+  let result: Question[] = [];
   try {
     const fetchStart = Date.now();
     const apiRes = await fetch(backendUrl, {
@@ -159,7 +177,7 @@ export default async function SimulacaoLoader({
     const provaData = rawData.prova || rawData;
     const totalBruto = Array.isArray(provaData?.questoes) ? provaData.questoes.length : 0;
     const semResposta = Array.isArray(provaData?.questoes)
-        ? provaData.questoes.filter((q: any) => q.opcaoCorreta === null).length : 0;
+        ? provaData.questoes.filter((q: QuestaoBruta) => q.opcaoCorreta === null).length : 0;
     console.log(`${LOG}    Questões brutas: ${totalBruto} | sem opcaoCorreta (filtradas): ${semResposta} | válidas: ${totalBruto - semResposta}`);
 
     console.log(`${LOG} 🔄 Formatando dados...`);
@@ -171,7 +189,7 @@ export default async function SimulacaoLoader({
         const yNum = Number(year);
         if (!isNaN(yNum)) {
             const antes = formattedQuestions.length;
-            formattedQuestions = formattedQuestions.filter((q: any) => q.year === yNum);
+            formattedQuestions = formattedQuestions.filter((q) => q.year === yNum);
             console.log(`${LOG}    Filtro year=${yNum}: ${antes} → ${formattedQuestions.length} questões`);
         } else {
             console.warn(`${LOG}    year param inválido: "${year}" (NaN). Filtro ignorado.`);

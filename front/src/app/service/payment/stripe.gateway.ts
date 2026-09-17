@@ -31,8 +31,8 @@ export class StripeGateway implements IPaymentGateway {
     const pixData = intent.next_action?.pix_display_qr_code;
     if (!pixData) throw new GatewayError('Stripe PIX: QR code não retornado', 500);
 
-    const imageUrl = (pixData as any).image_url_png ?? '';
-    const pixCode = (pixData as any).data ?? '';
+    const imageUrl = pixData.image_url_png ?? '';
+    const pixCode = pixData.data ?? '';
 
     return {
       paymentId: intent.id,
@@ -77,10 +77,10 @@ export class StripeGateway implements IPaymentGateway {
     return {
       paymentId: intent.id,
       status: intent.status,
-      boletoUrl: (boletoData as any).pdf ?? '',
-      barcode: (boletoData as any).number ?? '',
-      dueDate: (boletoData as any).expires_at
-        ? new Date((boletoData as any).expires_at * 1000).toISOString()
+      boletoUrl: boletoData.pdf ?? '',
+      barcode: boletoData.number ?? '',
+      dueDate: boletoData.expires_at
+        ? new Date(boletoData.expires_at * 1000).toISOString()
         : '',
       gateway: this.type,
     };

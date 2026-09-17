@@ -88,7 +88,7 @@ export async function GET(
     
     // Mapear o formato do backend (conteudo, percentual) para o frontend (topico, percentual)
     const metricas = Array.isArray(backendData) 
-      ? backendData.map((item: any) => ({
+      ? backendData.map((item: { conteudo: string; percentual: number }) => ({
           topico: item.conteudo, // Backend "conteudo" -> Frontend "topico"
           percentual: item.percentual
         }))

@@ -33,21 +33,38 @@ function formatLatexExpressions(text: string | null): string {
     }).replace(/\$\s*\$/g, ' ');
 }
 
-function formatApiData(jsonData: any): any[] {
+// Formato bruto de POST /api/prova/instituicao no BFF
+interface QuestaoBruta {
+    numeroEnunciado?: number | null;
+    enunciado?: string | null;
+    alternativas?: { letra: string; texto: string }[] | null;
+    opcaoCorreta?: string | null;
+    conteudo?: unknown[] | null;
+    dia?: number | null;
+    imageNames?: string[];
+}
+
+interface ProvaBruta {
+    siglaUniversidade?: string;
+    ano?: number;
+    questoes?: QuestaoBruta[];
+}
+
+function formatApiData(jsonData: ProvaBruta & { prova?: ProvaBruta }): Question[] {
     const provaData = jsonData.prova || jsonData;
     if (!provaData || !Array.isArray(provaData.questoes)) return [];
 
-    const questoesValidas = provaData.questoes.filter((q: any) => q.opcaoCorreta !== null);
-    return questoesValidas.map((questao: any) => {
+    const questoesValidas = provaData.questoes.filter((q) => q.opcaoCorreta !== null);
+    return questoesValidas.map((questao) => {
         const correctAnswerIndex = (questao.opcaoCorreta?.toString().toUpperCase().charCodeAt(0) ?? 65) - 65;
         let options: string[] = ["A", "B", "C", "D", "E"];
         if (Array.isArray(questao.alternativas) && questao.alternativas.length > 0) {
-            options = questao.alternativas.map((alt: any) => formatLatexExpressions(alt.texto));
+            options = questao.alternativas.map((alt) => formatLatexExpressions(alt.texto));
         }
         const materias = new Set<string>();
         const conteudos: string[] = [];
         if (Array.isArray(questao.conteudo)) {
-            questao.conteudo.forEach((item: any) => {
+            questao.conteudo.forEach((item) => {
                 if (typeof item === 'string') {
                     const parts = item.split(' – ').map((s: string) => s.trim());
                     if (parts[0]) materias.add(parts[0]);
@@ -56,7 +73,7 @@ function formatApiData(jsonData: any): any[] {
             });
         }
 
-        let images = [];
+        let images: string[] = [];
         if (questao.imageNames && questao.imageNames.length > 0) {
             const uniId = (provaData.siglaUniversidade || "").toUpperCase().replace(/-/g, '');
             const qYear = provaData.ano || new Date().getFullYear();
@@ -70,7 +87,7 @@ function formatApiData(jsonData: any): any[] {
             id: questao.numeroEnunciado || 0,
             university: (provaData.siglaUniversidade || "").toLowerCase(),
             year: provaData.ano || new Date().getFullYear(),
-            text: { principal: formatLatexExpressions(questao.enunciado), subItens: [] },
+            text: { principal: formatLatexExpressions(questao.enunciado ?? null), subItens: [] },
             options,
             correctAnswer: correctAnswerIndex,
             materia: Array.from(materias),
@@ -119,7 +136,7 @@ async function loadBffQuestions(
     count: number,
     externalApiUrl: string,
     token: string
-): Promise<any[]> {
+): Promise<Question[]> {
     const universitySlug = university.toUpperCase();
     const backendUrl = `${externalApiUrl}/api/prova/instituicao`;
 
@@ -134,9 +151,7 @@ async function loadBffQuestions(
     });
 
     if (!apiRes.ok) {
-        const err = new Error(`BFF respondeu ${apiRes.status}`);
-        (err as any).status = apiRes.status;
-        throw err;
+        throw Object.assign(new Error(`BFF respondeu ${apiRes.status}`), { status: apiRes.status });
     }
 
     const rawData = await apiRes.json();
@@ -144,7 +159,7 @@ async function loadBffQuestions(
 
     if (year) {
         const yNum = Number(year);
-        if (!isNaN(yNum)) formattedQuestions = formattedQuestions.filter((q: any) => q.year === yNum);
+        if (!isNaN(yNum)) formattedQuestions = formattedQuestions.filter((q) => q.year === yNum);
     }
 
     formattedQuestions.sort((a, b) => a.id - b.id);
@@ -196,30 +211,39 @@ export default async function SimulacaoLoader({
     return renderEmpty(university, year, isDev);
   }
 
+  // O JSX fica fora do try/catch: erro de render não é capturado por ele
+  // (React Compiler — react-hooks/error-boundaries).
+  let bffResult: Question[] = [];
+  let bffStatus: number | undefined;
+  let bffFailed = false;
   try {
-    const bffResult = await loadBffQuestions(university, year, count, externalApiUrl, token);
+    bffResult = await loadBffQuestions(university, year, count, externalApiUrl, token);
+  } catch (err: unknown) {
+    bffFailed = true;
+    const status = (err as { status?: unknown } | null)?.status;
+    if (typeof status === 'number') bffStatus = status;
+  }
 
-    if (bffResult.length > 0) {
-      return (
-        <SimulationQuizClient
-            initialQuestions={bffResult}
-            universitySlug={university}
-            examYear={year}
-            day={day}
-            numberOfQuestions={count}
-        />
-      );
+  if (bffFailed && !isDev) {
+    if (bffStatus === 404) {
+      return <div className="p-8 font-bold text-red-500">Questões não encontradas para esse simulado.</div>;
     }
-  } catch (err: any) {
-    if (!isDev) {
-      if (err?.status === 404) {
-        return <div className="p-8 font-bold text-red-500">Questões não encontradas para esse simulado.</div>;
-      }
-      if (typeof err?.status === 'number') {
-        return <div className="p-8 font-bold text-red-500">Falha ao buscar simulado no servidor (Erro {err.status}).</div>;
-      }
-      return <div className="p-8 font-bold text-red-500">Erro interno na montagem do simulado.</div>;
+    if (bffStatus !== undefined) {
+      return <div className="p-8 font-bold text-red-500">Falha ao buscar simulado no servidor (Erro {bffStatus}).</div>;
     }
+    return <div className="p-8 font-bold text-red-500">Erro interno na montagem do simulado.</div>;
+  }
+
+  if (bffResult.length > 0) {
+    return (
+      <SimulationQuizClient
+          initialQuestions={bffResult}
+          universitySlug={university}
+          examYear={year}
+          day={day}
+          numberOfQuestions={count}
+      />
+    );
   }
 
   return renderEmpty(university, year, isDev);

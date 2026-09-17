@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import LoadingScreen from "@/components/LoadingScreen";
 import LoginModal from "@/components/Login-modal";
 import { type MinigameData } from "@/lib/games/games";
-import { getGameComponent } from "@/lib/games/config";
+import { gameComponents } from "@/lib/games/config";
 import { ArrowLeft } from "lucide-react";
 
 interface ArenaGameClientProps {
@@ -35,7 +35,9 @@ export default function ArenaGameClient({ game }: ArenaGameClientProps) {
     console.log('Jogo finalizado!', score);
   };
 
-  const GameComponent = getGameComponent(game.slug);
+  // Lookup direto no mapa estático: chamar getGameComponent() em render faz o
+  // React Compiler tratar o retorno como componente recriado a cada render.
+  const GameComponent = gameComponents[game.slug] ?? null;
 
   if (isNavigating) {
     return <LoadingScreen message="Carregando Arena..." />;

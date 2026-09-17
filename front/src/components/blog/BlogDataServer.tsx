@@ -3,6 +3,19 @@ import { authOptions } from "@/lib/core/auth";
 import BlogClient from "./BlogClient";
 import { PostPreview } from "@/types";
 
+// Artigo como vem de GET /api/artigos no BFF (campos em português)
+interface ArtigoBackend {
+  id: string;
+  slug?: string;
+  titulo?: string;
+  dataPublicacao?: string;
+  resumo?: string;
+  categoria?: string;
+  tempoLeitura?: number;
+  visualizacoes?: number;
+  curtidas?: number;
+}
+
 async function fetchBlogPosts(): Promise<PostPreview[]> {
   try {
     const externalApiUrl = process.env.BACKEND_API_URL;
@@ -23,7 +36,7 @@ async function fetchBlogPosts(): Promise<PostPreview[]> {
     if (apiResponse.ok) {
       const data = await apiResponse.json();
       
-      const formattedData = Array.isArray(data) ? data.map((post: any) => ({
+      const formattedData = Array.isArray(data) ? (data as ArtigoBackend[]).map((post) => ({
         id: post.id,
         slug: post.slug || post.id, 
         title: post.titulo || "Sem título",

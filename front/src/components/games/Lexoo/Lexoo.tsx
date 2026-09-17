@@ -372,7 +372,7 @@ const useDeviceDetection = (): DeviceInfo => {
       const isTouchDevice = 
         "ontouchstart" in window || 
         navigator.maxTouchPoints > 0 ||
-        // @ts-ignore - para navegadores mais antigos
+        // @ts-expect-error - DocumentTouch só existe em navegadores antigos
         (window.DocumentTouch && document instanceof window.DocumentTouch);
 
       // Detecta se é dispositivo móvel por UA

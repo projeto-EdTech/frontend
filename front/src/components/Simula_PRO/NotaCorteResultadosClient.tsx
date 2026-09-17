@@ -5,16 +5,23 @@ import useSWR from 'swr';
 import Image from 'next/image';
 import { Target, ShieldCheck, SearchX } from 'lucide-react';
 import CourseCard from '@/components/Simula_PRO/CourseCard';
+import { type CourseResult } from '@/types/nota-corte';
 
 interface Props {
   course: string;
   score: number;
   institution: string;
-  initialTargetResult: any | null;
-  filteredAndSorted: any[];
+  initialTargetResult: CourseResult | null;
+  filteredAndSorted: CourseResult[];
 }
 
-const fetcher = async (url: string, payload: any) => {
+interface NotaCortePayload {
+  targetCourse: string;
+  targetInstitution: string;
+  userScore: number;
+}
+
+const fetcher = async (url: string, payload: NotaCortePayload) => {
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -113,7 +120,7 @@ export default function NotaCorteResultadosClient({
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {filteredAndSorted && filteredAndSorted.length > 0 ? (
-            filteredAndSorted.map((result: any) => (
+            filteredAndSorted.map((result) => (
               <CourseCard key={result.id} result={result} theme="light" />
             ))
           ) : (
