@@ -4,6 +4,7 @@ import React from 'react';
 import { Calendar, Clock, Eye, TrendingUp, ArrowRight, BookOpen, ThumbsUp, MessageCircle, Bookmark, Target, Award } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
+import { seededInt } from '@/lib/core/seededRandom';
 
 type PostCardProps = {
   title: string;
@@ -88,10 +89,11 @@ export function PostCard({
     }
   }, [isFullView, content, sanitizedHtmlContent]);
   
-  // Dados mockados se não fornecidos
-  const mockReadTime = readTime || Math.floor(Math.random() * 8) + 3;
-  const mockViews = views || Math.floor(Math.random() * 2000) + 500;
-  const mockLikes = likes || Math.floor(Math.random() * 100) + 20;
+  // Dados mockados se não fornecidos. Derivados do título em vez de sorteados:
+  // Math.random() no render dá um valor no SSR e outro na hidratação.
+  const mockReadTime = readTime || seededInt(`${title}:readTime`, 3, 10);
+  const mockViews = views || seededInt(`${title}:views`, 500, 2499);
+  const mockLikes = likes || seededInt(`${title}:likes`, 20, 119);
 
   // Função para obter cor da dificuldade
   const getDifficultyConfig = (diff: string) => {
@@ -216,7 +218,7 @@ export function PostCard({
             <div className="flex items-center gap-4 text-xs text-gray-700 font-medium">
               <div className="flex items-center gap-1.5 hover:text-gray-700 transition-colors cursor-pointer">
                 <Eye className="w-3.5 h-3.5" strokeWidth={2} />
-                <span>{mockViews.toLocaleString()}</span>
+                <span>{mockViews.toLocaleString('pt-BR')}</span>
               </div>
               
               <div className="flex items-center gap-1.5 hover:text-gray-700 transition-colors cursor-pointer">

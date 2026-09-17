@@ -1,21 +1,82 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { decodeJWT } from "@/app/service/jwtDecoder";
+
+/**
+ * Troca a sessão do NextAuth pela sessão do BFF Java.
+ *
+ * Pega o `id_token` do provedor OAuth, manda ao Java em `POST /auth/google` e grava o JWT
+ * devolvido no cookie `user_data` HttpOnly. É o **único** lugar do fluxo de login que escreve
+ * esse cookie — se esta rota falhar, o aplicativo inteiro se comporta como deslogado, porque
+ * todas as telas e rotas de sessão leem dali.
+ *
+ * O JWT **não volta no corpo**. A resposta traz só o que o cliente usa nos analytics; devolver
+ * o token daria ao navegador como guardá-lo, que é exatamente o que esta arquitetura evita.
+ * Quem precisa dos claims na tela pergunta a `GET /api/user/me`.
+ *
+ * Os três modos de falha são separados **no log**, porque na tela eles são indistinguíveis e já
+ * custaram horas de depuração apontando para o lugar errado:
+ *
+ * | Log                   | Significado                          | Status |
+ * |-----------------------|--------------------------------------|--------|
+ * | `[sync-user][NET]`    | não alcançou o BFF (rede/firewall)   | 504    |
+ * | `[sync-user][BFF]`    | o Java respondeu, mas com erro       | relay  |
+ * | `[sync-user][SHAPE]`  | respondeu OK, em formato inesperado  | 502    |
+ * | `[sync-user][BUG]`    | exceção nossa                        | 500    |
+ *
+ * O corpo devolvido ao navegador é sanitizado em todos eles: nada de host, stack ou nome de
+ * classe interna do Java atravessa esta rota.
+ *
+ * CACHE STRATEGY: no-store — grava sessão, nunca pode ser servida de cache
+ */
+
+/**
+ * Corta antes dos 10s de connect timeout padrão do undici.
+ *
+ * Sem isto, um BFF inalcançável pendura o login por 10s e o erro chega como um
+ * `TypeError: fetch failed` genérico, sem dizer se foi rede, DNS ou o Java engasgado.
+ */
+const TIMEOUT_MS = 8000;
+
+/** Grafias em que o JWT já chegou do BFF. Ler só `{ token }` fazia o login falhar calado. */
+function extrairJwt(backendData: unknown): string | null {
+  const bruto =
+    typeof backendData === "string"
+      ? backendData
+      : ((backendData as Record<string, unknown> | null)?.token ??
+        (backendData as Record<string, unknown> | null)?.accessToken ??
+        (backendData as Record<string, unknown> | null)?.jwt ??
+        (
+          (backendData as Record<string, Record<string, unknown>> | null)?.data as
+            | Record<string, unknown>
+            | undefined
+        )?.token);
+
+  // Qualquer coisa que não seja string vira `[object Object]` no cookie — sessão morta que só
+  // aparece como 401 três telas depois.
+  if (typeof bruto !== "string") return null;
+
+  const limpo = bruto.trim().replace(/^Bearer\s+/i, "");
+  return limpo || null;
+}
+
+/** Só o formato, nunca o valor: a regra do CLAUDE.md proíbe logar JWT, mesmo truncado. */
+function descreverFormato(backendData: unknown): string {
+  if (typeof backendData !== "object" || backendData === null) return typeof backendData;
+  return `object{${Object.keys(backendData).join(",")}}`;
+}
+
+/** Falha antes de chegar ao Java: timeout nosso, connect timeout do undici, DNS, recusa. */
+function ehErroDeRede(erro: unknown): boolean {
+  if (erro instanceof DOMException && erro.name === "TimeoutError") return true;
+  if (erro instanceof Error && erro.name === "AbortError") return true;
+  return erro instanceof TypeError && "cause" in erro;
+}
 
 export async function POST(req: Request) {
   // Obtém o token da sessão (JWT decodificado pelo next-auth)
   // getToken typing expects NextRequest/NextApiRequest; cast via unknown -> NextRequest to avoid 'any'
   const token = await getToken({ req: req as unknown as NextRequest, secret: process.env.NEXTAUTH_SECRET });
-
-  console.log("[sync-user][TOKEN] token completo (decodificado):", JSON.stringify(token, null, 2));
-  console.log("[sync-user][TOKEN] googleAccount:", JSON.stringify(token?.googleAccount, null, 2));
-
-  // JWT bruto completo (string assinada), sem decodificar
-  const rawToken = await getToken({
-    req: req as unknown as NextRequest,
-    secret: process.env.NEXTAUTH_SECRET,
-    raw: true,
-  });
-  console.log("[sync-user][TOKEN] JWT bruto completo:", rawToken);
 
   if (!token?.googleAccount) {
     console.log("[sync-user][ABORT] googleAccount ausente no token");
@@ -33,82 +94,103 @@ export async function POST(req: Request) {
     );
   }
 
+  const idToken = (token.googleAccount as { id_token?: string })?.id_token;
+
+  if (!idToken) {
+    console.log("[sync-user][ABORT] id_token ausente no googleAccount");
+    return NextResponse.json(
+      { message: "Não autorizado: id_token não encontrado" },
+      { status: 401 }
+    );
+  }
+
+  let response: Response;
+
   try {
-    const idToken = (token.googleAccount as any)?.id_token;
-    console.log("[sync-user][GOOGLE] id_token extraído:", idToken);
-    console.log("[sync-user][GOOGLE] access_token:", (token.googleAccount as any)?.access_token);
-    console.log("[sync-user][GOOGLE] refresh_token:", (token.googleAccount as any)?.refresh_token);
-
-    if (!idToken) {
-      console.log("[sync-user][ABORT] id_token ausente no googleAccount");
-      return NextResponse.json(
-        { message: "Não autorizado: id_token não encontrado" },
-        { status: 401 }
-      );
-    }
-
-    // Monta o payload enviando apenas o id_token conforme solicitado
-    const payload = {
-      token: idToken
-    };
-
-    console.log("[sync-user][BFF] enviando payload:", JSON.stringify(payload, null, 2));
-    console.log("[sync-user][BFF] URL destino:", `${process.env.BACKEND_API_URL}/auth/google`);
-
-    // Faz a chamada ao backend na rota especificada
-    const response = await fetch(`${process.env.BACKEND_API_URL}/auth/google`, {
+    response = await fetch(`${process.env.BACKEND_API_URL}/auth/google`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ token: idToken }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-
-    // Tenta ler o corpo da resposta
-    const contentType = response.headers.get("content-type") || "";
-    let backendData;
-
-    if (contentType.includes("application/json")) {
-      backendData = await response.json();
-    } else {
-      backendData = await response.text();
+  } catch (e) {
+    if (ehErroDeRede(e)) {
+      const causa = (e as { cause?: { code?: string; message?: string } }).cause;
+      console.error(
+        `[sync-user][NET] BFF inalcançável em ${process.env.BACKEND_API_URL} — ` +
+          `${(e as Error).name}: ${causa?.code ?? "sem código"} ${causa?.message ?? (e as Error).message}. ` +
+          `Confira se o host aceita conexão (Test-NetConnection <host> -Port <porta>) ` +
+          `antes de procurar bug de autenticação.`
+      );
+      return NextResponse.json(
+        { message: "Não foi possível conectar ao servidor. Tente novamente." },
+        { status: 504 }
+      );
     }
 
-    console.log("[sync-user][BFF] status:", response.status);
-    console.log("[sync-user][BFF] resposta:", JSON.stringify(backendData, null, 2));
+    console.error("[sync-user][BUG] Exceção inesperada ao chamar o BFF", e);
+    return NextResponse.json(
+      { message: "Erro interno ao conectar com backend" },
+      { status: 500 }
+    );
+  }
+
+  try {
+    // Tenta ler o corpo da resposta
+    const contentType = response.headers.get("content-type") || "";
+    const backendData = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text();
 
     if (!response.ok) {
-       return NextResponse.json(
-        {
-          message: "Erro no backend ao sincronizar usuário",
-          details: backendData,
-        },
+      // Sem repassar `backendData`: o corpo do Java pode carregar host, stack ou nome de
+      // classe interna, e esta é a única barreira entre ele e a tela do aluno.
+      console.error("[sync-user][BFF] Backend respondeu", response.status, backendData);
+      return NextResponse.json(
+        { message: "Não foi possível sincronizar sua conta. Tente novamente." },
         { status: response.status }
       );
     }
 
-    // Retorna a resposta exata do backend. 
-    // Se o backend envia uma string (JWT), backendData será essa string.
-    // Se o backend envia um objeto { token: "..." }, retornamos o objeto.
-    const responseNext = NextResponse.json(backendData, { status: 200 });
+    const jwtDoBff = extrairJwt(backendData);
+    // Só o `jwtDecoder` lê JWT neste projeto. Validar antes de gravar impede que uma resposta
+    // OK porém inesperada vire um cookie inútil — o modo de falha que respondia 200 e deixava
+    // o aluno preso em 401.
+    const decoded = jwtDoBff ? decodeJWT(jwtDoBff) : null;
 
-    const tokenFromBackend = typeof backendData === "string" ? backendData : backendData?.token;
-    if (tokenFromBackend) {
-      responseNext.cookies.set("user_data", tokenFromBackend, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60 // 30 dias
-      });
+    if (!jwtDoBff || !decoded) {
+      console.error(
+        `[sync-user][SHAPE] Resposta 200 do BFF sem JWT utilizável. ` +
+          `Formato recebido: ${descreverFormato(backendData)}. ` +
+          `Grafias aceitas: string crua, { token }, { accessToken }, { jwt }, { data: { token } }.`
+      );
+      return NextResponse.json(
+        { message: "Não foi possível sincronizar sua conta. Tente novamente." },
+        { status: 502 }
+      );
     }
+
+    const responseNext = NextResponse.json(
+      { ok: true, id: decoded.id ?? null, tipo: decoded.tipo ?? null },
+      { status: 200 }
+    );
+
+    responseNext.cookies.set("user_data", jwtDoBff, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60 // 30 dias
+    });
 
     return responseNext;
 
   } catch (e) {
-    console.error("[sync-user][EXCEPTION]", e);
+    console.error("[sync-user][BUG] Falha ao processar a resposta do BFF", e);
     return NextResponse.json(
-      { message: "Erro interno ao conectar com backend", error: String(e) },
+      { message: "Erro interno ao conectar com backend" },
       { status: 500 }
     );
   }

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__obsidian__obsidian_simple_search",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend remote -v)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend branch -a)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend log --oneline -5)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend config --local --list)",
+      "PowerShell(git -C D:\\\\GitHub\\\\frontend status --short)",
+      "PowerShell(gh auth status)",
+      "PowerShell(git ls-remote --heads https://github.com/projeto-EdTech/frontend.git)",
+      "Bash(git symbolic-ref *)",
+      "Bash(sed 's/^ D //')",
+      "Bash(git -C d:/GitHub/frontend ls-files front/src/lib/badges/)",
+      "Bash(git -C d:/GitHub/frontend check-ignore -v front/src/lib/badges/badges.json front/src/lib/badges/badgeUtils.ts)",
+      "Bash(grep -n \"^  {$\\\\|^    id:\\\\|^    slug:\\\\|^    readingTime:\\\\|^    popularity:\\\\|^    category:\\\\|^    stats: {\\\\|^    views:\\\\|^    likes:\\\\|^    readingTime\\\\|^    }$\\\\|^  }\" src/lib/data/posts.ts)",
+      "Bash(node \"C:/Users/fegro/AppData/Local/Temp/claude/d--GitHub-frontend/8eeecd7d-4f34-4d81-b21c-5efaef6a9906/scratchpad/inspect-posts.js\")",
+      "Bash(node \"C:/Users/fegro/AppData/Local/Temp/claude/d--GitHub-frontend/8eeecd7d-4f34-4d81-b21c-5efaef6a9906/scratchpad/fix-posts.js\")",
+      "Bash(cmd //c dir /b \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\lib\")",
+      "Bash(cmd //c dir /b \"d:\\\\GitHub\\\\frontend\\\\front\\\\src\\\\lib\\\\Games\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('next',p.dependencies.next,'| next-auth',p.dependencies['next-auth']\\)\")",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__get_runtime_logs",
+      "mcp__claude_ai_Vercel__get_project"
+    ]
+  }
+}

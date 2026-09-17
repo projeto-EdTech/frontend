@@ -99,7 +99,7 @@ export default async function EstatisticasDados({ subject, vestibularSelecionado
     }
     const backendData = await res.json();
     metricas = Array.isArray(backendData) 
-      ? backendData.map((item: any) => ({
+      ? backendData.map((item: { conteudo: string; percentual: number }) => ({
           topico: item.conteudo,
           percentual: item.percentual
         }))

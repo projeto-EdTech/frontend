@@ -43,8 +43,8 @@ export function SimuladoMockup({ isDark, selectedAnswer = -1, setSelectedAnswer 
               <Image
                 src="/Logo_Universidades/enem.png"
                 alt="ENEM Logo"
-                fill
-                className="object-contain"
+                layout="fill"
+                objectFit="contain"
               />
             </div>
             <div>

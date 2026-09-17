@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
+import { useUserTier } from "@/hooks/useUserTier";
 
 export default function Footer() {
-  const { data: session } = useSession();
-  const userTier = session?.user?.tier ?? "FREE";
+  // Quem já assina não precisa do link de planos. Enquanto `loading`, o tier ainda é o "FREE"
+  // otimista do hook — esconder aí faria o item sumir e voltar para usuário grátis.
+  const { isPro, loading } = useUserTier();
+  const mostrarPlanos = loading || !isPro;
 
   return (
     <footer className="relative footer-themed border-t themed-border backdrop-blur-xl">
@@ -57,7 +59,7 @@ export default function Footer() {
                   Biblioteca
                 </Link>
               </li>
-              {userTier !== "Simula PRO" && (
+              {mostrarPlanos && (
                 <li>
                   <Link
                     href="/paidPlan"
@@ -77,15 +79,6 @@ export default function Footer() {
                   News
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/#downloads"
-                  className="group inline-flex items-center themed-text-secondary hover:text-purple-600 dark:hover:text-purple-400 text-sm font-medium transition-all duration-300 hover:translate-x-1"
-                >
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 group-hover:bg-purple-500 transition-colors duration-300"></span>
-                  Download da plataforma
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -95,15 +88,6 @@ export default function Footer() {
               🏢 <span>Empresa</span>
             </h4>
             <ul className="space-y-3">
-              <li>
-                <Link
-                  href="/#about"
-                  className="group inline-flex items-center themed-text-secondary hover:text-purple-600 dark:hover:text-purple-400 text-sm font-medium transition-all duration-300 hover:translate-x-1"
-                >
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-3 group-hover:bg-cyan-500 transition-colors duration-300"></span>
-                  Sobre Nós
-                </Link>
-              </li>
               <li>
                 <Link
                   href="/contato"
@@ -147,13 +131,22 @@ export default function Footer() {
         <div className="relative mt-16 pt-8 border-t themed-border">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
             <p className="themed-text-secondary text-sm font-medium">
-              © 2025 <span className="font-bold themed-text">Vestibuline</span>
-              . Todos os direitos reservados. 💙
+              © 2026 <span className="font-bold themed-text">Vestibuline</span>
+              . Projeto open-source sob licença{" "}
+              <a
+                href="https://github.com/projeto-EdTech/frontend/blob/main/LICENSE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-300"
+              >
+                MIT
+              </a>
+              . 💙
             </p>
 
             {/* Redes sociais com animações aprimoradas */}
             <div className="flex items-center gap-4">
-              <span className="themed-text-secondary text-sm font-medium mr-2">
+              <span className="themed-text-secondary text-sm font-medium mr-2 animate-pulse">
                 Siga-nos:
               </span>
               <div className="flex gap-3">

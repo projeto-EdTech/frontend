@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { seededInt } from "@/lib/core/seededRandom";
 
 export interface UniversityData {
   name: string;
@@ -102,7 +103,8 @@ export function UniversityCard({ university, isDark = false }: UniversityCardPro
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
-                  width: `${Math.random() * 40 + 60}%`,
+                  // Decorativo: derivado do nome para não divergir na hidratação.
+                  width: `${seededInt(`${university.name}:provas`, 60, 100)}%`,
                   backgroundColor: university.color,
                 }}
               />

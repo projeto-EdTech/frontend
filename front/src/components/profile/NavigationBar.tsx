@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  BookOpen,
-  BarChart2,
-  Settings,
-  Target,
-  CalendarDays,
-  AlertCircle,
-} from "lucide-react";
+import { BookOpen, BarChart2, Settings, Target } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useUserTier } from "@/hooks/useUserTier";
 
@@ -52,7 +45,17 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
           </svg>
           <span className="hidden md:inline">Perfil</span>
         </button>
-
+        <button
+          onClick={() => setActiveTab("simulados")}
+          className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+            activeTab === "simulados"
+              ? "bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <BookOpen size={18} className="flex-shrink-0" />
+          <span className="hidden md:inline">Simulados</span>
+        </button>
         <button
           onClick={() => setActiveTab("estatisticas")}
           className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
@@ -64,30 +67,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
           <BarChart2 size={18} className="flex-shrink-0" />
           <span className="hidden md:inline">Estatísticas</span>
         </button>
-        <button
-          onClick={() => setActiveTab("questoesNaoResolvidas")}
-          className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-            activeTab === "questoesNaoResolvidas"
-              ? "bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <AlertCircle size={18} className="flex-shrink-0" />
-          <span className="hidden lg:inline">Questões não resolvidas</span>
-        </button>
         {isPRO && (
           <>
-            <button
-              onClick={() => setActiveTab("planner")}
-              className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 items-center gap-2 hidden md:flex cursor-pointer ${
-                activeTab === "planner"
-                  ? "bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <CalendarDays size={18} className="flex-shrink-0" />
-              <span className="hidden lg:inline">Planner de estudos</span>
-            </button>
             <button
               onClick={() => setActiveTab("notasDeCorte")}
               className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
@@ -101,7 +82,6 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
             </button>
           </>
         )}
-
         <button
           onClick={() => setActiveTab("configuracoes")}
           className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${

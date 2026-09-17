@@ -7,7 +7,6 @@ interface UniversityContextType {
   universities: University[];
   loading: boolean;
   error: string | null;
-  isUsingLocalFallback: boolean;
 }
 
 const UniversityContext = createContext<UniversityContextType | undefined>(undefined);
@@ -20,43 +19,39 @@ export const UniversityStorage: React.FC<UniversityStorageProps> = ({ children }
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isUsingLocalFallback, setIsUsingLocalFallback] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
-        const storedToken = localStorage.getItem('user_data');
-        
+        // Sem Authorization: o cookie `user_data` é HttpOnly e acompanha sozinho todo fetch
+        // same-origin. A rota o lê no servidor com `readUserToken`.
         const response = await fetch('/api/universities', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${storedToken}`,
           },
         });
 
         if (!response.ok) {
-          throw new Error(`API responded with status ${response.status}`);
+          throw new Error('Falha ao buscar universidades');
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          throw new Error('Resposta inesperada do servidor (não-JSON)');
         }
         const data = await response.json();
-        setUniversities(data);
-        setIsUsingLocalFallback(false);
+        const normalized = Array.isArray(data)
+          ? data.map((u: University) => ({
+              ...u,
+              logo: u.logo && !u.logo.startsWith('/') && !u.logo.startsWith('http')
+                ? `/${u.logo}`
+                : u.logo,
+            }))
+          : data;
+        setUniversities(normalized);
       } catch (err) {
-        console.warn('Falha ao buscar universidades da API, carregando dados locais:', err);
-        
-        // Fallback para dados locais em caso de falha
-        try {
-          const { universities: localUniversities } = await import('@/lib/data/universities');
-          setUniversities(localUniversities);
-          setIsUsingLocalFallback(true);
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✓ Usando dados locais de universidades (fallback)');
-          }
-        } catch (fallbackErr) {
-          console.error('Erro ao carregar dados locais de universidades:', fallbackErr);
-          setError('Não foi possível carregar as universidades.');
-        }
+        console.error('Erro ao carregar universidades:', err);
+        setError('Não foi possível carregar as universidades.');
       } finally {
         setLoading(false);
       }
@@ -66,7 +61,7 @@ export const UniversityStorage: React.FC<UniversityStorageProps> = ({ children }
   }, []);
 
   return (
-    <UniversityContext.Provider value={{ universities, loading, error, isUsingLocalFallback }}>
+    <UniversityContext.Provider value={{ universities, loading, error }}>
       {children}
     </UniversityContext.Provider>
   );

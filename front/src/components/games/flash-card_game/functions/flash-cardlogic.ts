@@ -13,6 +13,12 @@ import {
   flashCardsData // Importando os dados locais
 } from '../lib/flash-cardData';
 
+// Formato de /flashcards/recomendacao no BFF
+interface MateriaRecomendada {
+  nome: string;
+  topicos: { nome: string }[];
+}
+
 /**
  * Hook personalizado para gerenciar toda a lógica do jogo Flash Card
  */
@@ -42,13 +48,9 @@ export class FlashCardGameLogic {
    * Busca as matérias e prepara os dados iniciais com base nas recomendações do backend
    */
   async fetchCards(): Promise<{ cards: FlashCard[]; subjects: string[] }> {
-    const storedToken = localStorage.getItem('user_data');
-
+    // Sem Authorization: o cookie `user_data` HttpOnly acompanha sozinho o fetch same-origin.
     const response = await fetch('/api/games/flash-cards', {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${storedToken}`,
-      },
       cache: 'no-store',
     });
 
@@ -58,17 +60,17 @@ export class FlashCardGameLogic {
     }
 
     const data = await response.json();
-    const recommendedMaterias = data.materias || [];
+    const recommendedMaterias: MateriaRecomendada[] = data.materias || [];
 
     const filteredCards: FlashCard[] = [];
     const subjectsSet = new Set<string>();
 
     // Filtra o banco de dados local baseado no que o backend recomendou
-    recommendedMaterias.forEach((recMateria: any) => {
+    recommendedMaterias.forEach((recMateria) => {
       const actualSubject = flashCardsData.find(s => s.subject.toLowerCase() === recMateria.nome.toLowerCase());
       
       if (actualSubject) {
-        recMateria.topicos.forEach((recTopic: any) => {
+        recMateria.topicos.forEach((recTopic) => {
           const actualTopic = actualSubject.topics.find(t => t.name.toLowerCase() === recTopic.nome.toLowerCase());
           
           if (actualTopic) {
@@ -312,17 +314,16 @@ export class FlashCardGameLogic {
    */
   async submitResults(correctIds: number[]): Promise<void> {
     try {
-      const storedToken = localStorage.getItem('user_data');
-
       console.log('[FlashCardLogic] 📤 submitResults — Enviando resultados ao backend:');
       console.log('[FlashCardLogic]    CorrectIds:', correctIds);
-      console.log('[FlashCardLogic]    Token (primeiros 20 chars):', storedToken ? storedToken.substring(0, 20) + '...' : 'não encontrado');
 
+      // Sem Authorization: o cookie `user_data` HttpOnly vai sozinho no fetch same-origin.
+      // ATENÇÃO: `api/games/flash-cards/route.ts` exporta só `GET` — este POST responde 405 e
+      // os acertos nunca chegaram ao backend. Bug de escopo próprio.
       const response = await fetch('/api/games/flash-cards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${storedToken}`,
         },
         body: JSON.stringify({ correctIds }),
       });

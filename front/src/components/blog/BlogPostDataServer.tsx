@@ -3,6 +3,19 @@ import { authOptions } from "@/lib/core/auth";
 import BlogPostClient from "@/components/blog/BlogPostClient";
 import { Post, PostPreview } from "@/types";
 
+// Artigo como vem de GET /api/artigos no BFF (campos em português)
+interface ArtigoBackend {
+  id: string;
+  slug?: string;
+  titulo?: string;
+  dataPublicacao?: string;
+  resumo?: string;
+  categoria?: string;
+  tempoLeitura?: number;
+  visualizacoes?: number;
+  curtidas?: number;
+}
+
 export default async function BlogPostDataServer({ slug, articleId }: { slug: string, articleId?: string }) {
   try {
     const externalApiUrl = process.env.BACKEND_API_URL;
@@ -45,7 +58,7 @@ export default async function BlogPostDataServer({ slug, articleId }: { slug: st
                 likes: backendPost.curtidas || 0,
             },
             tags: backendPost.tags || []
-        } as any as Post;
+        } as unknown as Post;
     } else if (postRes.status === 404) {
       post = null; // Cliente lida disparando notFound
     }
@@ -53,7 +66,7 @@ export default async function BlogPostDataServer({ slug, articleId }: { slug: st
     let relatedPosts: PostPreview[] = [];
     if (relatedRes.ok) {
         const data = await relatedRes.json();
-        const formattedData = Array.isArray(data) ? data.map((p: any) => ({
+        const formattedData = Array.isArray(data) ? (data as ArtigoBackend[]).map((p) => ({
             id: p.id,
             slug: p.slug || p.id, 
             title: p.titulo || "Sem título",
@@ -68,7 +81,7 @@ export default async function BlogPostDataServer({ slug, articleId }: { slug: st
         })) : [];
         
         relatedPosts = formattedData
-           .filter((p: any) => p.slug !== slug)
+           .filter((p) => p.slug !== slug)
            .slice(0, 3);
     }
 

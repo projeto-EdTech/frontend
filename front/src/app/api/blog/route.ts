@@ -1,5 +1,18 @@
 import { NextResponse } from 'next/server';
 
+// Artigo como vem do BFF (campos em português)
+interface ArtigoBackend {
+  id: string | number;
+  slug?: string;
+  titulo?: string;
+  dataPublicacao?: string;
+  resumo?: string;
+  categoria?: string;
+  tempoLeitura?: number;
+  visualizacoes?: number;
+  curtidas?: number;
+}
+
 export async function GET(request: Request) {
   const externalApiUrl = process.env.BACKEND_API_URL;
 
@@ -52,7 +65,7 @@ export async function GET(request: Request) {
       console.log('[API_BLOG] ✅ Sucesso! Formatando e retornando dados ao frontend.');
 
       // Mapeia os dados do backend (português) para o contrato do frontend (inglês)
-      const formattedData = Array.isArray(data) ? data.map((post: any) => ({
+      const formattedData = Array.isArray(data) ? (data as ArtigoBackend[]).map((post) => ({
         id: post.id,
         slug: post.slug || post.id, // Fallback para ID se não houver slug
         title: post.titulo || 'Sem título',

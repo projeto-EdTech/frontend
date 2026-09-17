@@ -15,12 +15,25 @@ interface PixData {
   qrCodeUrl: string;
 }
 
+/** Espelha `PixPaymentStatus` de `usePixPaymentStatus` — a página repassa o que o poll viu. */
+type WaitingStatus = "idle" | "pending" | "paid" | "failed" | "expired";
+
 interface PixFormProps {
   pixData: PixData | null;
   loading?: boolean;
+  /** Estado da confirmação do pagamento, consultada no Mercado Pago pelo servidor. */
+  waitingStatus?: WaitingStatus;
 }
 
-export default function PixForm({ pixData, loading }: PixFormProps) {
+const MENSAGEM_POR_STATUS: Record<WaitingStatus, { texto: string; cor: string } | null> = {
+  idle: null,
+  pending: { texto: "Aguardando confirmação do pagamento...", cor: "#34c759" },
+  paid: { texto: "Pagamento identificado!", cor: "#34c759" },
+  failed: { texto: "Pagamento não concluído. Gere um novo código.", cor: "#ff3b30" },
+  expired: { texto: "Código expirado. Gere um novo PIX.", cor: "#ff9500" },
+};
+
+export default function PixForm({ pixData, loading, waitingStatus = "idle" }: PixFormProps) {
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
@@ -43,6 +56,38 @@ export default function PixForm({ pixData, loading }: PixFormProps) {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const aviso = MENSAGEM_POR_STATUS[waitingStatus];
+
+  const bannerStatus = aviso ? (
+    <div
+      className="rounded-xl p-4 flex items-center gap-3 ring-1 bg-white"
+      style={{ borderColor: aviso.cor, boxShadow: `inset 0 0 0 1px ${aviso.cor}33` }}
+      role="status"
+      aria-live="polite"
+    >
+      {waitingStatus === "pending" ? (
+        <span
+          className="w-4 h-4 border-2 rounded-full animate-spin flex-shrink-0"
+          style={{ borderColor: `${aviso.cor}40`, borderTopColor: aviso.cor }}
+        />
+      ) : (
+        <span
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+          style={{ backgroundColor: aviso.cor }}
+        />
+      )}
+      <span
+        className="text-sm font-semibold"
+        style={{
+          color: aviso.cor,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        }}
+      >
+        {aviso.texto}
+      </span>
+    </div>
+  ) : null;
 
   if (loading) {
     return (
@@ -164,6 +209,8 @@ export default function PixForm({ pixData, loading }: PixFormProps) {
             {copied ? 'Código Copiado!' : 'Copiar Código PIX'}
           </button>
         </div>
+
+        {bannerStatus}
 
         {/* QR Code colapsível (secundário) */}
         <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-[#d2d2d7] shadow-sm">
@@ -328,6 +375,8 @@ export default function PixForm({ pixData, loading }: PixFormProps) {
           ⏰ O código PIX expira em 30 minutos.
         </p>
       </div>
+
+      {bannerStatus}
 
       <div className="bg-[#e5f3ff] border border-[#b3d9ff] rounded-xl p-5 relative overflow-hidden">
         <div className="absolute bottom-0 right-0 opacity-30 w-24 h-24">

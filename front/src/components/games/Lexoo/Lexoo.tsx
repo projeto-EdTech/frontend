@@ -354,9 +354,11 @@ const useDeviceDetection = (): DeviceInfo => {
     orientation: "portrait",
     isTouchDevice: false,
     hasNotch: false,
-    screenWidth: typeof window !== "undefined" ? window.innerWidth : 1024,
-    screenHeight: typeof window !== "undefined" ? window.innerHeight : 768,
-    pixelRatio: typeof window !== "undefined" ? window.devicePixelRatio : 1,
+    // Sem ler window aqui: o branch servidor/cliente daria um valor no HTML do
+    // SSR e outro na hidratação. O detectDevice abaixo preenche na montagem.
+    screenWidth: 1024,
+    screenHeight: 768,
+    pixelRatio: 1,
   });
 
   useEffect(() => {
@@ -370,7 +372,7 @@ const useDeviceDetection = (): DeviceInfo => {
       const isTouchDevice = 
         "ontouchstart" in window || 
         navigator.maxTouchPoints > 0 ||
-        // @ts-ignore - para navegadores mais antigos
+        // @ts-expect-error - DocumentTouch só existe em navegadores antigos
         (window.DocumentTouch && document instanceof window.DocumentTouch);
 
       // Detecta se é dispositivo móvel por UA
@@ -932,7 +934,7 @@ const GameInstance = ({ mode, setMode }: GameInstanceProps) => {
             </button>
 
             {/* Botão de Reset/Novo Jogo */}
-            {session?.user?.tier === "Simula PRO" && (
+            {session?.user?.tier === "SIMULAPRO" && (
               <button
                 onClick={() => {
                   resetGame();

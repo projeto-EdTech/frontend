@@ -1,5 +1,5 @@
 export interface University {
-  id?: number;
+  id: number;
   name: string;
   slug: string;
   logo: string;

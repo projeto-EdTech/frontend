@@ -13,8 +13,18 @@ interface QuestoesIAMockupProps {
   isDark: boolean;
 }
 
+interface QuestaoMockup {
+  exam: string;
+  subject: string;
+  logo: string;
+  question: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanationSteps: string[];
+}
+
 // 1. Banco de dados mockado das questões com LOGOS
-const questionsData: Record<string, any> = {
+const questionsData: Record<string, QuestaoMockup> = {
   "Física — Eletricidade": {
     exam: "FUVEST 2025",
     subject: "Física",

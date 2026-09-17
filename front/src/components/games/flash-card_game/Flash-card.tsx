@@ -11,7 +11,7 @@ import { useSession } from 'next-auth/react';
 const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
   const { theme } = useTheme();
   const { data: session } = useSession();
-  const isPro = session?.user?.tier === 'Simula PRO';
+  const isPro = session?.user?.tier === 'SIMULAPRO';
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const DAILY_LIMIT = 10;
   const [isLoading, setIsLoading] = useState(true);

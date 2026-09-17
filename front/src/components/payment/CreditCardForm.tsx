@@ -1,32 +1,29 @@
 "use client"
 
-/* 
+/*
  * CREDIT CARD FORM - Design System macOS
- * Seguindo o padrão de design estabelecido nos componentes anteriores
  * Cores: #0071e3 (Primary), #34c759 (Success), #f5f5f7 (BG)
  * Tipografia: -apple-system, BlinkMacSystemFont
- * Integração com Mercado Pago Brick customizado
+ *
+ * Gateway: STRIPE (Payment Element).
+ * PIX e boleto seguem no Mercado Pago — ver `PixForm.tsx` e `BoletoForm.tsx`.
+ *
+ * O cartão nunca chega ao nosso servidor: o Payment Element troca os dados direto com a
+ * Stripe e a confirmação usa o `clientSecret` criado por
+ * `/api/process-subscription/credit-card`.
+ *
+ * A Stripe não oferece pagamento parcelado em BRL, então o plano anual é cobrado à vista
+ * e o mensal vira assinatura recorrente.
  */
 
-import { CreditCard } from "lucide-react";
-import { CardPayment } from "@mercadopago/sdk-react";
+import { useState, useMemo } from "react";
+import { CreditCard, Lock } from "lucide-react";
+import { loadStripe, type Stripe, type StripeElementsOptions } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import Image from "next/image";
 
 interface Plan {
     precoTotal: number;
-}
-
-interface CardFormData {
-    token: string;
-    issuer_id: string;
-    payment_method_id: string;
-    installments: number;
-}
-
-interface IBrickError {
-    message: string;
-    cause?: string;
-    code?: string;
 }
 
 interface PayerData {
@@ -39,118 +36,174 @@ interface PayerData {
     };
 }
 
+export type BillingMode = "payment" | "subscription";
+
 interface CreditCardFormProps {
+    /** Client secret devolvido pela rota de criação da cobrança. */
+    clientSecret: string;
+    billingMode: BillingMode;
     selectedPlan: Plan | undefined;
-    onSubmit: (cardFormData: CardFormData) => Promise<void>;
-    onError: (error: IBrickError) => void;
     payerData: PayerData;
+    /**
+     * Recebe o id do PaymentIntent confirmado. A tela de sucesso o envia para
+     * `/api/subscriptions/activate`, que reconsulta a Stripe antes de liberar o tier — o id
+     * sozinho não prova nada, é só a chave da consulta.
+     */
+    onSuccess: (paymentIntentId: string) => void;
+    onError: (error: { message: string }) => void;
 }
 
-export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerData }: CreditCardFormProps) {
-    const initialization = {
-        amount: selectedPlan?.precoTotal || 0,
-        cardholderName: `${payerData.firstName} ${payerData.lastName}`,
-        payer: {
-            firstName: payerData.firstName,
-            lastName: payerData.lastName,
-            email: payerData.email,
-            identification: {
-                type: payerData.identification.type,
-                number: payerData.identification.number,
-            },
+/**
+ * Carregado uma única vez no escopo do módulo: `loadStripe` dispara o download do
+ * Stripe.js e recriá-lo a cada render remontaria o Element.
+ */
+let stripePromise: Promise<Stripe | null> | null = null;
+
+function getStripePromise(): Promise<Stripe | null> {
+    if (!stripePromise) {
+        stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
+    }
+    return stripePromise;
+}
+
+/**
+ * Aparência do Payment Element espelhando o design macOS usado no restante do checkout.
+ */
+const appearance: StripeElementsOptions["appearance"] = {
+    theme: "flat",
+    variables: {
+        colorPrimary: "#0071e3",
+        colorBackground: "#ffffff",
+        colorText: "#1d1d1f",
+        colorTextSecondary: "#86868b",
+        colorDanger: "#ff3b30",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontSizeBase: "15px",
+        borderRadius: "8px",
+        spacingUnit: "4px",
+    },
+    rules: {
+        ".Input": {
+            border: "1px solid #d2d2d7",
+            padding: "12px 16px",
+            boxShadow: "none",
         },
-        identificationType: payerData.identification.type,
-        identificationNumber: payerData.identification.number,
-    };
+        ".Input:focus": {
+            border: "1px solid #0071e3",
+            boxShadow: "0 0 0 4px rgba(0, 113, 227, 0.1)",
+        },
+        ".Input--invalid": {
+            border: "1px solid #ff3b30",
+            boxShadow: "0 0 0 4px rgba(255, 59, 48, 0.1)",
+        },
+        ".Label": {
+            color: "#86868b",
+            fontSize: "13px",
+            fontWeight: "600",
+        },
+    },
+};
 
-    const customization = {
-        visual: {
-            style: {
-                theme: "Flat" as const,
-                customVariables: {
-                    // Cores principais - macOS Style
-                    baseColor: "#0071e3", // Azul Apple
-                    baseColorFirstVariant: "#0077ed", // Azul Apple hover
-                    baseColorSecondVariant: "#005bb5", // Azul Apple pressed
-                    
-                    // Textos alinhados com macOS
-                    textPrimaryColor: "#1d1d1f", // Preto Apple
-                    textSecondaryColor: "#86868b", // Cinza secundário Apple
+/**
+ * Campos + botão de confirmação. Precisa viver dentro de `<Elements>` para acessar os
+ * hooks `useStripe` / `useElements`.
+ */
+function StripeCardFields({
+    billingMode,
+    selectedPlan,
+    payerData,
+    onSuccess,
+    onError,
+}: Omit<CreditCardFormProps, "clientSecret">) {
+    const stripe = useStripe();
+    const elements = useElements();
+    const [submitting, setSubmitting] = useState(false);
 
-                    // Bordas sutis macOS
-                    outlinePrimaryColor: "#d2d2d7", // Border padrão Apple
-                    outlineSecondaryColor: "#e8e8ed", // Border hover Apple
-                    
-                    // Cores de estado Apple
-                    errorColor: "#ff3b30", // Vermelho Apple
-                    successColor: "#34c759", // Verde Apple
-                    
-                    // Texto do botão
-                    buttonTextColor: "#ffffff",
-                    
-                    // Tipografia San Francisco
-                    fontSizeExtraSmall: "11px",
-                    fontSizeSmall: "13px",
-                    fontSizeMedium: "15px",
-                    fontSizeLarge: "17px",
-                    fontSizeExtraLarge: "20px",
-                    fontWeightNormal: "400",
-                    fontWeightSemiBold: "600",
-                    
-                    // Espaçamentos macOS
-                    inputVerticalPadding: "12px",
-                    inputHorizontalPadding: "16px",
-                    formPadding: "0px",
-                    
-                    // Bordas arredondadas macOS
-                    borderRadiusSmall: "6px",
-                    borderRadiusMedium: "8px",
-                    borderRadiusLarge: "12px",
-                    borderRadiusFull: "9999px",
-                    
-                    // Bordas e focus states macOS
-                    inputBorderWidth: "1px",
-                    inputFocusedBorderWidth: "1px",
-                    inputFocusedBoxShadow: "0 0 0 4px rgba(0, 113, 227, 0.1)", // Blue focus ring Apple
-                    inputErrorFocusedBoxShadow: "0 0 0 4px rgba(255, 59, 48, 0.1)", // Red focus ring Apple
-                    
-                    // Transformação de texto
-                    formInputsTextTransform: "none",
+    const valorFormatado = (selectedPlan?.precoTotal ?? 0).toFixed(2).replace(".", ",");
+    const rotuloBotao =
+        billingMode === "subscription"
+            ? `Assinar por R$ ${valorFormatado}/mês`
+            : `Pagar R$ ${valorFormatado} à vista`;
+
+    async function handleSubmit(event: React.FormEvent) {
+        event.preventDefault();
+
+        if (!stripe || !elements) return;
+
+        setSubmitting(true);
+
+        try {
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                // `if_required` mantém o usuário na página quando não há desafio 3-D Secure.
+                redirect: "if_required",
+                confirmParams: {
+                    return_url: `${window.location.origin}/paidPlan`,
+                    payment_method_data: {
+                        billing_details: {
+                            name: `${payerData.firstName} ${payerData.lastName}`.trim(),
+                            email: payerData.email,
+                        },
+                    },
                 },
-            },
-        },
-        paymentMethods: {
-            maxInstallments: 12,
-        },
-        labels: {
-            formTitle: "Informações de Pagamento",
-            emailSectionTitle: "Dados do Titular",
-            installmentsSectionTitle: "Parcelamento",
-            cardholderName: {
-                label: "Nome Completo do Titular",
-                placeholder: "Como está no cartão",
-            },
-            email: {
-                label: "E-mail do Titular",
-                placeholder: "exemplo@gmail.com",
-            },
-            cardholderIdentification: {
-                label: "CPF do Titular",
-            },
-            cardNumber: {
-                label: "Número do Cartão",
-            },
-            expirationDate: {
-                label: "Data de Validade",
-            },
-            securityCode: {
-                label: "Código de Segurança",
-            },
-            selectInstallments: "Escolha o parcelamento",
-            selectIssuerBank: "Selecione o banco emissor",
-            formSubmit: "Finalizar Pagamento",
-        },
-    };
+            });
+
+            if (error) {
+                onError({ message: error.message ?? "Não foi possível confirmar o pagamento." });
+                return;
+            }
+
+            if (paymentIntent && (paymentIntent.status === "succeeded" || paymentIntent.status === "processing")) {
+                onSuccess(paymentIntent.id);
+                return;
+            }
+
+            onError({ message: "Pagamento não foi concluído. Tente novamente." });
+        } catch {
+            onError({ message: "Erro inesperado ao confirmar o pagamento." });
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <PaymentElement options={{ layout: "tabs" }} />
+
+            <button
+                type="submit"
+                disabled={!stripe || submitting}
+                className="w-full bg-[#0071e3] text-white py-4 px-6 rounded-xl font-semibold text-base hover:bg-[#0077ed] transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+            >
+                {submitting ? (
+                    <span className="flex items-center justify-center gap-3">
+                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Processando pagamento...
+                    </span>
+                ) : (
+                    <span className="flex items-center justify-center gap-3">
+                        <Lock className="w-5 h-5" />
+                        {rotuloBotao}
+                    </span>
+                )}
+            </button>
+        </form>
+    );
+}
+
+export default function CreditCardForm({
+    clientSecret,
+    billingMode,
+    selectedPlan,
+    payerData,
+    onSuccess,
+    onError,
+}: CreditCardFormProps) {
+    const options = useMemo<StripeElementsOptions>(
+        () => ({ clientSecret, appearance, locale: "pt-BR" }),
+        [clientSecret]
+    );
 
     return (
         <div className="space-y-6 relative">
@@ -159,8 +212,8 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#0071e3]/5 rounded-full blur-3xl"></div>
                 <div className="flex items-center gap-6 relative z-10">
                     <div className="relative w-24 h-24 flex-shrink-0">
-                        <Image 
-                            src="/Mascote/banners/Camaleão_1.png" 
+                        <Image
+                            src="/Mascote/banners/Camaleão_1.png"
                             alt="Mascote Vestibuline"
                             width={96}
                             height={96}
@@ -188,21 +241,24 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                         Dados do Cartão
                     </h3>
                     <p className="text-[#86868b]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-                        Preencha as informações do seu cartão
+                        {billingMode === "subscription"
+                            ? "Assinatura mensal com renovação automática"
+                            : "Cobrança única, à vista"}
                     </p>
                 </div>
             </div>
 
-            {/* Container do Mercado Pago com estilo consistente */}
+            {/* Container do formulário da Stripe */}
             <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7] p-6 shadow-sm hover:shadow-md transition-all duration-300">
-                <div id="cardPaymentBrick_container">
-                    <CardPayment
-                        initialization={initialization}
-                        customization={customization}
-                        onSubmit={onSubmit}
+                <Elements stripe={getStripePromise()} options={options}>
+                    <StripeCardFields
+                        billingMode={billingMode}
+                        selectedPlan={selectedPlan}
+                        payerData={payerData}
+                        onSuccess={onSuccess}
                         onError={onError}
                     />
-                </div>
+                </Elements>
             </div>
 
             {/* Elementos de segurança como no resto do site */}
@@ -224,8 +280,8 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                     </div>
                     {/* Mascote de segurança */}
                     <div className="hidden md:block relative w-20 h-20 flex-shrink-0">
-                        <Image 
-                            src="/Mascote/banners/Camaleão_5.png" 
+                        <Image
+                            src="/Mascote/banners/Camaleão_5.png"
                             alt="Mascote Segurança"
                             width={80}
                             height={80}
@@ -245,7 +301,7 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                             💪 Invista no seu futuro!
                         </h4>
                         <p className="text-white/90 leading-relaxed mb-4" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-                            Milhares de estudantes já conquistaram suas aprovações com o Vestibuline. 
+                            Milhares de estudantes já conquistaram suas aprovações com o Vestibuline.
                             Você é o próximo!
                         </p>
                         <div className="flex flex-wrap gap-3">
@@ -262,8 +318,8 @@ export default function CreditCardForm({ selectedPlan, onSubmit, onError, payerD
                         </div>
                     </div>
                     <div className="hidden lg:block relative w-32 h-32 flex-shrink-0">
-                        <Image 
-                            src="/Mascote/banners/Camaleão_3.png" 
+                        <Image
+                            src="/Mascote/banners/Camaleão_3.png"
                             alt="Mascote Motivação"
                             width={128}
                             height={128}

@@ -1,34 +1,33 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { 
-  Search, 
-  Calendar, 
-  MapPin, 
-  Building2, 
-  RotateCcw, 
-  ChevronRight, 
-  ChevronLeft, 
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import {
+  Search,
+  Calendar,
+  MapPin,
+  Building2,
+  RotateCcw,
+  ChevronRight,
+  ChevronLeft,
   ChevronsLeft,
   GraduationCap,
   BookOpen,
   CheckCircle2,
-  Trophy
-} from 'lucide-react';
+  Trophy,
+} from "lucide-react";
 
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import Sidebar from '@/components/Sidebar';
-import LoginModal from '@/components/Login-modal';
-import LoadingScreen from '@/components/LoadingScreen';
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import LoginModal from "@/components/Login-modal";
+import LoadingScreen from "@/components/LoadingScreen";
 
-import { type University } from '@/types/university';
-import { YEARS, ESTADOS_POR_REGIAO } from './Library.constants';
-import { getRegionColorClass, getUniversityLink } from './Library.utils';
+import { type University } from "@/types/university";
+import { YEARS, ESTADOS_POR_REGIAO } from "./Library.constants";
+import { getRegionColorClass, getUniversityLink } from "./Library.utils";
 
 interface Props {
   initialUniversities: University[];
@@ -43,7 +42,8 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
   // Filtros
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [selectedInstitution, setSelectedInstitution] = useState<string>("todas");
+  const [selectedInstitution, setSelectedInstitution] =
+    useState<string>("todas");
   const [selectedState, setSelectedState] = useState<string>("todas");
 
   // Paginação
@@ -52,7 +52,7 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
 
   // Verificar autenticação
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (status === "unauthenticated") {
       setIsLoginModalOpen(true);
     }
   }, [status]);
@@ -62,22 +62,37 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
     return initialUniversities.filter((u) => {
       if (!u) return false;
 
-      const universityName = u.name || '';
-      const matchesSearch = universityName.toLowerCase().includes(searchText.toLowerCase()) ||
-                           (u.fullName && u.fullName.toLowerCase().includes(searchText.toLowerCase()));
-      
-      const matchesType = selectedInstitution === "todas" || u.type === selectedInstitution;
-      const matchesYear = selectedYear === null || (Array.isArray(u.year) && u.year.includes(selectedYear));
-      const matchesState = selectedState === "todas" || u.state === selectedState;
-      
+      const universityName = u.name || "";
+      const matchesSearch =
+        universityName.toLowerCase().includes(searchText.toLowerCase()) ||
+        (u.fullName &&
+          u.fullName.toLowerCase().includes(searchText.toLowerCase()));
+
+      const matchesType =
+        selectedInstitution === "todas" || u.type === selectedInstitution;
+      const matchesYear =
+        selectedYear === null ||
+        (Array.isArray(u.year) && u.year.includes(selectedYear));
+      const matchesState =
+        selectedState === "todas" || u.state === selectedState;
+
       return matchesSearch && matchesType && matchesYear && matchesState;
     });
-  }, [initialUniversities, searchText, selectedInstitution, selectedYear, selectedState]);
+  }, [
+    initialUniversities,
+    searchText,
+    selectedInstitution,
+    selectedYear,
+    selectedState,
+  ]);
 
   // Lógica de paginação
   const totalPages = Math.ceil(filteredUniversities.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentUniversities = filteredUniversities.slice(startIndex, startIndex + itemsPerPage);
+  const currentUniversities = filteredUniversities.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   // Reset para página 1 quando filtros mudam
   useEffect(() => {
@@ -86,10 +101,13 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
 
   const goToPage = useCallback((page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavigation = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
     e.preventDefault();
     setIsNavigating(true);
     router.push(href);
@@ -111,22 +129,19 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
       {/* Background Decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[10%] left-[5%] w-[500px] h-[500px] bg-blue-400/5 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[10%] right-[5%] w-[400px] h-[400px] bg-purple-400/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div
+          className="absolute bottom-[10%] right-[5%] w-[400px] h-[400px] bg-purple-400/5 rounded-full blur-[100px] animate-pulse"
+          style={{ animationDelay: "2s" }}
+        ></div>
       </div>
 
       <Header />
 
       <main className="container mx-auto px-4 py-8 md:py-12 relative z-10">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <aside className="hidden lg:block lg:w-80 shrink-0">
-            <Sidebar />
-          </aside>
-
           {/* Conteúdo Principal */}
           <div className="flex-1 min-w-0">
             <div className="bg-[var(--color-bg-alt)] backdrop-blur-xl rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] border border-gray-200 p-6 md:p-10 relative overflow-hidden">
-              
               {/* Hero Section Local — Revertido para o design original */}
               <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700 relative">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-start gap-6 md:gap-8 max-w-5xl mx-auto">
@@ -144,11 +159,13 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     </div>
                     {/* Balão de fala original */}
                     <div className="absolute -top-2 -right-2 md:-top-4 md:-right-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl px-3 py-2 md:px-4 md:py-2.5 shadow-lg animate-in slide-in-from-right duration-700 delay-500 z-10">
-                      <p className="text-xs md:text-sm font-bold whitespace-nowrap">Bora estudar? 📚</p>
+                      <p className="text-xs md:text-sm font-bold whitespace-nowrap">
+                        Bora estudar? 📚
+                      </p>
                       <div className="absolute left-1/2 bottom-0 translate-y-full -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-indigo-600"></div>
                     </div>
                   </div>
-                  
+
                   {/* Conteúdo de texto - Título e subtítulo originais */}
                   <div className="flex-1 text-center md:text-left order-1 md:order-2">
                     <div className="relative inline-block">
@@ -159,8 +176,9 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                       </h1>
                     </div>
                     <p className="text-base md:text-lg text-gray-600 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-1000 delay-400 mt-4">
-                      Explore nossa biblioteca completa de simulados das principais universidades do Brasil. 
-                      Prepare-se com questões reais e teste seus conhecimentos.
+                      Explore nossa biblioteca completa de simulados das
+                      principais universidades do Brasil. Prepare-se com
+                      questões reais e teste seus conhecimentos.
                     </p>
                   </div>
                 </div>
@@ -169,7 +187,9 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                 <div className="mt-10 flex flex-wrap justify-center items-center gap-4 md:gap-6 text-sm text-gray-600 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-600">
                   <div className="flex items-center gap-2 px-4 py-2 bg-white backdrop-blur-xl rounded-full shadow-sm border border-gray-200">
                     <div className="w-2 h-2 bg-[var(--color-blue-500)] rounded-full animate-pulse"></div>
-                    <span className="font-medium">{initialUniversities.length} Universidades</span>
+                    <span className="font-medium">
+                      {initialUniversities.length} Universidades
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2 bg-white backdrop-blur-xl rounded-full shadow-sm border border-gray-200">
                     <div className="w-2 h-2 bg-[var(--color-success)] rounded-full animate-pulse delay-300"></div>
@@ -194,7 +214,7 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                       type="text"
                       placeholder="Buscar universidade..."
                       value={searchText}
-                      onChange={e => setSearchText(e.target.value)}
+                      onChange={(e) => setSearchText(e.target.value)}
                       className="w-full px-3 py-2 bg-white backdrop-blur-xl border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-lg focus:shadow-blue-400/30 transition text-gray-900 placeholder-gray-400 text-sm outline-none"
                     />
                   </div>
@@ -206,12 +226,18 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     </span>
                     <select
                       value={selectedYear ?? ""}
-                      onChange={e => setSelectedYear(e.target.value ? Number(e.target.value) : null)}
+                      onChange={(e) =>
+                        setSelectedYear(
+                          e.target.value ? Number(e.target.value) : null,
+                        )
+                      }
                       className="w-full px-3 py-2 bg-white backdrop-blur-xl border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400 focus:shadow-lg focus:shadow-purple-400/30 transition text-gray-900 text-sm appearance-none cursor-pointer outline-none"
                     >
                       <option value="">Todos os anos</option>
-                      {YEARS.map(year => (
-                        <option key={year} value={year}>{year}</option>
+                      {YEARS.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -223,14 +249,16 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     </span>
                     <select
                       value={selectedState}
-                      onChange={e => setSelectedState(e.target.value)}
+                      onChange={(e) => setSelectedState(e.target.value)}
                       className="w-full px-3 py-2 bg-white backdrop-blur-xl border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-green-400/50 focus:border-green-400 focus:shadow-lg focus:shadow-green-400/30 transition text-gray-900 text-sm appearance-none cursor-pointer outline-none"
                     >
                       <option value="todas">Todos os estados</option>
                       {ESTADOS_POR_REGIAO.map(({ regiao, estados }) => (
                         <optgroup key={regiao} label={regiao}>
-                          {estados.map(estado => (
-                            <option key={estado} value={estado}>{estado}</option>
+                          {estados.map((estado) => (
+                            <option key={estado} value={estado}>
+                              {estado}
+                            </option>
                           ))}
                         </optgroup>
                       ))}
@@ -244,7 +272,7 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     </span>
                     <select
                       value={selectedInstitution}
-                      onChange={e => setSelectedInstitution(e.target.value)}
+                      onChange={(e) => setSelectedInstitution(e.target.value)}
                       className="w-full px-3 py-2 bg-white backdrop-blur-xl border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 focus:shadow-lg focus:shadow-indigo-400/30 transition text-gray-900 text-sm appearance-none cursor-pointer outline-none"
                     >
                       <option value="todas">Todas</option>
@@ -256,7 +284,10 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                   </div>
 
                   {/* Botão Limpar Filtros */}
-                  {(searchText || selectedInstitution !== "todas" || selectedYear !== null || selectedState !== "todas") && (
+                  {(searchText ||
+                    selectedInstitution !== "todas" ||
+                    selectedYear !== null ||
+                    selectedState !== "todas") && (
                     <button
                       onClick={clearFilters}
                       className="ml-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400/50 text-sm font-medium"
@@ -280,7 +311,8 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     <h2 className="text-2xl font-bold text-gray-900">
                       Universidades Encontradas
                       <span className="ml-3 text-sm font-medium text-gray-500">
-                        ({filteredUniversities.length} resultado{filteredUniversities.length !== 1 ? 's' : ''})
+                        ({filteredUniversities.length} resultado
+                        {filteredUniversities.length !== 1 ? "s" : ""})
                       </span>
                     </h2>
                   </div>
@@ -297,35 +329,44 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     {currentUniversities.map((university, index) => {
                       const link = getUniversityLink(university, selectedYear);
                       return (
-                        <Link 
-                          href={link} 
+                        <Link
+                          href={link}
                           key={university.slug || index}
                           onClick={(e) => handleNavigation(e, link)}
                         >
-                          <div 
+                          <div
                             className="group bg-white backdrop-blur-xl border border-gray-200 rounded-2xl p-6 transition-all duration-300 transform hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl flex flex-col items-center text-center h-full relative overflow-hidden min-h-[220px] animate-in fade-in slide-in-from-bottom-4 hover:border-blue-500 hover:shadow-blue-500/20"
                             style={{
                               animationDelay: `${index * 80}ms`,
-                              animationDuration: '600ms',
-                              animationFillMode: 'both'
+                              animationDuration: "600ms",
+                              animationFillMode: "both",
                             }}
                           >
                             {/* Background decorativo sutil */}
                             <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-indigo-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            
+
                             {/* Indicador de região no canto superior */}
-                            <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${getRegionColorClass(university.state)} shadow-sm opacity-60 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                            
+                            <div
+                              className={`absolute top-3 right-3 w-3 h-3 rounded-full ${getRegionColorClass(university.state)} shadow-sm opacity-60 group-hover:opacity-100 transition-opacity duration-300`}
+                            ></div>
+
                             {/* Container do logo original */}
                             <div className="relative z-10 w-20 h-20 !bg-white rounded-xl shadow-md border border-gray-100 flex items-center justify-center mb-4 transition-all duration-300 overflow-hidden group-hover:shadow-lg group-hover:scale-110 p-0">
                               <Image
-                                src={university.logo ? (university.logo.startsWith('http') || university.logo.startsWith('/') ? university.logo : `/${university.logo}`) : "/placeholder.svg"}
+                                src={
+                                  university.logo
+                                    ? university.logo.startsWith("http") ||
+                                      university.logo.startsWith("/")
+                                      ? university.logo
+                                      : `/${university.logo}`
+                                    : "/placeholder.svg"
+                                }
                                 alt={university.name}
                                 fill
                                 className="object-contain p-1 relative z-10 transition-all duration-300"
                               />
                             </div>
-                            
+
                             {/* Conteúdo do card original */}
                             <div className="relative z-10 flex-1 flex flex-col justify-between space-y-3">
                               <div className="space-y-2">
@@ -336,14 +377,20 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                                   {university.fullName}
                                 </p>
                                 <div className="flex flex-wrap gap-1.5 justify-center mt-2">
-                                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 ${
-                                    university.type === 'federal' ? 'bg-blue-100 text-blue-700 group-hover:bg-blue-200' :
-                                    university.type === 'estadual' ? 'bg-green-100 text-green-700 group-hover:bg-green-200' :
-                                    university.type === 'particular' ? 'bg-purple-100 text-purple-700 group-hover:bg-purple-200' :
-                                    university.type === 'militar' ? 'bg-red-100 text-red-700 group-hover:bg-red-200' :
-                                    'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
-                                  }`}>
-                                    {university.type || 'N/A'}
+                                  <span
+                                    className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 ${
+                                      university.type === "federal"
+                                        ? "bg-blue-100 text-blue-700 group-hover:bg-blue-200"
+                                        : university.type === "estadual"
+                                          ? "bg-green-100 text-green-700 group-hover:bg-green-200"
+                                          : university.type === "particular"
+                                            ? "bg-purple-100 text-purple-700 group-hover:bg-purple-200"
+                                            : university.type === "militar"
+                                              ? "bg-red-100 text-red-700 group-hover:bg-red-200"
+                                              : "bg-gray-100 text-gray-700 group-hover:bg-gray-200"
+                                    }`}
+                                  >
+                                    {university.type || "N/A"}
                                   </span>
                                   {university.state && (
                                     <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600 group-hover:bg-gray-200 transition-all duration-300">
@@ -352,10 +399,12 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                                   )}
                                 </div>
                               </div>
-                              
+
                               {/* Indicador de ação original */}
                               <div className="flex items-center justify-center gap-2 text-blue-600 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 mt-4">
-                                <span className="text-sm font-bold tracking-wide">ACESSAR PROVAS</span>
+                                <span className="text-sm font-bold tracking-wide">
+                                  ACESSAR PROVAS
+                                </span>
                                 <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                               </div>
                             </div>
@@ -369,8 +418,12 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 text-gray-400">
                       <Search className="w-10 h-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">Nenhum resultado encontrado</h3>
-                    <p className="text-gray-500">Tente ajustar seus filtros para encontrar o que procura.</p>
+                    <h3 className="text-xl font-bold text-gray-900">
+                      Nenhum resultado encontrado
+                    </h3>
+                    <p className="text-gray-500">
+                      Tente ajustar seus filtros para encontrar o que procura.
+                    </p>
                     <button
                       onClick={clearFilters}
                       className="px-6 py-2 bg-blue-600 text-white rounded-full font-bold hover:scale-105 transition-all shadow-lg shadow-blue-500/20"
@@ -386,7 +439,7 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                     <div className="text-sm text-gray-600 font-medium">
                       Página {currentPage} de {totalPages}
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => goToPage(1)}
@@ -396,7 +449,7 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                       >
                         <ChevronsLeft className="w-4 h-4" />
                       </button>
-                      
+
                       <button
                         onClick={() => goToPage(currentPage - 1)}
                         disabled={currentPage === 1}
@@ -405,20 +458,27 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                         <ChevronLeft className="w-4 h-4" />
                         Anterior
                       </button>
-                      
+
                       <div className="hidden md:flex items-center gap-2">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                          const showPage = page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1);
+                        {Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1,
+                        ).map((page) => {
+                          const showPage =
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 &&
+                              page <= currentPage + 1);
                           if (!showPage) return null;
-                          
+
                           return (
                             <button
                               key={page}
                               onClick={() => goToPage(page)}
                               className={`min-w-[40px] h-10 px-3 rounded-xl font-semibold transition-all duration-300 ${
                                 currentPage === page
-                                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg scale-110'
-                                  : 'bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 hover:bg-white hover:scale-105 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer text-sm'
+                                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg scale-110"
+                                  : "bg-white/90 backdrop-blur-xl border border-gray-200 text-gray-700 hover:bg-white hover:scale-105 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer text-sm"
                               }`}
                             >
                               {page}
@@ -426,7 +486,7 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
                           );
                         })}
                       </div>
-                      
+
                       <button
                         onClick={() => goToPage(currentPage + 1)}
                         disabled={currentPage === totalPages}
@@ -445,7 +505,10 @@ export function UniversityLibraryClient({ initialUniversities }: Props) {
       </main>
 
       <Footer />
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
     </div>
   );
 }

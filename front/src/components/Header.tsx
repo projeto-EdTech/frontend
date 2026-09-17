@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AccessibilityMenu from "@/components/AccessibilityMenu";
+import AccessibilityMenu from "./AccessibilityMenu";
 import Image from "next/image";
 import Link from "next/link";
 import UserAvatar from "./UserAvatar";
-import { getRankIcon } from "@/lib/ranking/rankUtils";
 import { useSession, signOut } from "next-auth/react";
 import { useUserTier } from "@/hooks/useUserTier";
 import {
@@ -13,14 +12,13 @@ import {
   LogOut,
   PersonStanding,
   Home,
-  BarChart3,
   Menu,
   X,
   Library,
   Newspaper,
   ChevronRight,
-  BrainCircuit,
   Gamepad2,
+  PlusCircle,
 } from "lucide-react";
 import LoginModal from "./Login-modal";
 import { useRouter } from "next/navigation";
@@ -48,24 +46,6 @@ export default function Header() {
     profileIcon: "Avatar/Camaleão_1.png",
     useInitialAvatar: true,
   });
-
-  const [userRank, setUserRank] = useState<
-    import("@/lib/ranking/rankUtils").RankType | null
-  >(null);
-
-  // Blur do header quando o pop-up de ranking estiver ativo
-  const [isRankModalOpen, setIsRankModalOpen] = useState(false);
-
-  useEffect(() => {
-    const onOpen = () => setIsRankModalOpen(true);
-    const onClose = () => setIsRankModalOpen(false);
-    window.addEventListener("rankingModalOpen", onOpen);
-    window.addEventListener("rankingModalClose", onClose);
-    return () => {
-      window.removeEventListener("rankingModalOpen", onOpen);
-      window.removeEventListener("rankingModalClose", onClose);
-    };
-  }, []);
 
   // Fechar menu mobile quando a tela for redimensionada
   useEffect(() => {
@@ -155,22 +135,6 @@ export default function Header() {
     };
   }, []);
 
-  // Carrega rank do sessionStorage e ouve atualizações do perfil
-  useEffect(() => {
-    const stored = sessionStorage.getItem("userRank");
-    if (stored) setUserRank(stored as import("@/lib/ranking/rankUtils").RankType);
-
-    const handleRankUpdate = () => {
-      const updated = sessionStorage.getItem("userRank");
-      setUserRank(
-        (updated as import("@/lib/ranking/rankUtils").RankType) ?? null,
-      );
-    };
-
-    window.addEventListener("rankUpdated", handleRankUpdate);
-    return () => window.removeEventListener("rankUpdated", handleRankUpdate);
-  }, []);
-
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
   };
@@ -204,18 +168,6 @@ export default function Header() {
   };
 
   const navigationItems = [
-    // Apenas inclua Simula IA se o usuário tiver plano pago
-    ...(hasPaidPlan
-      ? [
-          {
-            name: "Vest IA",
-            href: "/VestIA",
-            icon: BrainCircuit,
-            description: "Pagina de conversa com a VestiIA",
-            color: "from-blue-500 to-cyan-500",
-          },
-        ]
-      : []),
     // Itens públicos
     {
       name: "Início",
@@ -225,7 +177,7 @@ export default function Header() {
       color: "from-blue-500 to-cyan-500",
     },
     {
-      name: "Comunidade",
+      name: "News",
       href: "/blog",
       icon: Newspaper,
       description: "Últimas notícias",
@@ -236,18 +188,18 @@ export default function Header() {
     ...(isAuthenticated
       ? [
           {
+            name: "Criar Simulado",
+            href: "/create",
+            icon: PlusCircle,
+            description: "Crie seu próprio simulado",
+            color: "from-orange-500 to-red-500",
+          },
+          {
             name: "Arena",
             href: "/Arena",
             icon: Gamepad2,
             description: "Venha explorar os mini games do Vestibuline",
             color: "from-orange-500 to-red-500",
-          },
-          {
-            name: "Criar Simulado",
-            href: "/create",
-            icon: BarChart3,
-            description: "Monte seu simulado",
-            color: "from-green-500 to-emerald-500",
           },
           {
             name: "Biblioteca",
@@ -266,14 +218,10 @@ export default function Header() {
 
   return (
     <>
-      <header
-        className={`themed-header sticky top-0 z-50 backdrop-blur-md transition-all duration-300 ${
-          isRankModalOpen ? "blur-md brightness-75 pointer-events-none" : ""
-        }`}
-      >
+      <header className="themed-header sticky top-0 z-50 backdrop-blur-md shadow-sm transition-all duration-300">
         <div className="absolute inset-0 bg-white"></div>
         <div className="container mx-auto px-4 relative">
-          <div className="flex items-center justify-between h-16 lg:h-18">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center h-16 lg:h-18">
             <div className="flex items-center h-16 lg:h-18 overflow-hidden">
               <Link
                 href="/"
@@ -293,7 +241,7 @@ export default function Header() {
               </Link>
             </div>
 
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="hidden md:flex justify-self-center items-center space-x-1">
               {navigationItems.map((item) => (
                 <Link
                   key={item.name}
@@ -314,7 +262,7 @@ export default function Header() {
               ))}
             </nav>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-self-end space-x-3">
               <button
                 onClick={toggleMobileMenu}
                 className={`relative md:hidden p-2.5 rounded-lg transition-all duration-200 ${
@@ -324,15 +272,9 @@ export default function Header() {
                 }`}
               >
                 {isMobileMenuOpen ? (
-                  <X
-                    className="w-5 h-5 text-gray-700 dark:text-gray-300"
-                    strokeWidth={2}
-                  />
+                  <X className="w-5 h-5 text-gray-700" strokeWidth={2} />
                 ) : (
-                  <Menu
-                    className="w-5 h-5 text-gray-700 dark:text-gray-300"
-                    strokeWidth={2}
-                  />
+                  <Menu className="w-5 h-5 text-gray-700" strokeWidth={2} />
                 )}
               </button>
 
@@ -364,22 +306,15 @@ export default function Header() {
                     className="relative group transition-all duration-300 hover:scale-110 cursor-pointer"
                   >
                     {/* Avatar com configurações do sessionStorage */}
-                    <div className="relative inline-block">
-                      <UserAvatar
-                        name={session.user?.name || ""}
-                        className="w-10 h-10 text-lg"
-                        customIcon={
-                          profileSettings.useInitialAvatar
-                            ? undefined
-                            : profileSettings.profileIcon
-                        }
-                      />
-                      {userRank && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-transparent ">
-                          {getRankIcon(userRank, 3)}
-                        </div>
-                      )}
-                    </div>
+                    <UserAvatar
+                      name={session.user?.name || ""}
+                      className="w-10 h-10 text-lg"
+                      customIcon={
+                        profileSettings.useInitialAvatar
+                          ? undefined
+                          : profileSettings.profileIcon
+                      }
+                    />
                   </button>
 
                   {isUserMenuOpen && (

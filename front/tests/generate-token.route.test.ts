@@ -5,7 +5,7 @@
  * Vitest. Validação real por ora via `npm run build`.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { POST } from '../src/app/api/users/generate-token/route';
+import { POST } from '../src/app/api/user/generate-token/route';
 import * as service from '../src/app/service/discordToken.service';
 
 // JWT helper: monta um token com payload arbitrário (assinatura irrelevante p/ decode).
@@ -33,6 +33,27 @@ describe('POST /api/users/generate-token', () => {
   it('retorna 401 quando não há JWT (header nem cookie)', async () => {
     const res = await POST(makeReq({}));
     expect(res.status).toBe(401);
+  });
+
+  it('lê o JWT do cookie user_data quando não há header Authorization', async () => {
+    const spy = vi
+      .spyOn(service, 'generateDiscordToken')
+      .mockResolvedValue({ token: 'VEST-CK00K' });
+
+    const jwt = makeJwt({ id: 'user-cookie' });
+    const res = await POST(makeReq({ Cookie: `user_data=${jwt}` }));
+
+    expect(res.status).toBe(200);
+    expect(spy).toHaveBeenCalledWith('user-cookie', jwt);
+  });
+
+  it('retorna 401 quando o JWT não traz id, sub nem email', async () => {
+    const spy = vi.spyOn(service, 'generateDiscordToken');
+
+    const res = await POST(makeReq({ Authorization: `Bearer ${makeJwt({ nome: 'x' })}` }));
+
+    expect(res.status).toBe(401);
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('extrai userId de sub/id/email e devolve { token } do service', async () => {

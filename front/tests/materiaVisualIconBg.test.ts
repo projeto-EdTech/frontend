@@ -1,6 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   getMateriaVisual,
 } from "../src/components/games/Enigma/lib/enigma-data";
@@ -28,30 +26,5 @@ describe("getMateriaVisual", () => {
   it("matéria desconhecida → null", () => {
     expect(getMateriaVisual("Astrologia")).toBeNull();
     expect(getMateriaVisual("")).toBeNull();
-  });
-});
-
-describe("Questoes_Gemini — customização de fundo/cor dos ícones de matéria", () => {
-  const src = readFileSync(
-    resolve(__dirname, "../src/components/Simula_PRO/Questoes_Gemini.tsx"),
-    "utf-8",
-  );
-
-  it("usa getMateriaVisual no componente", () => {
-    expect(src).toMatch(/getMateriaVisual/);
-  });
-
-  it("aplica !bg-white nos ícones de matéria", () => {
-    expect(src).toMatch(/!bg-white/);
-  });
-
-  it("aplica cor inline via colorHex", () => {
-    expect(src).toMatch(/colorHex/);
-  });
-
-  it("integra o seletor Matéria→Conteúdo (helpers + modal)", () => {
-    expect(src).toMatch(/buildSubjectTree/);
-    expect(src).toMatch(/parseSubjectKey/);
-    expect(src).toMatch(/handleSelectMateria/);
   });
 });

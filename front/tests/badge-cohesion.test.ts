@@ -1,4 +1,4 @@
-import assert from 'assert';
+import { describe, it, expect } from 'vitest';
 
 // Mock/test object representing the updated styles we want to enforce
 const EXPECTED_TIER_COLORS = {
@@ -29,29 +29,26 @@ const EXPECTED_TIER_COLORS = {
   }
 };
 
-function testBadgeTierStyles() {
-  console.log('🔄 Iniciando teste de coesão visual das badges...');
-  
-  // Vamos garantir que a estrutura de cores planejada está correta e bate com o carrossel
-  for (const [tier, expected] of Object.entries(EXPECTED_TIER_COLORS)) {
-    assert.ok(expected.bg, `Tier ${tier} deve ter bg definido`);
-    assert.ok(expected.iconColor, `Tier ${tier} deve ter iconColor definido`);
-    assert.ok(expected.border, `Tier ${tier} deve ter border definido`);
-    
-    // Validando classes do carrossel (AchievementCarousel.tsx)
-    if (tier === 'bronze') {
-      assert.strictEqual(expected.bg, 'bg-amber-500/[0.08]');
-      assert.strictEqual(expected.iconColor, 'text-amber-500');
-    } else if (tier === 'prata') {
-      assert.strictEqual(expected.bg, 'bg-gray-400/[0.08]');
-      assert.strictEqual(expected.iconColor, 'text-gray-400');
-    } else if (tier === 'ouro') {
-      assert.strictEqual(expected.bg, 'bg-yellow-400/[0.08]');
-      assert.strictEqual(expected.iconColor, 'text-yellow-500');
-    }
-  }
+describe('coesão visual das badges por tier', () => {
+  it.each(Object.entries(EXPECTED_TIER_COLORS))('tier %s tem bg, iconColor e border definidos', (_tier, expected) => {
+    expect(expected.bg).toBeTruthy();
+    expect(expected.iconColor).toBeTruthy();
+    expect(expected.border).toBeTruthy();
+  });
 
-  console.log('✅ Teste de coesão de cores concluído com sucesso!');
-}
+  // Validando classes do carrossel (AchievementCarousel.tsx)
+  it('bronze usa âmbar', () => {
+    expect(EXPECTED_TIER_COLORS.bronze.bg).toBe('bg-amber-500/[0.08]');
+    expect(EXPECTED_TIER_COLORS.bronze.iconColor).toBe('text-amber-500');
+  });
 
-testBadgeTierStyles();
+  it('prata usa cinza', () => {
+    expect(EXPECTED_TIER_COLORS.prata.bg).toBe('bg-gray-400/[0.08]');
+    expect(EXPECTED_TIER_COLORS.prata.iconColor).toBe('text-gray-400');
+  });
+
+  it('ouro usa amarelo', () => {
+    expect(EXPECTED_TIER_COLORS.ouro.bg).toBe('bg-yellow-400/[0.08]');
+    expect(EXPECTED_TIER_COLORS.ouro.iconColor).toBe('text-yellow-500');
+  });
+});

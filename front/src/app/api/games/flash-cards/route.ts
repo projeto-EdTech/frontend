@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { decodeJWT } from '@/app/service/jwtDecoder';
+import { readUserToken } from '@/app/service/sessionToken';
 
 // ============================================================
 // GET — Busca os dados dos flash cards do backend externo
@@ -12,8 +13,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Erro de configuração do servidor.' }, { status: 500 });
   }
 
-  const authHeader = request.headers.get('Authorization');
-  const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  // Header ou cookie `user_data` — ver `src/app/service/sessionToken.ts`.
+  const userToken = readUserToken(request);
 
   if (!userToken) {
     console.warn('[API_FLASHCARDS] ❌ Requisição GET sem token JWT.');
@@ -34,7 +35,6 @@ export async function GET(request: Request) {
 
   console.log('[API_FLASHCARDS] 📤 GET — Enviando requisição ao backend:');
   console.log('[API_FLASHCARDS]    URL:', backendUrl);
-  console.log('[API_FLASHCARDS]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
 
   try {
     const apiResponse = await fetch(backendUrl, {

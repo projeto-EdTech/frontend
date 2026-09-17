@@ -76,6 +76,19 @@ export const colorMappings: ColorMappings = {
   "bg-orange-50": { shadow: "rgba(249, 115, 22, 0.25)", background: "#fff7ed", borderHex: "#ffedd5", colorHex: "#c2410c" },
 };
 
+export const subjects: Subject[] = [
+  { id: "matematica", name: "Matemática", icon: "∑", color: "text-blue-700", bgColor: "bg-blue-50", borderColor: "border-blue-100" },
+  { id: "fisica", name: "Física", icon: "⚛", color: "text-indigo-700", bgColor: "bg-indigo-50", borderColor: "border-indigo-100" },
+  { id: "quimica", name: "Química", icon: "🧪", color: "text-emerald-700", bgColor: "bg-emerald-50", borderColor: "border-emerald-100" },
+  { id: "biologia", name: "Biologia", icon: "🧬", color: "text-green-700", bgColor: "bg-green-50", borderColor: "border-green-100" },
+  { id: "historia", name: "História", icon: "📜", color: "text-amber-700", bgColor: "bg-amber-50", borderColor: "border-amber-100" },
+  { id: "geografia", name: "Geografia", icon: "🌍", color: "text-teal-700", bgColor: "bg-teal-50", borderColor: "border-teal-100" },
+  { id: "portugues", name: "Português", icon: "✍", color: "text-rose-700", bgColor: "bg-rose-50", borderColor: "border-rose-100" },
+  { id: "literatura", name: "Literatura", icon: "📖", color: "text-purple-700", bgColor: "bg-purple-50", borderColor: "border-purple-100" },
+  { id: "filosofia", name: "Filosofia", icon: "🤔", color: "text-cyan-700", bgColor: "bg-cyan-50", borderColor: "border-cyan-100" },
+  { id: "sociologia", name: "Sociologia", icon: "👥", color: "text-orange-700", bgColor: "bg-orange-50", borderColor: "border-orange-100" },
+];
+
 // =============================================================================
 // HELPER VISUAL DE MATÉRIA (fonte única: subjects + colorMappings)
 // =============================================================================
@@ -110,19 +123,6 @@ export function getMateriaVisual(materia: string): MateriaVisual | null {
     colorHex: colors?.colorHex ?? "#374151",
   };
 }
-
-export const subjects: Subject[] = [
-  { id: "matematica", name: "Matemática", icon: "∑", color: "text-blue-700", bgColor: "bg-blue-50", borderColor: "border-blue-100" },
-  { id: "fisica", name: "Física", icon: "⚛", color: "text-indigo-700", bgColor: "bg-indigo-50", borderColor: "border-indigo-100" },
-  { id: "quimica", name: "Química", icon: "🧪", color: "text-emerald-700", bgColor: "bg-emerald-50", borderColor: "border-emerald-100" },
-  { id: "biologia", name: "Biologia", icon: "🧬", color: "text-green-700", bgColor: "bg-green-50", borderColor: "border-green-100" },
-  { id: "historia", name: "História", icon: "📜", color: "text-amber-700", bgColor: "bg-amber-50", borderColor: "border-amber-100" },
-  { id: "geografia", name: "Geografia", icon: "🌍", color: "text-teal-700", bgColor: "bg-teal-50", borderColor: "border-teal-100" },
-  { id: "portugues", name: "Português", icon: "✍", color: "text-rose-700", bgColor: "bg-rose-50", borderColor: "border-rose-100" },
-  { id: "literatura", name: "Literatura", icon: "📖", color: "text-purple-700", bgColor: "bg-purple-50", borderColor: "border-purple-100" },
-  { id: "filosofia", name: "Filosofia", icon: "🤔", color: "text-cyan-700", bgColor: "bg-cyan-50", borderColor: "border-cyan-100" },
-  { id: "sociologia", name: "Sociologia", icon: "👥", color: "text-orange-700", bgColor: "bg-orange-50", borderColor: "border-orange-100" },
-];
 
 // =============================================================================
 // GAME DATA (Entidades e Labels)

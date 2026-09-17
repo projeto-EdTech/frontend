@@ -1,5 +1,315 @@
 # CHANGES
 
+## [Chore/licença] Projeto passa a ser open-source sob MIT, e merge de `main` na `Versão-1.0`
+
+O Vestibuline deixa de ser produto fechado de empresa e passa a ser projeto open-source. O `LICENSE` MIT já tinha entrado no commit `982f035`; o repositório ainda dizia o contrário em dois lugares, e agora está coerente.
+
+### Documentação e interface
+
+| Onde | Antes | Agora |
+|---|---|---|
+| `README.md`, topo | "AVISO: Repositório PRIVADO — uso exclusivo da equipe Vestibuline" | aviso de projeto open-source sob MIT, com convite a contribuir e lembrete de que chave e dado de aluno não entram no repositório. Badges de CI e de licença |
+| `README.md`, Licença | "Código proprietário © Vestibuline. Todos os direitos reservados. Uso estritamente interno." | MIT, com a ressalva de que a licença cobre o **código** — marca, identidade visual e o banco de questões das bancas ficam de fora |
+| `README.md`, Contribuindo | "Branch a partir de `main`" e workflow TDD "do `CLAUDE.md`" | fluxo por **fork** para quem é de fora; o workflow TDD está descrito no próprio README, porque `CLAUDE.md` está no `.gitignore` e não chega a quem clona |
+| `front/src/components/Footer.tsx` | "© 2026 Vestibuline. Todos os direitos reservados." | "© 2026 Vestibuline. Projeto open-source sob licença MIT", com link para o `LICENSE` |
+
+`front/package.json` mantém `"private": true` — essa flag só impede publicação acidental no npm e não tem relação com a visibilidade do repositório.
+
+### Antes de tornar o repositório público
+
+Varredura no histórico completo (`git log --all -S`) por `.env` versionado, chaves Stripe (`sk_live_`, `sk_test_`, `whsec_`), Google (`AIzaSy`), Mercado Pago (`APP_USR-`), Slack e blocos de chave privada PEM: **nenhum segredo real encontrado**. As três ocorrências de `sk_live_`/`whsec_` são placeholders em documentação. O único arquivo `.env*` versionado é o `.env.example`, sem valores.
+
+### Merge de `main`
+
+As duas branches divergiram em `ce69c32` (janeiro) e seguiram paralelas: 33 commits na `Versão-1.0`, 42 na `main`, **nenhum patch em comum** — daí os 87 arquivos em conflito que travavam o PR #10 e impediam o CI de rodar.
+
+O merge foi feito com `-s ours`: a árvore da `Versão-1.0` vale inteira, por ser a linha mais recente (ago/set contra jul) e a que registra o corte para a Fase 1. Ficam de fora os 68 arquivos que só existem na `main` — `app/VestIA`, `app/ranking`, `api/planner`, `api/relatorio-IA`, `components/community`, `components/pricing`, `lib/badges`, `lib/ranking` —, features de Fase 2 a 5 removidas de propósito em `f73044e`. Continuam recuperáveis pelo histórico da `main` quando a fase chegar.
+
+### Verificação
+
+- `npm test` → 14 arquivos, 107 testes passando
+- `npm run lint` → 0 erros
+- `npx tsc --noEmit` → 0 erros
+- `npm run build` → ok
+- Conflito restante com `main`: **0**
+
+### Fora de escopo
+
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` e templates de issue/PR não foram criados nesta entrega.
+- Tornar o repositório público de fato, no GitHub, é ação manual do responsável.
+
+---
+
+## [Chore/ci] GitHub Actions (lint + test), README enxuto e lint/testes verdes
+
+Entram o workflow de CI e o novo `README.md`, que passa a apontar para a documentação técnica em [`projeto-EdTech/docs`](https://github.com/projeto-EdTech/docs/blob/main/architecture/frontend.md). Antes do commit, rodar os passos do CI localmente mostrou que ele nasceria **vermelho**: `npm run lint` não existia mais e 4 arquivos de teste falhavam. Esta entrega corrige os dois.
+
+### CI — `.github/workflows/ci.yml` (novo)
+
+- Dispara em `pull_request` contra `main`; `concurrency` por número do PR com `cancel-in-progress`.
+- Job único **Lint & Test** em `ubuntu-latest`, `working-directory: front`.
+- Node 20 com cache npm por `front/package-lock.json` → `npm ci --legacy-peer-deps` → `npm run lint` → `npm run test`.
+- Verificado localmente: `npm ci --legacy-peer-deps --dry-run` com o lockfile atual passa (lockfile em sincronia com o `package.json`), e todos os `engines.node` do lockfile aceitam Node 20.19.
+
+### README
+
+- `README.md` da raiz substituído pela versão enxuta: visão geral, setup, scripts, fluxo de contribuição e licença. Stack detalhada, estrutura de pastas, rotas, camada de serviço, variáveis de ambiente e convenções agora moram em `projeto-EdTech/docs/architecture/frontend.md`; decisões de arquitetura em `projeto-EdTech/docs/adr/`.
+- Divergências corrigidas contra o código: a linha do script `lint` diz `eslint .` (não `next lint`).
+- `front/.env.example` **criado** — o README manda `cp .env.example .env`, e o arquivo não existia. Traz só as chaves efetivamente lidas (`process.env.*` em `front/src/`, mais `NEXTAUTH_URL`, lida pelo next-auth). `NEXT_PUBLIC_MERCADO_PAGO_KEY` e `STRIPE_WEBHOOK_SECRET`, listadas no README antigo, ficaram de fora: nenhum consumidor no código.
+- `.gitignore`: exceção `!front/.env.example` sob `front/.env*`. O `.env` real continua ignorado.
+
+### Lint — `next lint` removido no Next 16
+
+| Arquivo | Mudança |
+|---|---|
+| `front/package.json` | script `lint`: `next lint` → `eslint .` |
+| `front/eslint.config.mjs` | `FlatCompat` (quebrava com `Converting circular structure to JSON`) → flat config nativo: `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript` via `defineConfig`, com `globalIgnores` para `.next`, `out`, `build`, `coverage`, `next-env.d.ts` e `tests/escalabilidade_K6` |
+
+Com a config funcionando, o ESLint apontou **103 erros** (e 79 avisos). Resultado final: **0 erros, 106 avisos**.
+
+**Corrigidos no código (74):**
+
+- **63 × `@typescript-eslint/no-explicit-any`** — tipos locais para o que o BFF devolve, sem mudar mapeamento nenhum:
+  - `CursoBackend` em `api/Nota-corte/route.ts` e `Simula_PRO/NotaCorteResultados.tsx`
+  - `ArtigoBackend` em `api/blog/route.ts`, `blog/BlogDataServer.tsx` e `blog/BlogPostDataServer.tsx`
+  - `QuestaoBruta`/`ProvaBruta` em `Simula_PRO/SimulacaoLoader.tsx` e `Simulation/SimulacaoLoader.tsx`; `formatApiData` passa a devolver `Question[]`
+  - `{ conteudo; percentual }` em `api/estatisticas/[subject]/route.ts` e `Estatisticas/EstatisticasDados.tsx`
+  - `NotaCorteResultadosClient` tipado com `CourseResult` (`@/types/nota-corte`)
+  - `SimulationQuizClient` (as duas cópias): `text as any` → `text as ComplexEnunciado`
+  - `stripe.gateway.ts`: casts removidos — `pix_display_qr_code` e `boleto_display_details` já são tipados no SDK
+  - `mercadopago.gateway.ts`: `barcode` via cast estreito (campo real da resposta, ausente no tipo do SDK)
+  - `jwtDecoder.ts`: index signature de `JWTPayload` `any` → `unknown`
+  - `MateriaRecomendada` em `flash-cardlogic.ts`; `QuestaoMockup` em `mockups/QuestoesIAMockup.tsx`
+  - `analytics.ts`: `gtag`/`clarity` com `unknown[]`; `payment-router.test.ts`: mock via `ConstructorParameters<typeof StripeGateway>[1]`
+- **4 × `react/no-unescaped-entities`** — `app/page.tsx`: `"pagar para ver"` → `&ldquo;…&rdquo;`
+- **1 × `@typescript-eslint/ban-ts-comment`** — `Lexoo.tsx`: `@ts-ignore` → `@ts-expect-error`
+- **Regras do React Compiler (`eslint-plugin-react-hooks` 7):**
+  - `purity` (2) — `NotaCorteResultados.tsx`: `Date.now()`/`Math.random()` em render → ids determinísticos (`api-result-<curso>-<instituição>`, `curso-<índice>`)
+  - `immutability` (1) — `NavigationSound.tsx`: o `Audio` saiu de `useMemo` (que não pode ser mutado) para um `useRef` criado num efeito de montagem
+  - `static-components` (1) — `ArenaGameClient.tsx`: `getGameComponent(slug)` em render → lookup direto em `gameComponents[slug]`
+  - `preserve-manual-memoization` (1) — `simulation/[university]/summary/page.tsx`: `universities` (do contexto) entrou nas deps do `useMemo`
+  - `error-boundaries` (2) — `Simulation/SimulacaoLoader.tsx` e `Simula_PRO/NotaCorteResultados.tsx`: JSX saiu de dentro do `try/catch`; o `try` só busca dados e o render vem depois. As mensagens de erro exibidas são as mesmas
+
+**Rebaixado para aviso (29) — dívida consciente:** `react-hooks/set-state-in-effect`. Boa parte é padrão de hidratação (`setMounted(true)`, `ThemeContext`, `useUserTier`, `use-mobile`, `SkipLink`); refatorar muda comportamento de renderização e exige teste visual tela a tela. A regra está como `warn` em `eslint.config.mjs`, com comentário apontando para esta entrada.
+
+### Testes — 4 arquivos falhando
+
+| Arquivo | Causa | Correção |
+|---|---|---|
+| `generate-token.route.test.ts` | a rota lia o cookie com `cookies()` de `next/headers`, que lança fora do request scope → 500 no lugar de 401 | **rota corrigida**: `readUserToken(request)` de `service/sessionToken.ts` e decode via `decodeJWT` de `service/jwtDecoder.ts` — o parser e o decode manuais violavam as regras do `CLAUDE.md`. +2 specs: JWT pelo cookie `user_data` e 401 para JWT sem `id`/`sub`/`email` |
+| `badge-cohesion.test.ts` | script com `assert` e chamada solta — "No test suite found" | convertido para `describe`/`it`, mesmas asserções |
+| `user-profile.test.ts` | idem | convertido para `describe`/`it`, mesmas asserções |
+| `materiaVisualIconBg.test.ts` | o bloco `Questoes_Gemini` lia `Simula_PRO/Questoes_Gemini.tsx`, **apagado no commit `83575da`** | bloco removido; os 4 testes de `getMateriaVisual` seguem. A "exceção deliberada" do README antigo não vale mais: o componente não existe neste checkout |
+
+### Verificação
+
+- `npm test` → **14 arquivos, 107 testes, todos passando**
+- `npm run lint` → **0 erros**, 106 avisos
+- `npx tsc --noEmit` → **0 erros**
+- `npm ci --legacy-peer-deps --dry-run` → ok
+- `npm run build` → ok (o CI não roda build; checado à mão por causa do checklist do README)
+
+### Correção depois da primeira execução do CI
+
+`DiscordTokenModal.test.tsx` fazia `Object.assign(navigator, …)` no `beforeEach`. O global `navigator` só existe a partir do **Node 21**: passava na máquina local (Node 24) e quebrava no runner (Node 20) com `ReferenceError: navigator is not defined`. Trocado por `vi.stubGlobal('navigator', …)` com `vi.unstubAllGlobals()` no `afterEach`. Reproduzido localmente rodando a suíte com o global removido: 14 arquivos, 107 testes passando.
+
+### Fora de escopo
+
+- 29 × `set-state-in-effect` (acima).
+- Logs com prefixo de JWT em `api/questions/[university]/route.ts` (10 caracteres) e `api/blog/route.ts` (20 caracteres), contra a regra "nada de JWT em log". As duas rotas também leem só o header `Authorization`, sem `readUserToken`.
+- `enigma.tsx` compara o tier com `"Simula PRO"`, mas os tiers são `FREE`/`SIMULAPRO`/…: todo mundo cai no limite FREE. O comportamento foi mantido — na Fase 1 isso pode ser o desejado.
+
+---
+
+## [Chore/infra] Remoção do gate de IP — o site passa a ser público
+
+O *proxy* do Next 16 (`front/src/proxy.ts`) devolvia **404 sem corpo** para todo IP fora da allowlist de `ALLOWED_IPS`, cobrindo inclusive `/_next/static` e `public/`, com exceção de `/api/webhooks/*`. Esse gate foi removido a pedido: a aplicação agora responde para qualquer origem, sem filtro de IP.
+
+### O que saiu
+
+| Arquivo | Ação |
+|---|---|
+| `front/src/proxy.ts` | **removido** — era o único conteúdo do arquivo; sem ele o Next 16 não instala nenhum proxy |
+| `front/tests/proxy.test.ts` | **removido** — as specs cobriam só o gate e quebrariam com o módulo ausente |
+
+Deletar o arquivo em vez de transformá-lo em *pass-through* evita manter uma camada que roda em toda requisição sem fazer nada. Para reativar o gate, basta restaurar os dois arquivos pelo histórico do git.
+
+### O que ficou
+
+`front/src/lib/core/ip-allowlist.ts` (`parseAllowlist`, `isAllowed`, `normalizeIp`, `ipToBits`) **continua no repositório**, junto com `tests/ip-allowlist.test.ts`, que segue passando. A lib é pura, não tem efeito colateral em import e ninguém mais a consome — vira código órfão, mantido para o caso de o gate voltar. Pode ser removida numa limpeza futura.
+
+### Impacto operacional
+
+- A env `ALLOWED_IPS` deixou de ter consumidor. Pode sair do `.env` e das variáveis de ambiente do deploy; se ficar, é ignorada.
+- A exceção de `/api/webhooks/*` perde o propósito — os webhooks de Stripe e Mercado Pago já chegavam por ela e continuam chegando.
+- **Nenhuma outra proteção mudou.** Autenticação por cookie `user_data` (HttpOnly), `readUserToken` nas rotas e as regras do `CLAUDE.md` seguem intactas. O que se perdeu foi apenas a camuflagem do deploy: o domínio agora é alcançável por qualquer pessoa.
+
+### Documentação
+
+`README.md` da raiz: seção **Gate de IP (`proxy.ts`)** removida, sumário renumerado (13–21), `ALLOWED_IPS` retirado do bloco de variáveis de ambiente e a linha de `proxy.test.ts` tirada da tabela de specs.
+
+### Testes
+
+`npm test` → **11 arquivos passando, 114 testes**. As 4 falhas restantes (`badge-cohesion.test.ts`, `user-profile.test.ts` sem suite; `materiaVisualIconBg.test.ts` apontando para `Questoes_Gemini.tsx` inexistente; `generate-token.route.test.ts` com `cookies` fora do request scope) são **anteriores a esta entrega** e não têm relação com o proxy.
+
+---
+
+## [Feat/auth] `GET /api/user/me` — fallback para a sessão do NextAuth, com remontagem do cookie fragmentado
+
+`GET /api/user/me` tinha uma única fonte de sessão: o cookie `user_data`, o JWT do BFF Java. Quando `/api/sync-user` falha — BFF fora do ar, endpoint divergente, `id_token` ausente —, esse cookie **nunca é gravado**, e a rota respondia 401 em toda navegação. O aluno atravessava o OAuth inteiro, tinha sessão NextAuth válida no navegador, e a aplicação o tratava como deslogado.
+
+A rota passa a ter **duas fontes**, nesta ordem, e só devolve 401 quando as duas faltam.
+
+### Diagnóstico
+
+O cookie presente no navegador nesse estado é o do NextAuth, e ele chega **fragmentado**: `next-auth.session-token.0` e `next-auth.session-token.1`. O NextAuth fatia o cookie quando o valor passa de ~3900 bytes (o teto de 4096 por cookie nos navegadores, menos a estimativa de overhead — `ALLOWED_COOKIE_SIZE`/`CHUNK_SIZE` em `next-auth/core/lib/cookie.js`). Neste projeto ele passa porque o callback `jwt` de `lib/core/auth.ts` guarda o objeto `account` inteiro do Google — `id_token`, `access_token`, `refresh_token`, scopes. É a dívida registrada na entrega anterior, em *Fora de escopo*.
+
+Dois fatos determinaram a implementação:
+
+1. **Nenhum pedaço isolado é legível.** Só o valor concatenado, na ordem numérica do sufixo, é um token válido.
+2. **O valor remontado não é um JWT — é um JWE cifrado** (`dir` + `A256GCM`, `next-auth/jwt/index.js`). `jwt-decode` lê base64 do segundo segmento; num JWE esse segmento é chave cifrada, não JSON. Concatenar e passar ao `decodeJWT` devolveria `null`, e o 401 continuaria igual. Quem abre esse cookie é o `decode` do próprio `next-auth/jwt`, com a `NEXTAUTH_SECRET`.
+
+### O que mudou em `front/src/app/service/sessionToken.ts`
+
+Nova função exportada **`readNextAuthSessionToken(req)`**: devolve o cookie de sessão do NextAuth já remontado, ou `null`.
+
+- Reconhece **os dois nomes**: `next-auth.session-token` e `__Secure-next-auth.session-token`, o prefixo que o NextAuth usa quando a `NEXTAUTH_URL` é HTTPS. Só o nome curto funcionaria em `localhost` e falharia calado no deploy.
+- Aceita tanto o cookie inteiro (sessão pequena, sem sufixo) quanto os pedaços.
+- Ordena por **`Number(sufixo)`, não por texto**. Com onze ou mais pedaços, ordenar como string põe `.10` logo depois de `.1`; o valor sai embaralhado e a falha aparece como "token inválido", não como "ordem errada" — e só quando a sessão cresce.
+- Descarta sufixo não-numérico, para não concatenar um cookie alheio que por acaso comece igual.
+
+A remontagem mora aqui, e não na rota, porque este arquivo é o único parser de sessão do projeto (regra do `CLAUDE.md`).
+
+O parsing de cookie do arquivo foi unificado num `parseCookies(req)` que devolve `Map`, usado tanto por `readUserToken` quanto pela função nova. `decodeURIComponent` passou a ser tolerante a falha: um pedaço de cookie fragmentado pode terminar no meio de um `%XX`, e nesse caso o valor cru já é o correto. Comportamento de `readUserToken` inalterado.
+
+### O que mudou em `front/src/app/api/user/me/route.ts`
+
+A rota virou duas funções de leitura mais um `responder()`:
+
+| Fonte | Origem | Quando entra |
+|---|---|---|
+| `user_data` | JWT do BFF Java, gravado por `/api/sync-user` | sempre que existe e decodifica |
+| `next-auth.session-token` | sessão do NextAuth, remontada e decifrada | fallback: `user_data` ausente, ilegível ou expirado |
+
+O que a fonte 2 entrega e o que não entrega:
+
+| Campo | Valor no fallback | Motivo |
+|---|---|---|
+| `id` | sempre `null` | o `sub` do NextAuth é a conta Google, não o aluno no banco. **Preencher com ele quebraria o login**: `SyncUserEffect` só pula o sync quando `claims.id` é truthy, então a sessão pareceria sincronizada e o `user_data` nunca seria gravado |
+| `newsletter` | sempre `false` | o claim não existe na sessão do NextAuth |
+| `nome`, `email` | `token.user`, com `token.name`/`token.email` de reserva | é o que `lib/core/auth.ts` grava |
+| `tier` | `token.tier` normalizado por `normalizeTier` | mesmo valor que `useUserTier` **já usava** como fallback pela sessão do cliente (`session?.user?.tier`); não expõe nada que o navegador não tivesse antes. Grafia desconhecida segue caindo para `FREE` |
+
+Falha ao decifrar — chunk faltando, segredo trocado, sessão expirada, `NEXTAUTH_SECRET` ausente — responde **401**, não 500: é ausência de sessão válida, não erro do servidor.
+
+Novo header de resposta **`X-Claims-Source`**: `user_data` ou `next-auth`. Existe para o diagnóstico não depender de adivinhação — `next-auth` na resposta significa que o `user_data` não chegou, ou seja, que o problema está no `/api/sync-user` e não nesta rota.
+
+Contrato preservado: a resposta segue com os mesmos cinco campos de `UserClaims`, nenhum token volta no corpo, e `Cache-Control: no-store` vale nas duas fontes. `lib/core/userClaims.ts`, `hooks/useUserTier.ts` e `components/SyncUserEffect.tsx` não precisaram mudar.
+
+### Novo arquivo
+
+| Arquivo | Propósito |
+|---|---|
+| `front/tests/user-me.route.test.ts` | 21 specs Vitest, ambiente node. Cifra de verdade com o `encode` do `next-auth/jwt` em vez de dublar o `decode` — dublar esconderia justamente o que os testes provam. Cobre: 401 sem cookie e com cookies alheios; precedência do `user_data`; remontagem de `.0`+`.1`; cookie inteiro sem sufixo; chunks fora de ordem no header; ordenação numérica com mais de dez pedaços; nome `__Secure-`; 401 (e não 500) em chunk faltando, segredo errado, sessão expirada e `NEXTAUTH_SECRET` ausente; fallback quando o `user_data` não decodifica; `id` sempre `null`; `newsletter` sempre `false`; tier desconhecido virando `FREE`; os cinco campos exatos em ambas as fontes; nenhum token no corpo nem no log; `no-store` nas duas fontes |
+
+### Verificação
+
+`npx vitest run tests/user-me.route.test.ts` — **21/21 passando**. `tsc --noEmit` sem erro nos arquivos alterados.
+
+Suíte completa: 125 passando, 1 falhando e 5 arquivos sem coletar — todos **pré-existentes** e alheios a esta entrega (`generate-token.route.test.ts` chama `cookies()` de `next/headers` fora de contexto de request; `badge-cohesion`, `guerreiro-discord-badge`, `ranking-up`, `materiaVisualIconBg` e `user-profile` importam `@/lib/ranking/rankUtils` e `@/lib/badges/*`, removidos no alinhamento à Fase 1). Nenhum deles importa os arquivos alterados aqui. `eslint` não roda no projeto (`TypeError: Converting circular structure to JSON` ao carregar a config) — dívida pré-existente.
+
+### Fora de escopo
+
+- Enxugar o cookie do NextAuth para ele parar de ser fragmentado — guardar só `id_token` em vez do `account` inteiro em `lib/core/auth.ts`. Esta entrega faz o fragmentado funcionar; não elimina a fragmentação
+- A causa raiz do `user_data` não ser gravado (`/api/sync-user` falhando). O fallback tira o aluno da tela de deslogado, mas o `id` e o `newsletter` só chegam pelo BFF. Suspeitas levantadas e não fechadas: `sync-user` chama `${BACKEND_API_URL}/auth/google` enquanto as rotas que funcionam usam `${BACKEND_API_URL}/api/...`; o scope do Google em `lib/core/auth.ts` não inclui `openid`; e `refreshAccessToken` não renova o `id_token` guardado em `googleAccount`
+
+---
+
+## [Fix/auth] `POST /api/sync-user` — timeout explícito e diagnóstico dos três modos de falha
+
+Correção do login quebrado: `GET /api/user/me` respondia **401 em toda navegação** e o cookie `user_data` não existia em `Application > Cookies`. A rota `me` não tinha defeito — ela apenas relatava a ausência de sessão. O cookie nunca chegava a ser gravado.
+
+### Diagnóstico
+
+`/api/sync-user` é o **único** ponto do fluxo de login que escreve `user_data`. A cadeia real:
+
+1. A rota faz `fetch` em `${BACKEND_API_URL}/auth/google`
+2. O host do BFF não aceitava conexão TCP a partir da máquina do front — `Test-NetConnection` com `TcpTestSucceeded=False` e ping sem resposta, com o adaptador Radmin VPN local **Up**
+3. Sem timeout próprio, o `fetch` estourava no **connect timeout padrão do undici (10s)**: `POST /api/sync-user 500 in 10.6s`, vindo do `catch` genérico
+4. `cookies.set("user_data", ...)` nunca executava
+5. `readUserToken()` devolvia `null` → 401 permanente em `/api/user/me` e nas 15 telas e rotas que dependem do cookie
+
+O sintoma apontava para autenticação; a causa era conectividade. O código não ajudava a perceber isso — e escondia ainda um segundo modo de falha silencioso, descrito abaixo.
+
+### O que mudou em `front/src/app/api/sync-user/route.ts`
+
+**Timeout explícito.** `signal: AbortSignal.timeout(8000)` no `fetch` do BFF. Corta antes dos 10s do undici, e a falha passa a ser nossa e nomeável em vez de um `TypeError: fetch failed` genérico.
+
+**Os três modos de falha, separados no log.** O `catch` único virou classificação por causa. `AbortSignal.timeout` lança `DOMException` com `name === 'TimeoutError'`; o undici lança `TypeError` com `cause.code` (`UND_ERR_CONNECT_TIMEOUT`, `ECONNREFUSED`, `ENOTFOUND`).
+
+| Log | Significado | Status |
+|---|---|---|
+| `[sync-user][NET]` | não alcançou o BFF (rede, firewall, host errado) | **504** |
+| `[sync-user][BFF]` | o Java respondeu, mas com erro | relay do status |
+| `[sync-user][SHAPE]` | respondeu OK, em formato inesperado | **502** |
+| `[sync-user][BUG]` | exceção nossa | 500 |
+
+O log de `[NET]` nomeia `error.name`, `cause.code`, `cause.message`, o host de `BACKEND_API_URL` e a dica de testar `Test-NetConnection` antes de procurar bug de autenticação. O corpo devolvido ao navegador segue sanitizado nos quatro casos — nada de host, stack ou nome de classe interna do Java atravessa a rota.
+
+**Fim do 200 silencioso.** A versão anterior lia o JWT só como `string` crua ou `{ token }`. Qualquer outra grafia deixava `tokenFromBackend` como `undefined`, o `cookies.set` era **pulado** e a rota ainda respondia **200 com `{ ok: false }`** — backend saudável, front preso em 401, e nenhum sinal de erro em lugar nenhum. Agora a função `extrairJwt()` aceita `string`, `{ token }`, `{ accessToken }`, `{ jwt }` e `{ data: { token } }`, apara o prefixo `Bearer` e espaços, e rejeita qualquer valor que não seja string. Sem JWT utilizável, a rota responde **502** e loga o formato recebido.
+
+**Validação antes de gravar o cookie.** O cookie só é escrito se `decodeJWT()` de `jwtDecoder.ts` — o único lugar do projeto autorizado a ler JWT — devolver payload não-nulo. Impede que `[object Object]`, string truncada ou token de outro formato virem uma sessão morta.
+
+**Cabeçalho `CACHE STRATEGY`.** O arquivo não tinha o comentário exigido pelo `CLAUDE.md`. Adicionado, junto da tabela de modos de falha e da nota de por que o JWT não volta no corpo.
+
+Nada mudou em `SyncUserEffect.tsx`: ele já trata `!res.ok`, e 502/504 caem no mesmo ramo que o 500 de antes.
+
+### Novo arquivo
+
+| Arquivo | Propósito |
+|---|---|
+| `front/tests/sync-user.route.test.ts` | 21 specs Vitest. Segue o padrão de `generate-token.route.test.ts`: `getToken` do NextAuth via `vi.mock`, `fetch` global via `vi.stubGlobal`, helper `makeJwt()`. Cobre 401 sem `googleAccount` e sem `id_token`; 500 sem `BACKEND_API_URL`; 504 em erro de rede e em timeout; `AbortSignal` presente no `fetch`; relay de status do BFF com corpo sanitizado; cookie gravado com `httpOnly`/`sameSite=lax`/`path=/`/`maxAge` 30d nas cinco grafias aceitas; 502 em formato desconhecido, em token-objeto e em JWT que não decodifica; e a garantia de que nem o JWT do BFF nem o `id_token` do Google aparecem em `console.*` |
+
+### Fora de escopo (por decisão do usuário)
+
+- Timeout e tratamento uniforme nas demais rotas que falam com o BFF — `Nota-corte`, `user/stats`, `universities`, `subscribe`, `games/flash-cards`. Nenhuma tem timeout hoje; todas penduram 10s quando o BFF cai
+- Qualquer aviso de conexão na tela do aluno — a falha segue silenciosa no cliente, por opção
+- Mover o JWT do Java para dentro do token do NextAuth, eliminando `user_data` e `/api/user/me`
+- Enxugar o cookie do NextAuth, hoje partido em `.0`/`.1` por guardar o objeto `account` inteiro em `lib/core/auth.ts`
+
+---
+
+## [Chore/scope] Alinhamento do repositório à Fase 1 — Lançamento Core (JAN 2027)
+
+Remoção do que sobrou de features das Fases 2 e 3 no repositório, conforme `Fase 1 - Lançamento Core (JAN 2027)`. O grosso do código dessas features já havia saído; o que restava eram rotas órfãs, componentes órfãos, escopo OAuth e dependências npm sem consumidor — além de copy de marketing prometendo IA que não estará no ar no dia 1.
+
+### Removido
+
+| Item | Feature | Fase |
+|---|---|---|
+| `front/src/app/api/ai/` (`chat`, `historico`) | VestIA — Tutor de IA | 3 |
+| `front/src/components/PremiumFeatureModal.tsx` | modal de upgrade do VestIA (órfão) | 3 |
+| `front/src/components/mockups/CronogramaMockup.tsx` | Planner de Estudos (órfão) | 2 |
+| `front/src/lib/data/playlists.ts` | Playlist de Questões (órfão) | 2/5 |
+
+Escopo `https://www.googleapis.com/auth/calendar.events` retirado do provider Google em `lib/core/auth.ts` — existia só para o Planner. O login deixa de pedir acesso ao Google Calendar.
+
+Wrappers `DndProvider`/`HTML5Backend` retirados de `app/page.tsx` e `components/profile/ProfileClient.tsx` — restos do drag-and-drop do Planner, sem nenhum alvo de drag.
+
+Dependências removidas do `package.json` (zero imports em `src/`): `@google/genai`, `googleapis`, `date-holidays`, `react-dnd`, `react-dnd-html5-backend`, `@fullcalendar/{core,daygrid,interaction,react,timegrid}`, `react-datetime-picker`, `docx`, `file-saver`.
+
+### Mantido de propósito
+
+- **Explicação de Gabarito por IA** — `/api/generate-explanation`, `Simula_PRO/Questoes_Gemini.tsx`, `subjectKey.ts`, `QuestoesIAMockup.tsx`, a fiação no `ProfileClient` e a dep `@google/generative-ai`. Fica exatamente como estava configurada, sem religar nem corrigir.
+- **Discord** e **Stripe** — fora do escopo deste corte.
+- **Criação de prova personalizada** (`/create`, `/api/simulations/create*`) — é modo do Simulador, feature crítica da Fase 1.
+
+### Copy reescrito
+
+Landing (`app/page.tsx`) e `app/paidPlan/page.tsx` deixam de vender "agente de IA", "plano personalizado", "Recomendação IA" e "Feedback em tempo real com IA". No lugar: provas reais com cronômetro, desempenho por matéria e nota de corte — o que a Fase 1 entrega.
+
+---
+
 ## [Feature/payment] Payment Gateway Router — MercadoPago + Stripe com Failover Automático
 
 Implementação de roteador de gateway de pagamento com failover automático entre MercadoPago e Stripe. Objetivo: tornar o fluxo de pagamento resiliente a instabilidades de gateway, sem impacto para o usuário.

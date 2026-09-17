@@ -74,7 +74,8 @@ export class MercadoPagoGateway implements IPaymentGateway {
       paymentId: String(result.id),
       status: result.status ?? 'pending',
       boletoUrl: result.transaction_details?.external_resource_url ?? '',
-      barcode: (result as any).barcode?.content ?? '',
+      // `barcode` vem na resposta de boleto, mas não está no tipo do SDK
+      barcode: (result as { barcode?: { content?: string } }).barcode?.content ?? '',
       dueDate: result.date_of_expiration ?? '',
       gateway: this.type,
     };

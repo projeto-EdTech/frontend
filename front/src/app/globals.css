@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
 /* 
  * TIPOGRAFIA GLOBAL - macOS System Font (San Francisco)
  * Aplicando a fonte do sistema Apple em todos os elementos
@@ -107,8 +105,6 @@ html {
   --button-text: #ffffff;
   --shadow: rgba(0, 0, 0, 0.1);
   --shadow-hover: rgba(0, 0, 0, 0.15);
-  --clay-highlight: rgba(255, 255, 255, 0.6);
-  --clay-shadow: rgba(0, 0, 0, 0.08);
 }
 
 :root[data-theme="dark"] {
@@ -131,8 +127,6 @@ html {
   --button-text: #ffffff;
   --shadow: rgba(0, 0, 0, 0.5);
   --shadow-hover: rgba(0, 0, 0, 0.7);
-  --clay-highlight: rgba(255, 255, 255, 0.1);
-  --clay-shadow: rgba(0, 0, 0, 0.35);
 }
 
 /* Fallback para quando não há tema definido */
@@ -148,44 +142,12 @@ html {
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
-}
-
-/* ===== ESTILOS CLAYMORPHISM ===== */
-.clay-button {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.7),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-[data-theme="dark"] .clay-button {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.25),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.45);
-}
-
-.clay-button:hover {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.75),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.20),
-    0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-[data-theme="dark"] .clay-button:hover {
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.3),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.5),
-    0 8px 20px rgba(0, 0, 0, 0.4);
-}
-
-.clay-card {
-  box-shadow: 
-    inset 1px 1px 3px var(--clay-highlight),
-    inset -1px -1px 3px var(--clay-shadow);
 }
 
 /* ===== CLASSES OTIMIZADAS PARA PERFORMANCE ===== */
@@ -983,51 +945,6 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* Sidebar com suporte a tema */
-.sidebar-themed {
-  background-color: var(--bg-secondary) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  transition: all 0.3s ease;
-}
-
-/* Sidebar aprimorada para tema escuro */
-[data-theme="dark"] .sidebar-themed {
-  background: linear-gradient(135deg, var(--bg-secondary), #2a2a2a) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* Override para elementos específicos da sidebar */
-[data-theme="dark"] .sidebar-themed .text-gray-900 {
-  color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .text-gray-500 {
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .text-gray-400 {
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .bg-white\/50,
-[data-theme="dark"] .sidebar-themed .bg-gray-50 {
-  background-color: var(--card-bg) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .bg-gray-100 {
-  background-color: var(--bg-primary) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .border-gray-100,
-[data-theme="dark"] .sidebar-themed .border-gray-200 {
-  border-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .sidebar-themed .hover\:bg-blue-50\/50:hover {
-  background-color: var(--bg-primary) !important;
-}
-
 /* Footer com suporte a tema */
 .footer-themed {
   background-color: var(--header-bg);
@@ -1382,76 +1299,6 @@ body {
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #4a4a4a, #555555);
-}
-
-/* Sidebar premium section - preservar cores originais independente do tema */
-.sidebar-premium {
-  background: linear-gradient(
-    to right,
-    rgb(250 245 255),
-    rgb(253 242 248)
-  ) !important;
-  border: 1px solid rgb(196 181 253) !important;
-}
-
-.sidebar-premium h4 {
-  color: rgb(107 33 168) !important; /* purple-800 */
-}
-
-.sidebar-premium p {
-  color: rgb(147 51 234) !important; /* purple-600 */
-}
-
-.sidebar-premium button {
-  background: linear-gradient(
-    to right,
-    rgb(168 85 247),
-    rgb(236 72 153)
-  ) !important;
-  color: white !important;
-}
-
-.sidebar-premium button:hover {
-  background: linear-gradient(
-    to right,
-    rgb(147 51 234),
-    rgb(219 39 119)
-  ) !important;
-}
-
-/* Garantir que o tema escuro não afete o container premium */
-[data-theme="dark"] .sidebar-premium {
-  background: linear-gradient(
-    to right,
-    rgb(250 245 255),
-    rgb(253 242 248)
-  ) !important;
-  border: 1px solid rgb(196 181 253) !important;
-}
-
-[data-theme="dark"] .sidebar-premium h4 {
-  color: rgb(107 33 168) !important;
-}
-
-[data-theme="dark"] .sidebar-premium p {
-  color: rgb(147 51 234) !important;
-}
-
-[data-theme="dark"] .sidebar-premium button {
-  background: linear-gradient(
-    to right,
-    rgb(168 85 247),
-    rgb(236 72 153)
-  ) !important;
-  color: white !important;
-}
-
-[data-theme="dark"] .sidebar-premium button:hover {
-  background: linear-gradient(
-    to right,
-    rgb(147 51 234),
-    rgb(219 39 119)
-  ) !important;
 }
 
 /* Themed sections - About Us and similar sections */
@@ -2415,19 +2262,6 @@ html.text-spacing-enabled * {
     box-shadow 0.1s ease-in-out;
 }
 
-/* Elements that opt out of focus ring (e.g. login modal social buttons) */
-.no-focus-ring,
-.no-focus-ring:focus,
-.no-focus-ring:focus-visible {
-  outline: none !important;
-}
-
-/* Also override the focus-guide blue box-shadow for opted-out elements */
-:root.focus-guide-enabled .no-focus-ring:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
 /* Estilos para o link "Pular para o Conteúdo" */
 .skip-link {
   position: absolute;
@@ -2494,6 +2328,27 @@ html.text-spacing-enabled * {
   color: #90cdf4; /* Cor de destaque para o nome da seção */
 }
 
+/* ===== LOGIN MODAL — botões de provedor OAuth =====
+   No modo de alto contraste do SO (forced-colors), o navegador descarta gradiente
+   e box-shadow e repinta o botão com cores de sistema — o retângulo resultante não
+   herda o border-radius, então vaza como barra nas bordas e nos cantos.
+   forced-color-adjust: none mantém a paleta própria do botão. */
+.login-provider-btn {
+  forced-color-adjust: none;
+}
+
+@media (forced-colors: active) {
+  .login-provider-btn {
+    forced-color-adjust: none;
+    border: 1px solid transparent;
+  }
+
+  .login-provider-btn:focus-visible {
+    outline: 2px solid ButtonText;
+    outline-offset: 2px;
+  }
+}
+
 @keyframes slide-in {
   to {
     opacity: 1;
@@ -2503,11 +2358,15 @@ html.text-spacing-enabled * {
 
 /* Tipografia com fonte do sistema Apple (San Francisco) */
 .prose {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 .prose p {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 .prose h1,
@@ -2516,16 +2375,22 @@ html.text-spacing-enabled * {
 .prose h4,
 .prose h5,
 .prose h6 {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 /* Garanta que o conteúdo markdown dentro de cards temáticos use a fonte do sistema */
 .force-themed-card .prose {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 .force-themed-card .prose p {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif !important;
 }
 
 /* ===== SCROLLBAR CUSTOMIZADO PARA RELATÓRIO DE IA ===== */
@@ -2748,7 +2613,8 @@ aside ::-webkit-scrollbar-thumb:hover {
 
 /* Animação de pulso para teclas */
 @keyframes keyPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4);
   }
   50% {
@@ -2771,24 +2637,4 @@ aside ::-webkit-scrollbar-thumb:hover {
 
 .keyboard-row-3 {
   animation-delay: 0.3s;
-}
-
-/* ===== RANK AVATAR FRAME ===== */
-.rank-frame-diamante {
-  box-shadow: 0 0 13px 3px rgba(51, 173, 231, 0.75);
-  border: 2px solid rgba(6, 182, 212, 0.85);
-}
-
-.rank-frame-ouro {
-  box-shadow: 0 0 10px 3px rgba(243, 185, 22, 0.65);
-  border: 2px solid rgba(234, 179, 8, 0.85);
-}
-
-.rank-frame-prata {
-  box-shadow: 0 0 7px 1.5px rgba(176, 188, 205, 0.55);
-  border: 2px solid rgba(148, 163, 184, 0.75);
-}
-
-.rank-frame-bronze {
-  border: 2px solid rgba(194, 120, 60, 0.75);
 }
