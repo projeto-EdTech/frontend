@@ -132,7 +132,16 @@ export default function Footer() {
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
             <p className="themed-text-secondary text-sm font-medium">
               © 2026 <span className="font-bold themed-text">Vestibuline</span>
-              . Todos os direitos reservados. 💙
+              . Projeto open-source sob licença{" "}
+              <a
+                href="https://github.com/projeto-EdTech/frontend/blob/main/LICENSE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-300"
+              >
+                MIT
+              </a>
+              . 💙
             </p>
 
             {/* Redes sociais com animações aprimoradas */}

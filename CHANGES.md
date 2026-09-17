@@ -1,5 +1,45 @@
 # CHANGES
 
+## [Chore/licença] Projeto passa a ser open-source sob MIT, e merge de `main` na `Versão-1.0`
+
+O Vestibuline deixa de ser produto fechado de empresa e passa a ser projeto open-source. O `LICENSE` MIT já tinha entrado no commit `982f035`; o repositório ainda dizia o contrário em dois lugares, e agora está coerente.
+
+### Documentação e interface
+
+| Onde | Antes | Agora |
+|---|---|---|
+| `README.md`, topo | "AVISO: Repositório PRIVADO — uso exclusivo da equipe Vestibuline" | aviso de projeto open-source sob MIT, com convite a contribuir e lembrete de que chave e dado de aluno não entram no repositório. Badges de CI e de licença |
+| `README.md`, Licença | "Código proprietário © Vestibuline. Todos os direitos reservados. Uso estritamente interno." | MIT, com a ressalva de que a licença cobre o **código** — marca, identidade visual e o banco de questões das bancas ficam de fora |
+| `README.md`, Contribuindo | "Branch a partir de `main`" e workflow TDD "do `CLAUDE.md`" | fluxo por **fork** para quem é de fora; o workflow TDD está descrito no próprio README, porque `CLAUDE.md` está no `.gitignore` e não chega a quem clona |
+| `front/src/components/Footer.tsx` | "© 2026 Vestibuline. Todos os direitos reservados." | "© 2026 Vestibuline. Projeto open-source sob licença MIT", com link para o `LICENSE` |
+
+`front/package.json` mantém `"private": true` — essa flag só impede publicação acidental no npm e não tem relação com a visibilidade do repositório.
+
+### Antes de tornar o repositório público
+
+Varredura no histórico completo (`git log --all -S`) por `.env` versionado, chaves Stripe (`sk_live_`, `sk_test_`, `whsec_`), Google (`AIzaSy`), Mercado Pago (`APP_USR-`), Slack e blocos de chave privada PEM: **nenhum segredo real encontrado**. As três ocorrências de `sk_live_`/`whsec_` são placeholders em documentação. O único arquivo `.env*` versionado é o `.env.example`, sem valores.
+
+### Merge de `main`
+
+As duas branches divergiram em `ce69c32` (janeiro) e seguiram paralelas: 33 commits na `Versão-1.0`, 42 na `main`, **nenhum patch em comum** — daí os 87 arquivos em conflito que travavam o PR #10 e impediam o CI de rodar.
+
+O merge foi feito com `-s ours`: a árvore da `Versão-1.0` vale inteira, por ser a linha mais recente (ago/set contra jul) e a que registra o corte para a Fase 1. Ficam de fora os 68 arquivos que só existem na `main` — `app/VestIA`, `app/ranking`, `api/planner`, `api/relatorio-IA`, `components/community`, `components/pricing`, `lib/badges`, `lib/ranking` —, features de Fase 2 a 5 removidas de propósito em `f73044e`. Continuam recuperáveis pelo histórico da `main` quando a fase chegar.
+
+### Verificação
+
+- `npm test` → 14 arquivos, 107 testes passando
+- `npm run lint` → 0 erros
+- `npx tsc --noEmit` → 0 erros
+- `npm run build` → ok
+- Conflito restante com `main`: **0**
+
+### Fora de escopo
+
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` e templates de issue/PR não foram criados nesta entrega.
+- Tornar o repositório público de fato, no GitHub, é ação manual do responsável.
+
+---
+
 ## [Chore/ci] GitHub Actions (lint + test), README enxuto e lint/testes verdes
 
 Entram o workflow de CI e o novo `README.md`, que passa a apontar para a documentação técnica em [`projeto-EdTech/docs`](https://github.com/projeto-EdTech/docs/blob/main/architecture/frontend.md). Antes do commit, rodar os passos do CI localmente mostrou que ele nasceria **vermelho**: `npm run lint` não existia mais e 4 arquivos de teste falhavam. Esta entrega corrige os dois.

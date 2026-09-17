@@ -4,7 +4,9 @@ Interface web da plataforma Vestibuline: preparação para vestibulares com simu
 
 [Reportar Bug](https://github.com/projeto-EdTech/frontend/issues) · [Solicitar Melhoria](https://github.com/projeto-EdTech/frontend/issues) · [Documentação Técnica Completa](https://github.com/projeto-EdTech/docs/blob/main/architecture/frontend.md)
 
-> **AVISO:** Repositório PRIVADO — uso exclusivo da equipe Vestibuline. Nenhum trecho de código deve ser compartilhado externamente sem aprovação formal.
+[![CI](https://github.com/projeto-EdTech/frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/projeto-EdTech/frontend/actions/workflows/ci.yml) [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
+
+> **Projeto open-source.** O código é livre sob a licença [MIT](LICENSE) e contribuição de qualquer pessoa é bem-vinda — veja [Contribuindo](#contribuindo). Chaves, credenciais e dados de aluno **nunca** entram no repositório: ficam no `.env` local e no provedor de deploy.
 
 ## Visão Geral
 
@@ -69,12 +71,12 @@ Lint e test rodam automaticamente em todo Pull Request contra `main` via GitHub 
 ### Fluxo de desenvolvimento
 
 1. Crie issue descrevendo objetivo, escopo, critérios de aceite e riscos
-2. Branch a partir de `main`:
+2. Faça fork do repositório (quem é do time pode trabalhar direto nele) e crie a branch a partir de `main`:
    - `feat/area-descricao-curta`
    - `fix/area-breve-erro`
    - `chore/infra-ou-build`
    - `refactor/modulo-alvo`
-3. Siga o **workflow TDD** do `CLAUDE.md`: escreva testes antes da implementação; build deve passar antes de abrir PR; documente em `CHANGES.md`.
+3. Siga o **workflow TDD**: escreva os testes em `front/tests/` antes da implementação; build deve passar antes de abrir PR; documente a entrega em `CHANGES.md`.
 4. Commits semânticos: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`
 5. Abra PR vinculando issue (`Closes #ID`), com resumo da mudança, motivação, screenshots/GIF (para UI) e passos de teste manual.
 
@@ -91,9 +93,11 @@ Mudanças de arquitetura relevantes (nova stack, novo padrão, mudança de fluxo
 
 ## Licença
 
-Código proprietário © Vestibuline. Todos os direitos reservados. Uso estritamente interno.
+[MIT](LICENSE) © 2026 Vestibuline.
 
-Não distribuir, reproduzir ou derivar sem autorização formal. Para liberação externa (snippet em blog, demo), solicitar aprovação ao responsável técnico e jurídico.
+Uso, cópia, modificação e distribuição são livres, inclusive comercialmente, desde que o aviso de copyright e a licença acompanhem o código. O software é fornecido "como está", sem garantia.
+
+A licença cobre o **código**. Marca, logotipo e identidade visual do Vestibuline não estão incluídos, e o banco de questões de vestibulares tem direitos das próprias bancas.
 
 ---
 
