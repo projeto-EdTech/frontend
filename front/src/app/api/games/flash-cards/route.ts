@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { decodeJWT } from '@/app/service/jwtDecoder';
 import { readUserToken } from '@/app/service/sessionToken';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 // ============================================================
 // GET — Busca os dados dos flash cards do backend externo
@@ -43,6 +44,7 @@ export async function GET(request: Request) {
         'Authorization': `Bearer ${userToken}`,
       },
       cache: 'no-store',
+      signal: bffTimeoutSignal(),
     });
 
     console.log('[API_FLASHCARDS] 📥 Resposta recebida do backend:');
@@ -74,6 +76,9 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error('[API_FLASHCARDS_ERROR] Erro de comunicação com o back-end (GET):', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Não foi possível se conectar ao servidor.' }, { status: 503 });
   }
 }

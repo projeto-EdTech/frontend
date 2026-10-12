@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useUserTier } from "@/hooks/useUserTier";
 import { Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -469,7 +469,7 @@ const useViewportHeight = () => {
 
 // Transforme o Lexoo atual em GameInstance (remova o export default)
 const GameInstance = ({ mode, setMode }: GameInstanceProps) => {
-  const { data: session } = useSession();
+  const { isPro } = useUserTier();
   const { theme } = useTheme();
   const countdownToMidnight = useCountdownToMidnight();
   
@@ -934,7 +934,7 @@ const GameInstance = ({ mode, setMode }: GameInstanceProps) => {
             </button>
 
             {/* Botão de Reset/Novo Jogo */}
-            {session?.user?.tier === "SIMULAPRO" && (
+            {isPro && (
               <button
                 onClick={() => {
                   resetGame();

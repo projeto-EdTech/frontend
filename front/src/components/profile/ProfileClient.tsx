@@ -15,6 +15,7 @@ import NavigationBar from "@/components/profile/NavigationBar";
 import useSWR from 'swr';
 import NotaCorteConsulta from "@/components/Simula_PRO/NotaCorteConsulta";
 import UserConfig from "@/components/profile/UserConfig";
+import RevisaoIA, { type ReviewableQuestion } from "@/components/profile/RevisaoIA";
 
 // Sem Authorization: o cookie `user_data` HttpOnly acompanha sozinho todo fetch same-origin.
 const fetcher = async (url: string) => {
@@ -41,15 +42,6 @@ interface SubjectPerformance {
 interface MonthlyProgressPoint {
   label: string;
   value: number;
-}
-
-interface ReviewableQuestion {
-  id: string;
-  enunciado: string;
-  suaResposta: string;
-  gabarito: string;
-  displayLabel: string;
-  displaySubject: string;
 }
 
 // Interface principal que une todas as outras
@@ -83,8 +75,6 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
   const { data: session, status } = useSession();
   const { universities } = useUniversityStorage();
   const [activeTab, setActiveTab] = useState("profile");
-  const [explanation, setExplanation] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>(initialProfileDataProps || initialProfileData); // <- Sem <any>
   const [isDataLoading, setIsDataLoading] = useState(!initialProfileDataProps); // se tiver prop, n carrega
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +93,7 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     const universityData = universities.find(u => u.slug.toLowerCase() === universityName);
     
     return universityData ? universityData.logo : null;
-  }, [groupedQuestions, selectedSubject, currentQuestionIndex]);
+  }, [groupedQuestions, selectedSubject, currentQuestionIndex, universities]);
 
   // Busca de dados utilizando SWR
   const { data: profileDataResponse, error: swrError, isLoading: isSwrLoading } = useSWR(
@@ -324,52 +314,6 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
     }
   };
 
-  const handleSubmit = async () => {
-    const currentGroup = groupedQuestions.get(selectedSubject);
-    const questionToSubmit = currentGroup ? currentGroup[currentQuestionIndex] : null;
-
-    if (!questionToSubmit) {
-        console.error("Nenhuma questão selecionada para gerar explicação.");
-        return;
-    }
-
-    setIsGenerating(true);
-    setExplanation('');
-
-    try {
-        const response = await fetch('/api/generate-explanation', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ 
-                enunciado: questionToSubmit.enunciado, 
-                gabarito: questionToSubmit.gabarito 
-            }) 
-        });
-
-    if (!response.ok || !response.body) {
-      throw new Error('A resposta da rede não foi bem-sucedida ou não continha um corpo.');
-    }
-    
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      const chunk = decoder.decode(value, { stream: true });
-      setExplanation((prev) => prev + chunk);
-    }
-    
-  } catch (error) {
-    console.error('Erro ao buscar explicação:', error);
-    setExplanation('Ocorreu um erro ao gerar a explicação. Tente novamente.');
-  } finally {
-    setIsGenerating(false);
-  }
-};
-
   return (
     <div className="min-h-screen bg-gray-50 relative">
       <Header />
@@ -431,6 +375,18 @@ export default function ProfileClient({ initialProfileDataProps }: { initialProf
                     onCancel={handleCancelProfile}
                   />
                 </TabsContent>
+                {/* Revisão com IA — explicação de gabarito das questões erradas */}
+                <TabsContent value="revisao" className="mt-6">
+                  <RevisaoIA
+                    groupedQuestions={groupedQuestions}
+                    selectedSubject={selectedSubject}
+                    setSelectedSubject={setSelectedSubject}
+                    currentQuestionIndex={currentQuestionIndex}
+                    setCurrentQuestionIndex={setCurrentQuestionIndex}
+                    universityLogoUrl={currentUniversityLogo}
+                  />
+                </TabsContent>
+
                 <TabsContent value="notasDeCorte" className="mt-6">
                   {isDataLoading ? (
                     // Reutiliza o SkeletonCard enquanto os dados do perfil carregam

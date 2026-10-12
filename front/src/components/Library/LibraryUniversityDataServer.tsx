@@ -2,6 +2,7 @@ import React from 'react';
 import LibraryUniversityClient from './LibraryUniversityClient';
 import { type University } from '@/types/university';
 import { cookies } from "next/headers";
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 
 interface LibraryUniversityDataServerProps {
   slug: string;
@@ -23,6 +24,7 @@ export default async function LibraryUniversityDataServer({ slug }: LibraryUnive
         next: {
           revalidate: 3600, // cache de 1 hora
         },
+        signal: bffTimeoutSignal(),
       });
 
       if (apiResponse.ok) {

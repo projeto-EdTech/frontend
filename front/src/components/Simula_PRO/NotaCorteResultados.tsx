@@ -1,5 +1,6 @@
 import React from 'react';
 import { cookies } from 'next/headers';
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 import NotaCorteResultadosClient from './NotaCorteResultadosClient';
 import { type CourseResult, type CourseStatus } from '@/types/nota-corte';
 
@@ -69,8 +70,8 @@ export default async function NotaCorteResultados({ course, score, institution }
 
   async function buscarResultados() {
     const [resMedia, resCursos] = await Promise.all([
-      fetch(urlMedia.toString(), { headers, cache: 'no-store' }),
-      fetch(`${externalApiUrl}/nota-corte/cursos`, { headers, next: { revalidate: 60 } })
+      fetch(urlMedia.toString(), { headers, cache: 'no-store', signal: bffTimeoutSignal() }),
+      fetch(`${externalApiUrl}/nota-corte/cursos`, { headers, next: { revalidate: 60 }, signal: bffTimeoutSignal() })
     ]);
 
     let targetCourseResult: CourseResult | null = null;

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 export async function GET(
   request: Request,
@@ -37,7 +38,6 @@ export async function GET(
     const backendUrl = `${externalApiUrl}/api/artigos/${identifier}`;
     console.log('[API_BLOG_SLUG] 📤 Enviando requisição ao backend:');
     console.log('[API_BLOG_SLUG]    URL:', backendUrl);
-    console.log('[API_BLOG_SLUG]    Token (primeiros 20 chars):', userToken.substring(0, 20) + '...');
 
     // Faz a requisição ao backend externo repassando o Bearer token
     const apiResponse = await fetch(backendUrl, {
@@ -46,6 +46,7 @@ export async function GET(
         'Authorization': `Bearer ${userToken}`,
       },
       cache: 'no-store',
+      signal: bffTimeoutSignal(),
     });
 
     console.log('[API_BLOG_SLUG] 📥 Resposta recebida do backend:');
@@ -94,6 +95,9 @@ export async function GET(
 
   } catch (error) {
     console.error('[API_BLOG_SLUG_ERROR] Erro de comunicação com o back-end:', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Não foi possível se conectar ao servidor.' }, { status: 503 });
   }
 }

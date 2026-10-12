@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 export async function POST(request: Request) {
   const backendUrl = process.env.BACKEND_API_URL;
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${apiKey}`, 
       },
       body: JSON.stringify(resultDataFromFrontend),
+      signal: bffTimeoutSignal(),
     });
 
     if (!backendResponse.ok) {
@@ -32,6 +34,9 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('[API_PROXY_ERROR]', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Erro ao processar a solicitação.' }, { status: 500 });
   }
 }

@@ -1,5 +1,160 @@
 # CHANGES
 
+## [Fix/auditoria] Timeout no BFF, sessão sem fragmentar, tier único, Revisão com IA e limpeza de pricing/payment
+
+Resposta à auditoria de 17/09/2026. Antes de mexer em código, cada item foi conferido contra o estado atual do repositório — quatro deles a auditoria apontava a partir de uma versão antiga do `README.md` e **já estavam resolvidos**. Os outros seis eram reais e foram corrigidos (ou decididos) nesta entrega.
+
+### Estado de cada item
+
+| Item | Estado encontrado | O que foi feito |
+|---|---|---|
+| Contradição de licença | já resolvido em `d3b8a62`: `README.md` diz MIT no topo e na seção Licença; o texto "Código proprietário… Repositório PRIVADO" é da versão anterior | nada a mudar — conferido |
+| Build (`badgeUtils`/`badges.json`) | já resolvido: `npm run build` passava | conferido; continua passando |
+| ESLint em flat config | já resolvido em `b780b67` (`eslint.config.mjs` nativo, script `eslint .`) | conferido: 0 erros |
+| `tsc --noEmit` | já resolvido: 0 erros | conferido; continua 0 |
+| Código órfão | **real** — 97 de 247 arquivos de `src/` inalcançáveis a partir das entradas do Next | removidas as telas `components/pricing/` e `components/payment/` (decisão do responsável: só essas); o resto fica listado como dívida no `README.md` |
+| Branch padrão `Versão-1.0` → `main` | **real** | **mantida** `Versão-1.0` como padrão, por decisão do responsável. `origin/main` é ancestral de `Versão-1.0` (fast-forward limpo), se um dia a decisão mudar |
+| Timeout em rotas | **real** — só `/api/sync-user` tinha | teto de 8s em **toda** chamada ao BFF: 12 rotas, 7 Server Components, 2 services e a renovação de token do Google |
+| Cookie NextAuth fragmentado | **real** — mitigado na leitura, não na origem | origem corrigida: o callback `jwt` deixa de guardar o `account` inteiro do Google |
+| Explicação de Gabarito por IA | **real** — rota sem sessão, gate FREE/PRO quebrado (`isFree` inexistente), nenhuma tela | rota com sessão, tier e cota no servidor; aba **Revisão** no perfil |
+| Variáveis de ambiente órfãs | **real**, em dois casos | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` removida do `.env.example`; `NEXT_PUBLIC_EMAILJS_*` ganharam consumidor real |
+
+### 1. Timeout em toda chamada ao BFF
+
+Sem teto próprio, uma chamada só desistia no connect timeout de 10s do undici — e, se o Java aceitasse a conexão sem responder, não desistia nunca, prendendo a função serverless e o aluno num carregamento infinito.
+
+**Novo — `front/src/app/service/bffTimeout.ts`:**
+
+- `BFF_TIMEOUT_MS = 8000` e `bffTimeoutSignal()` — `AbortSignal.timeout` novo a cada chamada.
+- `isBffUnreachable(erro)` — timeout, abort e `TypeError: fetch failed` com `cause` (rede/DNS/recusa) contam como BFF inalcançável; `TypeError` sem `cause` é bug nosso e não é confundido.
+- `BFF_UNREACHABLE_MESSAGE` — mensagem única para o navegador, sem host nem stack.
+
+**Aplicado em:**
+
+| Tipo | Arquivos | Resposta no timeout |
+|---|---|---|
+| Rotas | `Nota-corte` (GET e POST), `user/stats`, `user/profile`, `universities`, `subscribe`, `games/flash-cards`, `blog`, `blog/[slug]`, `estatisticas/[subject]`, `questions/[university]`, `simulations/save-result` | **504** com `BFF_UNREACHABLE_MESSAGE` — exceto `GET /api/Nota-corte`, que por contrato continua degradando para lista vazia (a tela de configurações precisa abrir com o BFF fora) |
+| `sync-user` | já tinha 8s; passa a usar o helper compartilhado (`ehErroDeRede` local removido) | 504, como antes |
+| Services | `bffPayments.ts` (`callBff`), `discordToken.service.ts` | `callBff`: **504** no timeout (mensagem própria), 503 nas demais falhas de rede |
+| Server Components | `BlogDataServer`, `BlogPostDataServer`, `ProfileDataServer`, `EstatisticasDados`, `LibraryUniversityDataServer`, `Simula_PRO/SimulacaoLoader`, `Simula_PRO/NotaCorteResultados` | caem no `catch` que cada um já tinha |
+| NextAuth | `refreshAccessToken` em `lib/core/auth.ts` (chamada ao Google) | cai no `catch` existente → `RefreshAccessTokenError` |
+
+`universities/[university]` e `simulations/create` não chamam o BFF (dados estáticos) e ficaram como estavam.
+
+**De carona, nos arquivos tocados:**
+
+- `api/blog/route.ts`, `api/blog/[slug]/route.ts` e `api/questions/[university]/route.ts` logavam os primeiros 20/10 caracteres do JWT — violação da regra "nunca logar JWT, nem os primeiros caracteres". As linhas saíram; `questions` passa a logar só se o token está presente.
+- `api/estatisticas/[subject]/route.ts` lia `BACKEND_API_URL` no carregamento do módulo; passa a ler por requisição.
+
+### 2. Cookie do NextAuth — corrigido na origem
+
+O callback `jwt` de `lib/core/auth.ts` guardava o objeto `account` **inteiro** do Google (`id_token`, `access_token`, `refresh_token`, `scope`, `token_type`, …) e ainda repetia o `access_token` em `token` e `accessToken`. A sessão cifrada passava dos 3933 bytes que o NextAuth aceita por cookie e era fatiada em `next-auth.session-token.0`, `.1`, …
+
+| Campo na sessão | Antes | Agora |
+|---|---|---|
+| `googleAccount` | objeto `account` inteiro | **removido** |
+| `googleIdToken` | — | só o `id_token` (o que o `/api/sync-user` usa); ausente em provedor que não emite |
+| `token` | cópia do `access_token` | **removido** (nenhum leitor) |
+| `accessToken`, `refreshToken`, `expires_at` | mantidos | mantidos — usados na renovação |
+
+- `refreshAccessToken` atualiza `googleIdToken` quando o Google devolve um novo, e não recria mais o campo `token`.
+- `/api/sync-user` lê `googleIdToken` e aceita o formato legado `googleAccount.id_token` — sessões emitidas antes do deploy continuam valendo até expirar.
+- `readNextAuthSessionToken` (remontagem dos chunks) **fica**: cobre sessões antigas e é defesa contra provedor futuro que estoure o teto. Comentários de `sessionToken.ts` e `user/me/route.ts` atualizados.
+- `types/next-auth.d.ts`: `googleIdToken?: string` no `JWT`.
+
+### 3. Tier único em toda a aplicação
+
+A sessão carregava `"Simula PRO"`; `Flash-card` e `Lexoo` comparavam com `'SIMULAPRO'`, `Nexo` e `Enigma` com `"Simula PRO"`. O mesmo aluno era PRO num jogo e FREE no seguinte.
+
+- `lib/core/auth.ts`: o callback `jwt` grava `normalizeTier(...)` e o callback `session` normaliza de novo (sessões antigas ainda trazem `"Simula PRO"`). Na sessão só circulam `FREE` | `SIMULAPRO` | `TEACHER` | `ADMIN`; valor desconhecido vira `FREE`.
+- `games/flash-card_game/Flash-card.tsx`, `games/Lexoo/Lexoo.tsx`, `games/Nexo/Nexo.tsx`, `games/Enigma/enigma.tsx`: deixam de ler `session.user.tier` cru e passam a usar `useUserTier().isPro` — tier do BFF (`/api/user/me`) com a sessão como fallback, mesmo caminho de `Header`, `Footer` e `NavigationBar`.
+- **Novo — `front/src/app/service/sessionClaims.ts`:** `readSessionClaims(req)` — a leitura das duas fontes de sessão (`user_data` e NextAuth) saiu de dentro de `/api/user/me` para ser reusada. `/api/user/me` passa a ser uma casca sobre ela, com o mesmo contrato (claims + `X-Claims-Source`).
+
+### 4. Explicação de Gabarito por IA
+
+**Rota — `front/src/app/api/generate-explanation/route.ts` (reescrita):**
+
+| Antes | Agora |
+|---|---|
+| sem sessão: qualquer requisição gerava explicação com a chave do Gemini | **401** sem sessão (`readSessionClaims`) |
+| gate FREE/PRO só no cliente, e quebrado | tier decidido no servidor (`isPaidTier`). PRO sem cota; FREE com **5 por dia** → **429** `{ error, limite }` ao esgotar |
+| `runtime = 'edge'` | `nodejs` (a cota usa `node:crypto`) |
+| sem teto | `timeout: 30000` no modelo; timeout → **504**, outra falha antes do streaming → **502**, sem URL do provedor nem nome de classe na resposta |
+| JSON inválido → 500 | **400**; texto acima de 20 mil caracteres → 400 |
+| `GEMINI_API_KEY` ausente → erro do SDK | **503** sem citar a variável |
+| streaming sem cancelamento | `cancel()` do `ReadableStream` para de ler o Gemini quando o aluno sai; erro no meio do streaming vira aviso no próprio texto |
+
+O saldo volta no header `X-AI-Quota-Remaining` (`unlimited` para PRO). A cota só é debitada **depois** que o Gemini aceitou a requisição — falha do provedor não custa uso.
+
+**Novo — `front/src/app/service/aiExplanationQuota.ts`:** cota em cookie HttpOnly `ai_explanations` (`path=/api/generate-explanation`, 2 dias). Formato `dia.usados.marca`: o dia é o de Brasília (vira à meia-noite local, não à de UTC); a marca é um hash curto do `id` (ou e-mail) do aluno — sem dado pessoal no cookie — para dois alunos no mesmo navegador não dividirem a cota. Valor de outro dia, de outro aluno, ilegível ou negativo vale como cota nova.
+
+**Novo — `front/src/lib/core/aiQuota.ts`:** `FREE_DAILY_EXPLANATIONS` e `AI_QUOTA_HEADER`, separados do service porque ele importa `node:crypto` e não pode entrar no bundle do navegador.
+
+**`front/src/app/service/sessionToken.ts` → `readRequestCookie(req, name)` (novo export):** cookie qualquer pelo mesmo parser da sessão, para a cota não precisar de um segundo parser.
+
+**Tela — `front/src/components/profile/RevisaoIA.tsx` (novo):** aba **Revisão** do perfil, visível para todos os planos.
+
+- Seleção Matéria → Conteúdo (`buildSubjectTree`/`parseSubjectKey`), progresso "Questão X de Y", enunciado com logo da universidade, "Sua resposta" × "Gabarito", botão "Explicar o gabarito com IA" e explicação renderizada com `DynamicMarkdown` (Markdown + KaTeX), navegação anterior/próxima.
+- A tela **não decide** acesso: mostra o saldo do header e a mensagem do 429. Selo "Plano gratuito: 5 explicações por dia" → "N de 5 restantes hoje" → botão desabilitado em 0; PRO vê "sem limite".
+- Explicação gerada fica em memória por questão (voltar não gasta cota); trocar de questão aborta o streaming em andamento.
+- Substitui `Simula_PRO/Questoes_Gemini.tsx` (removido em `83575da`), que lia `isFree` de `useUserTier()` — campo que o hook nunca devolveu —, contava uso em `localStorage` e abria modal de upgrade para `/paidPlan`, rota que não existe.
+
+`ProfileClient.tsx` monta a aba e perde o estado morto (`explanation`, `isGenerating`, `handleSubmit`); `NavigationBar.tsx` ganha o botão **Revisão**. O `useMemo` do logo passa a depender de `universities` (o logo não aparecia se a lista de universidades chegasse depois das questões).
+
+### 5. Remoção das telas de pricing e payment
+
+Decisão do responsável: remover **só** as telas. Nenhum arquivo do projeto as importava — a página `/paidPlan` e as rotas de checkout já tinham saído em `83575da`.
+
+- `front/src/components/pricing/` — 7 arquivos (`GuaranteeSection`, `HeroSection`, `PaymentMethodSelector`, `PersonalInfoForm`, `PlanCard`, `ProgressIndicator`, `SecuritySection`)
+- `front/src/components/payment/` — 4 arquivos (`BoletoForm`, `CreditCardForm`, `PixForm`, `StripeCardForm`)
+
+Ficaram, fora do escopo pedido: `hooks/usePixPaymentStatus.ts` e `app/service/pricing.service.ts` (sem consumidor desde antes), `app/service/payment/*` e `/api/subscriptions/activate` (vivos, via `usePendingPaymentReconciliation`).
+
+### 6. Variáveis de ambiente órfãs
+
+Conferência de cada chave do `.env.example` contra `process.env.*` em código **alcançável**:
+
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — o único consumidor eram `payment/StripeCardForm` e `payment/CreditCardForm`. **Removida** do `.env.example`.
+- `NEXT_PUBLIC_EMAILJS_SERVICE_ID` / `_TEMPLATE_ID` / `_PUBLIC_KEY` — o único consumidor era `components/contato/emailService.ts`, que nenhuma tela importava: a página `/contato` chamava `emailjs.send` com os três IDs **fixos no código**. A página passa a usar `sendContactEmail` do `emailService`, e as chaves ganham consumidor real.
+- `NEXTAUTH_URL` — sem `process.env` no `src/`, mas lida pelo próprio next-auth; fica.
+
+> **Atenção no deploy:** com a mudança do `/contato`, o formulário depende de `NEXT_PUBLIC_EMAILJS_*` estarem definidas no provedor. O `.env` local já tem as três.
+
+### Testes (novos, escritos antes da implementação)
+
+| Arquivo | Casos | Cobre |
+|---|---|---|
+| `tests/bffTimeout.test.ts` | 7 | teto < 10s, sinal aborta com `TimeoutError`, sinal novo por chamada, classificação rede × bug |
+| `tests/route-timeouts.test.ts` | 24 | `describe.each` em 12 rotas: todo `fetch` sai com `AbortSignal`; timeout → 504 sem `bff.local`/`TimeoutError` no corpo (GET Nota-corte → 200 vazio) |
+| `tests/auth-session-cookie.test.ts` | 9 | sem `googleAccount`, `googleIdToken` presente, `access_token`/`refresh_token` uma vez só, provedor sem `id_token`, **sessão cifrada ≤ 3933 bytes**, tier normalizado no `jwt` e no `session`, tier desconhecido → FREE |
+| `tests/aiExplanationQuota.test.ts` | 9 | virada do dia em Brasília, ida e volta, reset diário, cota por aluno, sem PII no cookie, negativo não vira crédito, lixo não lança |
+| `tests/generate-explanation.route.test.ts` | 11 | 401, 400 (campo/JSON), 503 sem chave, PRO ilimitado, FREE grava cookie HttpOnly, 429 no limite sem chamar o Gemini, reset diário, falha do Gemini não gasta cota nem vaza URL, timeout configurado, timeout → 504 |
+| `tests/RevisaoIA.test.tsx` | 6 | estado vazio, enunciado × resposta × gabarito, botão habilitado, selo FREE, selo PRO, logo normalizado |
+| `tests/sync-user.route.test.ts` | +2 | lê `googleIdToken`; precedência sobre o formato legado |
+
+### Verificação
+
+- `npm test` → **20 arquivos, 175 testes passando** (antes: 14 arquivos, 107)
+- `npm run lint` → **0 erros**, 92 avisos (antes: 106 — os arquivos removidos levaram 14)
+- `npx tsc --noEmit` → **0 erros**
+- `npm run build` → ok; `/api/generate-explanation` como rota dinâmica Node
+
+### Documentação
+
+- `front/src/app/api/README.md`: seção nova **Timeout**, seção **🤖 IA**, `readSessionClaims` na seção de autenticação, sessão do NextAuth corrigida na origem, `sync-user` com `googleIdToken`, pagamento reduzido ao que existe (`/api/subscriptions/activate`) com o contrato de checkout registrado para quando voltar, mapa de consumo e chamadas quebradas atualizados, checklist de rota nova com timeout e testes em `front/tests/`.
+- `README.md` da raiz: seção **Estado Atual e Dívidas Conhecidas** (o `front/CLAUDE.md` apontava para ela, e ela não existia).
+
+### Fora de escopo — registrado como dívida
+
+- **Revisão sem dados reais:** `/api/user/stats` devolve `reviewableQuestions: []` fixo — o BFF ainda não expõe as questões erradas. A aba mostra o estado vazio até o Java entregar o endpoint.
+- **Cota da IA é de navegador:** apagar o cookie recomeça a contagem. Medição à prova disso precisa de estado no BFF Java.
+- **Link "Planos" no `Footer`** aponta para `/paidPlan`, que não existe (404).
+- **`lib/core/auth.ts`** define tier PRO para um e-mail fixo no código no primeiro login — atalho de teste que continua lá (agora normalizado).
+- **`BlogDataServer`, `BlogPostDataServer`, `ProfileDataServer`** mandam ao BFF o `access_token` do **Google** (`session.accessToken`), não o JWT do Java (`user_data`).
+- **Demais órfãos** (85 de 241 arquivos após esta entrega): `components/community/`, `components/contato/*` (menos `emailService.ts`), `components/mockups/`, `components/Simulation/` (duplicata de `Simula_PRO/`), `components/Library/*` fora do `LibraryUniversityDataServer`, services `game`/`pricing`/`simulation`/`statistics`/`university`, `lib/data/*`, `hooks/use-mobile.ts`/`use-toast.ts`, `contexts/LoadingContext.tsx`, 5 componentes de `profile/` e primitivos não usados de `components/ui/` (kit shadcn).
+
+---
+
 ## [Chore/licença] Projeto passa a ser open-source sob MIT, e merge de `main` na `Versão-1.0`
 
 O Vestibuline deixa de ser produto fechado de empresa e passa a ser projeto open-source. O `LICENSE` MIT já tinha entrado no commit `982f035`; o repositório ainda dizia o contrário em dois lugares, e agora está coerente.

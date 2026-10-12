@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse, CourseResult } from '@/types/nota-corte';
 import { readUserToken } from '@/app/service/sessionToken';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 // Campos que o BFF pode devolver para cada curso (nomes variam entre endpoints)
 interface CursoBackend {
@@ -38,6 +39,7 @@ export async function GET(request: Request) {
         'Authorization': `Bearer ${userToken}`,
       },
       cache: 'no-store',
+      signal: bffTimeoutSignal(),
     });
 
     if (!apiResponse.ok) {
@@ -120,6 +122,7 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${userToken}`,
       },
       cache: 'no-store',
+      signal: bffTimeoutSignal(),
     });
 
     console.log('[API_NOTA_CORTE] 📥 Resposta recebida do backend:');
@@ -171,6 +174,9 @@ export async function POST(request: Request) {
 
   } catch (error: unknown) {
     console.error('[API_NOTA_CORTE_ERROR] Erro na rota Nota-corte:', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Não foi possível se conectar ao servidor.' }, { status: 503 });
   }
 }

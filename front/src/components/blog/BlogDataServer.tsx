@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/core/auth";
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 import BlogClient from "./BlogClient";
 import { PostPreview } from "@/types";
 
@@ -31,6 +32,7 @@ async function fetchBlogPosts(): Promise<PostPreview[]> {
         ...(userToken ? { 'Authorization': `Bearer ${userToken}` } : {})
       },
       next: { revalidate: 60 },
+      signal: bffTimeoutSignal(),
     });
 
     if (apiResponse.ok) {

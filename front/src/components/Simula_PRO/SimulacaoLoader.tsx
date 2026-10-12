@@ -1,6 +1,7 @@
 import React from "react";
 import SimulationQuizClient from "@/components/Simula_PRO/SimulationQuizClient";
 import { cookies } from "next/headers";
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 import { type Question } from "@/types/university";
 
 function formatLatexExpressions(text: string | null): string {
@@ -149,6 +150,7 @@ export default async function SimulacaoLoader({
       },
       body: JSON.stringify(payload),
       next: { revalidate: 60 },
+      signal: bffTimeoutSignal(),
     });
     const fetchDuration = Date.now() - fetchStart;
 

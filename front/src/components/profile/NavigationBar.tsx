@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, BarChart2, Settings, Target } from "lucide-react";
+import { BookOpen, BarChart2, Settings, Sparkles, Target } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useUserTier } from "@/hooks/useUserTier";
 
@@ -66,6 +66,18 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         >
           <BarChart2 size={18} className="flex-shrink-0" />
           <span className="hidden md:inline">Estatísticas</span>
+        </button>
+        {/* Visível para todos: o FREE tem cota diária, e quem decide o acesso é a rota. */}
+        <button
+          onClick={() => setActiveTab("revisao")}
+          className={`group px-4 md:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+            activeTab === "revisao"
+              ? "bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Sparkles size={18} className="flex-shrink-0" />
+          <span className="hidden md:inline">Revisão</span>
         </button>
         {isPRO && (
           <>

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { decode as decodeNextAuthSession } from 'next-auth/jwt';
-import { readUserToken, readNextAuthSessionToken } from '@/app/service/sessionToken';
-import { decodeJWT, normalizeTier, isTokenExpired } from '@/app/service/jwtDecoder';
+import { readSessionClaims, type ClaimsSource, type UserClaims } from '@/app/service/sessionClaims';
 
 /**
  * Claims de exibição do aluno logado.
@@ -27,15 +25,19 @@ import { decodeJWT, normalizeTier, isTokenExpired } from '@/app/service/jwtDecod
  *    autenticado pelo OAuth aparece como deslogado na tela inteira só porque o Java não
  *    respondeu.
  *
- * O cookie do NextAuth chega **fragmentado** neste projeto — `next-auth.session-token.0`,
- * `.1`, … — porque o callback `jwt` guarda o objeto `account` inteiro do Google e o valor
- * passa dos 4096 bytes que o navegador aceita por cookie. Quem remonta é
- * `readNextAuthSessionToken`, em `sessionToken.ts`.
+ * O cookie do NextAuth pode chegar **fragmentado** — `next-auth.session-token.0`, `.1`, … —
+ * quando o valor passa dos 4096 bytes que o navegador aceita por cookie. Era o caso de toda
+ * sessão até o callback `jwt` deixar de guardar o `account` inteiro do Google; sessões antigas
+ * ainda chegam assim até expirar. Quem remonta é `readNextAuthSessionToken`, em
+ * `sessionToken.ts`.
  *
  * Remontar não basta para ler: esse cookie é um **JWE cifrado** (`dir` + `A256GCM`), não um
  * JWT assinado. `jwt-decode` devolveria `null` — quem o abre é o `decode` do `next-auth/jwt`,
  * com a `NEXTAUTH_SECRET`. Por isso a regra "só o `jwtDecoder` lê JWT" continua valendo sem
  * exceção: o `jwtDecoder` cuida do token do Java, e o token do NextAuth não é JWT.
+ *
+ * A leitura das duas fontes mora em `src/app/service/sessionClaims.ts`, compartilhada com
+ * `/api/generate-explanation` — as duas rotas decidem o tier pelo mesmo caminho.
  *
  * O que a fonte 2 **não** entrega, e por quê:
  *
@@ -55,92 +57,19 @@ import { decodeJWT, normalizeTier, isTokenExpired } from '@/app/service/jwtDecod
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export interface UserClaims {
-    id: string | null;
-    nome: string | null;
-    email: string | null;
-    /** Já normalizado — a grafia que o BFF emite em `tipo` não é problema do cliente. */
-    tier: string;
-    newsletter: boolean;
-}
+export type { UserClaims } from '@/app/service/sessionClaims';
 
 export async function GET(request: Request) {
-    const claimsDoBff = lerClaimsDoUserData(request);
+    const sessao = await readSessionClaims(request);
 
-    if (claimsDoBff) {
-        return responder(claimsDoBff, 'user_data');
+    if (!sessao) {
+        return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
-    const claimsDoNextAuth = await lerClaimsDoNextAuth(request);
-
-    if (claimsDoNextAuth) {
-        return responder(claimsDoNextAuth, 'next-auth');
-    }
-
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    return responder(sessao.claims, sessao.source);
 }
 
-/** Fonte 1: o JWT do BFF Java. `null` quando o cookie não existe, não decodifica ou venceu. */
-function lerClaimsDoUserData(request: Request): UserClaims | null {
-    const userToken = readUserToken(request);
-
-    if (!userToken) return null;
-
-    const decoded = decodeJWT(userToken);
-
-    if (!decoded) return null;
-
-    // `exp` ausente não invalida: nem todo JWT do backend carrega o claim, e esta rota não
-    // libera acesso a nada — quem julga a validade do token de verdade é o BFF Java, a cada
-    // requisição. Mas `exp` vencido é resposta clara e não custa nada respeitar.
-    if (decoded.exp && isTokenExpired(userToken)) return null;
-
-    return {
-        id: typeof decoded.id === 'string' ? decoded.id : null,
-        nome: typeof decoded.nome === 'string' ? decoded.nome : null,
-        email: typeof decoded.email === 'string' ? decoded.email : null,
-        tier: normalizeTier(decoded.tipo),
-        // Duas grafias circulam no código (`newsletter` na interface do payload, `newsLetter` no
-        // botão do blog) e a que o backend emite não está confirmada. Aceita as duas: errar aqui
-        // faria o botão de newsletter mostrar o estado oposto do real.
-        newsletter: decoded.newsletter === true || decoded.newsLetter === true,
-    };
-}
-
-/** Fonte 2: a sessão do NextAuth, remontada dos chunks e decifrada. */
-async function lerClaimsDoNextAuth(request: Request): Promise<UserClaims | null> {
-    const sessionToken = readNextAuthSessionToken(request);
-    const secret = process.env.NEXTAUTH_SECRET;
-
-    if (!sessionToken || !secret) return null;
-
-    let payload: Awaited<ReturnType<typeof decodeNextAuthSession>>;
-
-    try {
-        // Lança quando falta um chunk, o segredo não confere ou a sessão expirou. Nada disso é
-        // erro do servidor — é ausência de sessão válida, e a resposta certa é 401.
-        payload = await decodeNextAuthSession({ token: sessionToken, secret });
-    } catch {
-        return null;
-    }
-
-    if (!payload) return null;
-
-    const user = payload.user as { name?: unknown; email?: unknown } | undefined;
-    const nome = user?.name ?? payload.name;
-    const email = user?.email ?? payload.email;
-
-    return {
-        // Nunca o `sub`: ver a tabela no cabeçalho deste arquivo.
-        id: null,
-        nome: typeof nome === 'string' ? nome : null,
-        email: typeof email === 'string' ? email : null,
-        tier: normalizeTier(payload.tier),
-        newsletter: false,
-    };
-}
-
-function responder(claims: UserClaims, fonte: 'user_data' | 'next-auth') {
+function responder(claims: UserClaims, fonte: ClaimsSource) {
     return NextResponse.json(claims, {
         status: 200,
         headers: {

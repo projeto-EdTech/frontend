@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-
-// Pega a URL do back-end a partir das variáveis de ambiente
-const BACKEND_API_URL = process.env.BACKEND_API_URL;
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 export async function GET(
   req: Request,
   context: { params: Promise<{ subject: string }> }
 ) {
+  // Lida por requisição, não no carregamento do módulo: lida no topo do arquivo, a variável
+  // congelava o valor do primeiro import e ignorava qualquer ajuste de ambiente posterior.
+  const BACKEND_API_URL = process.env.BACKEND_API_URL;
+
   // 1. Validar se a URL do back-end está configurada
   if (!BACKEND_API_URL) {
     console.error("A variável de ambiente BACKEND_API_URL não está definida.");
@@ -69,6 +71,7 @@ export async function GET(
       },
       // Configuração de cache (opcional, 'no-store' busca sempre os dados mais recentes)
       cache: 'no-store',
+      signal: bffTimeoutSignal(),
     });
 
     // 5. Tratar a resposta do back-end
@@ -101,6 +104,9 @@ export async function GET(
 
   } catch (error) {
     console.error("Erro de conexão com o back-end:", error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ message: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json(
       { message: "Não foi possível conectar ao serviço de estatísticas." },
       { status: 503 }

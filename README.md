@@ -66,6 +66,34 @@ Todos os comandos devem ser executados dentro de `front/`:
 
 Lint e test rodam automaticamente em todo Pull Request contra `main` via GitHub Actions (`.github/workflows/ci.yml`).
 
+## Estado Atual e Dívidas Conhecidas
+
+> Última conferência: 18/09/2026. Detalhe de cada entrega no [`CHANGES.md`](CHANGES.md).
+
+**Saúde do código:** `npm run build` ok · `npm run lint` 0 erros (92 avisos, a maioria `react-hooks/set-state-in-effect`) · `npx tsc --noEmit` 0 erros · `npm test` 175 testes passando.
+
+**Branch padrão no GitHub:** `Versão-1.0` (decisão mantida). `main` existe e é ancestral dela. O CI só dispara em Pull Request contra `main`.
+
+**Resolvido recentemente:**
+
+- Toda chamada ao BFF Java tem teto de 8s (`src/app/service/bffTimeout.ts`); BFF que não responde vira **504**, sem host nem stack na resposta.
+- A sessão do NextAuth cabe num cookie só — o callback `jwt` guarda apenas o `id_token` do Google, não mais o `account` inteiro.
+- Tier único na aplicação: sessão e telas só usam `FREE` | `SIMULAPRO` | `TEACHER` | `ADMIN`, via `useUserTier()`.
+- Explicação de gabarito por IA na aba **Revisão** do perfil, com sessão obrigatória e tier decidido no servidor: PRO sem limite, FREE com 5 explicações por dia.
+
+**Dívidas conhecidas:**
+
+| Área | Dívida |
+| --- | --- |
+| Revisão com IA | `/api/user/stats` devolve `reviewableQuestions: []` fixo — a aba mostra o estado vazio até o BFF expor as questões erradas do aluno |
+| Revisão com IA | a cota FREE é contada em cookie HttpOnly: apagar o cookie recomeça a contagem. Medição à prova disso precisa de estado no BFF |
+| Simulado | `POST /api/simulations/save-result` encaminha para um caminho provisório — o resultado não chega ao backend |
+| Flashcards | a rota só exporta `GET`; o `POST` dos acertos responde 405 |
+| Planos | não há tela de planos na Fase 1; o link "Planos" do rodapé aponta para `/paidPlan`, que não existe |
+| Sessão | `BlogDataServer`, `BlogPostDataServer` e `ProfileDataServer` mandam ao BFF o `access_token` do Google, não o JWT do Java |
+| Código órfão | 85 de 241 arquivos de `src/` não são alcançados por nenhuma rota: `components/community/`, `components/contato/*` (exceto `emailService.ts`), `components/mockups/`, `components/Simulation/` (duplicata de `Simula_PRO/`), parte de `components/Library/` e `components/profile/`, services `game`/`pricing`/`simulation`/`statistics`/`university`, `lib/data/*`, `hooks/usePixPaymentStatus.ts` e primitivos não usados do kit shadcn em `components/ui/` |
+| Lint | 92 avisos, a maioria `setState` síncrono em `useEffect` (padrão de hidratação) — ver `front/eslint.config.mjs` |
+
 ## Contribuindo
 
 ### Fluxo de desenvolvimento

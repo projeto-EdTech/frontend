@@ -16,6 +16,8 @@
  * CACHE STRATEGY: no-store — dados financeiros, sem cache (exceto o catálogo, ver `revalidate`)
  */
 
+import { bffTimeoutSignal, isBffUnreachable } from '@/app/service/bffTimeout';
+
 /** Endpoints do BFF que compõem a cadeia de pagamento. */
 export const BFF_PAYMENT_PATHS = {
     plans: '/plans',
@@ -53,6 +55,7 @@ const MENSAGEM_POR_STATUS: Record<number, string> = {
     404: 'Pagamento não encontrado.',
     409: 'Pagamento não concluído.',
     503: 'Serviço de pagamento indisponível. Tente novamente.',
+    504: 'O serviço de pagamento demorou para responder. Tente novamente.',
 };
 
 const MENSAGEM_PADRAO = 'Não foi possível processar o pagamento. Tente novamente.';
@@ -93,6 +96,7 @@ export async function callBff(path: string, options: BffCallOptions = {}): Promi
         headers,
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         ...(revalidate === undefined ? { cache: 'no-store' } : { next: { revalidate } }),
+        signal: bffTimeoutSignal(),
     };
 
     let response: Response;
@@ -102,7 +106,7 @@ export async function callBff(path: string, options: BffCallOptions = {}): Promi
     } catch (error: unknown) {
         // Sem repassar a mensagem: ela costuma trazer host e porta do BFF.
         console.error(`[BFF_PAYMENTS] Falha de comunicação em ${path}`, error);
-        return erroGenerico(503);
+        return erroGenerico(isBffUnreachable(error) ? 504 : 503);
     }
 
     if (!response.ok) {

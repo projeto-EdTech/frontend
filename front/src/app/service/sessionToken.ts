@@ -39,10 +39,13 @@ const NEXTAUTH_COOKIE_NAMES = [
  * Devolve o cookie de sessão do NextAuth **já remontado**.
  *
  * O NextAuth fatia esse cookie quando o valor passa de ~3900 bytes, porque 4096 é o teto que
- * os navegadores aceitam por cookie. Neste projeto ele passa: o callback `jwt` de
- * `src/lib/core/auth.ts` guarda o objeto `account` inteiro do Google (`id_token`,
- * `access_token`, `refresh_token`, scopes). O que chega no navegador é
- * `next-auth.session-token.0`, `.1`, … e nenhum pedaço isolado é legível.
+ * os navegadores aceitam por cookie. Neste projeto passava: o callback `jwt` de
+ * `src/lib/core/auth.ts` guardava o objeto `account` inteiro do Google. A origem foi corrigida
+ * — o callback guarda só `googleIdToken`, `accessToken` e `refreshToken`, e a sessão cabe num
+ * cookie só (`tests/auth-session-cookie.test.ts`). A remontagem continua aqui para sessões
+ * emitidas antes da correção e como defesa: nada impede um provedor futuro de estourar o teto.
+ * Fragmentado, o que chega no navegador é `next-auth.session-token.0`, `.1`, … e nenhum pedaço
+ * isolado é legível.
  *
  * A ordenação é **numérica**, não alfabética: com onze ou mais pedaços, ordenar como texto
  * põe `.10` logo depois de `.1` e o valor remontado sai embaralhado — falha que aparece só
@@ -84,6 +87,17 @@ export function readNextAuthSessionToken(req: Request): string | null {
 
 function readCookie(req: Request, name: string): string | null {
     return parseCookies(req).get(name) ?? null;
+}
+
+/**
+ * Cookie qualquer da requisição, pelo mesmo parser da sessão.
+ *
+ * Existe para quem precisa de um cookie que **não** é sessão — a cota diária da explicação por
+ * IA, por exemplo — sem escrever um segundo parser. Para sessão, use `readUserToken` ou
+ * `readNextAuthSessionToken`.
+ */
+export function readRequestCookie(req: Request, name: string): string | null {
+    return readCookie(req, name);
 }
 
 function parseCookies(req: Request): Map<string, string> {

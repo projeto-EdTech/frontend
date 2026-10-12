@@ -6,6 +6,8 @@
  * (Abordagem 1 do Token_Validation.md).
  */
 
+import { bffTimeoutSignal } from '@/app/service/bffTimeout';
+
 export interface GenerateTokenResponse {
   token: string;
 }
@@ -35,6 +37,7 @@ export async function generateDiscordToken(
     },
     body: JSON.stringify({ userId }),
     cache: 'no-store',
+    signal: bffTimeoutSignal(),
   });
 
   if (!response.ok) {

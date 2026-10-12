@@ -308,3 +308,32 @@ describe('POST /api/sync-user — o JWT nunca vai para o log', () => {
         expect(logs.join('\n')).not.toContain('id-token-do-google');
     });
 });
+
+describe('POST /api/sync-user — formato enxuto da sessão', () => {
+    // O callback `jwt` deixou de guardar o `account` inteiro do Google (era o que fragmentava o
+    // cookie do NextAuth). O `id_token` passou a morar em `googleIdToken`; sessões emitidas antes
+    // do deploy ainda trazem `googleAccount.id_token` e continuam valendo até expirarem.
+    it('13. lê o id_token de `googleIdToken`', async () => {
+        getTokenMock.mockResolvedValue({ googleIdToken: 'id-token-enxuto' } as never);
+        fetchMock.mockResolvedValue(bffJson(200, { token: JWT_DO_BFF }));
+
+        const res = await POST(makeReq());
+        const enviado = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+
+        expect(res.status).toBe(200);
+        expect(enviado.token).toBe('id-token-enxuto');
+    });
+
+    it('14. `googleIdToken` tem precedência sobre o formato legado', async () => {
+        getTokenMock.mockResolvedValue({
+            googleIdToken: 'id-token-novo',
+            googleAccount: { id_token: 'id-token-legado' },
+        } as never);
+        fetchMock.mockResolvedValue(bffJson(200, { token: JWT_DO_BFF }));
+
+        await POST(makeReq());
+        const enviado = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+
+        expect(enviado.token).toBe('id-token-novo');
+    });
+});

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readUserToken } from '@/app/service/sessionToken';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 export async function GET(request: Request) {
   const externalApiUrl = process.env.BACKEND_API_URL;
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
       next: {
         revalidate: 3600, 
       },
+      signal: bffTimeoutSignal(),
     });
 
     if (!apiResponse.ok) {
@@ -35,6 +37,9 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error('[API_UNIVERSITIES_ERROR]', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Ocorreu um erro interno ao buscar os dados.' }, { status: 500 });
   }
 }

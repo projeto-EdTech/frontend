@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/core/auth";
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 import BlogPostClient from "@/components/blog/BlogPostClient";
 import { Post, PostPreview } from "@/types";
 
@@ -31,8 +32,8 @@ export default async function BlogPostDataServer({ slug, articleId }: { slug: st
     };
 
     const [postRes, relatedRes] = await Promise.all([
-      fetch(postUrl, { method: "GET", headers, next: { revalidate: 60 } }),
-      fetch(allPostsUrl, { method: "GET", headers, next: { revalidate: 60 } })
+      fetch(postUrl, { method: "GET", headers, next: { revalidate: 60 }, signal: bffTimeoutSignal() }),
+      fetch(allPostsUrl, { method: "GET", headers, next: { revalidate: 60 }, signal: bffTimeoutSignal() })
     ]);
 
     let post: Post | null = null;

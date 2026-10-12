@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 // --- Tipagem para os dados recebidos da API e para o formato final ---
 
@@ -217,7 +218,7 @@ export async function POST(
   const authHeader = request.headers.get('Authorization');
   const userToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
-  console.log(`${LOG}    Token JWT presente: ${userToken ? 'SIM (primeiros 10 chars: ' + userToken.substring(0, 10) + '...)' : 'NÃO'}`);
+  console.log(`${LOG}    Token JWT presente: ${userToken ? 'SIM' : 'NÃO'}`);
 
   if (!userToken) {
     console.warn(`${LOG} ❌ Requisição sem token JWT. Retornando 401.`);
@@ -262,6 +263,7 @@ export async function POST(
       },
       body: JSON.stringify(backendPayload),
       cache: 'no-store',
+      signal: bffTimeoutSignal(),
     });
     const fetchDuration = Date.now() - fetchStart;
 
@@ -351,6 +353,9 @@ export async function POST(
     console.error(`${LOG}    Mensagem:`, error instanceof Error ? error.message : String(error));
     console.error(`${LOG}    Stack:`, error instanceof Error ? error.stack : 'N/A');
     console.log(`${LOG} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ message: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json(
       { message: 'Não foi possível buscar as questões. Verifique se o corpo da requisição está correto.' },
       { status: 503 }

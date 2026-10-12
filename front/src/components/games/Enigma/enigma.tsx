@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useUserTier } from "@/hooks/useUserTier";
 import { motion, AnimatePresence } from "framer-motion";
 import { Subject, SubjectCardProps, SubjectGridProps, subjects, colorMappings, Entity, GuessFeedback, FeedbackStatus, attributeLabels, } from "./lib/enigma-data";
 import { getTargetEntityForDay, getEntitiesForSubject, compareGuess, } from "./functions/enigma-logic";
@@ -686,9 +686,10 @@ function SubjectGrid({
 export default function EnigmaLobby() {
   const MAX_LIVES = 8;
   const FREE_DAILY_LIMIT = 1;
-  const { data: session } = useSession();
-  const tier: string | undefined = session?.user?.tier;
-  const plan: "FREE" | "Simula PRO" = tier === "Simula PRO" ? "Simula PRO" : "FREE";
+  // `tier === "Simula PRO"` nunca batia com a sessão normalizada (`SIMULAPRO`): o PRO jogava
+  // com o limite do FREE. Quem decide é `isPaidTier`, via `useUserTier`.
+  const { isPro } = useUserTier();
+  const plan: "FREE" | "Simula PRO" = isPro ? "Simula PRO" : "FREE";
   const [mode, setMode] = useState<GameMode>("lobby");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [playedSubjects, setPlayedSubjects] = useState<string[]>([]);

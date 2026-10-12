@@ -13,6 +13,8 @@ declare module "next-auth/jwt" {
 	interface JWT {
 		accessToken?: string;
 		refreshToken?: string;
+		/** `id_token` do Google, trocado pelo JWT do BFF em `/api/sync-user`. */
+		googleIdToken?: string;
 		expires_at?: number;
 		tier?: "FREE" | "SIMULAPRO" | "TEACHER" | "ADMIN";
 		user?: User;

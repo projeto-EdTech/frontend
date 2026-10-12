@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { decodeJWT } from '@/app/service/jwtDecoder';
 import { readUserToken } from '@/app/service/sessionToken';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const transformExternalData = (geralData: any, performanceData: any[]) => {
@@ -63,8 +64,8 @@ export async function GET(request: Request) {
     console.log('[API_USER_STATS]    Endpoint 2:', urlPerformance);
 
     const [geralResponse, performanceResponse] = await Promise.all([
-      fetch(urlGeral, { headers: authHeaders, cache: 'no-store' }),
-      fetch(urlPerformance, { headers: authHeaders, cache: 'no-store' }),
+      fetch(urlGeral, { headers: authHeaders, cache: 'no-store', signal: bffTimeoutSignal() }),
+      fetch(urlPerformance, { headers: authHeaders, cache: 'no-store', signal: bffTimeoutSignal() }),
     ]);
 
     console.log('[API_USER_STATS] 📥 Respostas recebidas:');
@@ -96,6 +97,9 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error('[API_USER_STATS_ERROR] Erro de comunicação com o back-end:', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Não foi possível se conectar ao servidor.' }, { status: 503 });
   }
 }

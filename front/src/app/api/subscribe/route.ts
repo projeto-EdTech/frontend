@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readUserToken } from '@/app/service/sessionToken';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 export async function POST(req: Request) {
   if (!process.env.BACKEND_API_URL) {
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         email: email,
       }),
+      signal: bffTimeoutSignal(),
     });
 
     const contentType = response.headers.get("content-type");
@@ -56,6 +58,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Corpo da requisição mal formatado.' }, { status: 400 });
     }
     console.error('Erro de comunicação com o back-end:', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Não foi possível se conectar ao servidor.' }, { status: 503 });
   }
 }

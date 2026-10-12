@@ -4,6 +4,8 @@ import GoogleProvider from "next-auth/providers/google";
 import AzureADProvider from "next-auth/providers/azure-ad";
 import FacebookProvider from "next-auth/providers/facebook";
 import DiscordProvider from "next-auth/providers/discord";
+import { normalizeTier } from "@/app/service/jwtDecoder";
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 
 /**
  * Função responsável por usar o refresh_token para obter um novo access_token do Google.
@@ -24,6 +26,8 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
         // Ensure refreshToken is a string (or empty string) to satisfy URLSearchParams typing
         refresh_token: String(token.refreshToken ?? ""),
       }),
+      // Mesmo teto do BFF: um Google lento não pode prender toda requisição autenticada.
+      signal: bffTimeoutSignal(),
     });
 
     const refreshedTokens = await response.json();
@@ -36,11 +40,12 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     return {
       ...token,
       accessToken: refreshedTokens.access_token,
-      token: refreshedTokens.access_token,
       // A API do Google retorna expires_in em segundos (ex: 3600), calculamos o novo timestamp de expiração
       expires_at: Math.floor(Date.now() / 1000 + refreshedTokens.expires_in),
       // O Google pode ou não retornar um novo refresh_token; mantenha o antigo se não vier um novo
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
+      // O Google só devolve `id_token` no refresh quando o escopo inclui `openid`.
+      googleIdToken: refreshedTokens.id_token ?? token.googleIdToken,
     };
   } catch (error) {
     console.error("Erro ao renovar o access token", error);
@@ -102,15 +107,22 @@ export const authOptions: NextAuthOptions = {
         const userTier = (userEmail === "fegrolla0210@gmail.com" || userEmail === "fegrolla0210@gmail.com") ? "Simula PRO" : "FREE";
         console.log(`[JWT] Definindo tier do usuário (${userEmail}): ${userTier}`);
 
-        // Espalha o token existente para manter compatibilidade com o tipo JWT
+        // Só o que alguém lê. Guardar o `account` inteiro do Google (id_token, access_token,
+        // refresh_token, scope, token_type…) e repetir o access_token em mais dois campos
+        // estourava os ~3.9KB por cookie: o NextAuth fatiava a sessão em
+        // `next-auth.session-token.0`, `.1`, … e quem lia o cookie inteiro recebia lixo.
+        //
+        // - `googleIdToken`: o `/api/sync-user` troca pelo JWT do BFF Java. Só o Google emite.
+        // - `accessToken` / `refreshToken` / `expires_at`: renovação em `refreshAccessToken`.
         return {
           ...token,
-          googleAccount: account, // Armazena o objeto inteiro do Google (tokens, expiração, scopes, etc)
-          token: account.access_token, // Mantém a referência que você já está usando na rota
-          accessToken: account.access_token, // Garante que o accessToken esteja preenchido
+          ...(account.id_token ? { googleIdToken: account.id_token } : {}),
+          accessToken: account.access_token,
           expires_at: expiresAt,
           refreshToken: account.refresh_token ?? (token as JWT).refreshToken,
-          tier: userTier, // Definindo o tier do usuário (padrão FREE, atualizado para Simula PRO no teste)
+          // Sempre um valor do tipo `Tier`: grafia livre ("Simula PRO") fazia uma tela comparar
+          // com 'SIMULAPRO' e outra com "Simula PRO", e o mesmo aluno mudava de plano entre elas.
+          tier: normalizeTier(userTier),
           user,
         } as JWT;
       }
@@ -138,7 +150,8 @@ export const authOptions: NextAuthOptions = {
       // Se user existir, assegure que tem o campo `tier` (definido na declaração)
       if (session.user) {
         // atribuição segura: cria um objeto novo com o tier quando disponível
-        session.user = { ...(session.user as User), tier: token.tier } as typeof session.user;
+        // Normaliza de novo: sessões emitidas antes desta versão ainda carregam "Simula PRO".
+        session.user = { ...(session.user as User), tier: normalizeTier(token.tier) } as typeof session.user;
       }
       return session;
     },

@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/core/auth";
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 import ProfileClient from "./ProfileClient";
 
 export default async function ProfileDataServer() {
@@ -18,6 +19,7 @@ export default async function ProfileDataServer() {
                 'Authorization': `Bearer ${userToken}`,
             },
             cache: "no-store",
+            signal: bffTimeoutSignal(),
         });
 
         if (apiResponse.ok) {

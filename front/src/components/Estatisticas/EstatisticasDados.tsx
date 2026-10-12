@@ -2,6 +2,7 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import Image from "next/image";
 import { cookies } from "next/headers";
+import { bffTimeoutSignal } from "@/app/service/bffTimeout";
 
 const TopicBarChart = dynamic(
   () => import('@/components/Simula_PRO/graficos_stats/TopicBarChart'),
@@ -88,7 +89,8 @@ export default async function EstatisticasDados({ subject, vestibularSelecionado
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      next: { revalidate: 60 } // Híbrido ISR 60s
+      next: { revalidate: 60 }, // Híbrido ISR 60s
+      signal: bffTimeoutSignal(),
     });
 
     if (!res.ok) {

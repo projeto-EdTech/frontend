@@ -4,8 +4,9 @@
 fim, eles são **proxies finos para o BFF Java**: recebem, encaminham e devolvem. Nenhuma regra de
 negócio vive aqui — é a regra do [`CLAUDE.md`](../../../../CLAUDE.md) e vale para todo o diretório.
 
-> **Última revisão:** 06/08/2026 — depois de a cadeia de pagamento sair do Next e de o JWT sair
-> do `localStorage`.
+> **Última revisão:** 18/09/2026 — timeout em toda chamada ao BFF, sessão do NextAuth sem
+> fragmentar, explicação de gabarito por IA com gate de tier no servidor e remoção das telas de
+> pricing/payment.
 
 ---
 
@@ -54,6 +55,11 @@ embora.
 Quem valida o token é o **BFF Java**. O `readUserToken` só prova que existe sessão e entrega o
 Bearer a repassar; ele não decodifica nem verifica assinatura.
 
+Quando a rota precisa do **tier** ou do `id` do aluno, use `readSessionClaims(req)`
+([`src/app/service/sessionClaims.ts`](../service/sessionClaims.ts)) — o mesmo caminho do
+`/api/user/me`, com as duas fontes de sessão e o tier já normalizado. Decidir tier por conta
+própria é o que fazia o aluno ser PRO numa tela e FREE na seguinte.
+
 ```ts
 import { readUserToken } from '@/app/service/sessionToken';
 
@@ -62,6 +68,30 @@ if (!userToken) {
   return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
 }
 ```
+
+---
+
+## Timeout — toda chamada ao BFF tem teto
+
+Sem teto próprio, uma chamada só desiste no connect timeout de 10s do undici — e, se o Java
+aceitar a conexão sem responder, não desiste nunca. Toda chamada ao BFF (rotas, Server
+Components e services) passa o sinal de
+[`src/app/service/bffTimeout.ts`](../service/bffTimeout.ts):
+
+```ts
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
+
+const res = await fetch(url, { headers, cache: 'no-store', signal: bffTimeoutSignal() }); // 8s
+// no catch:
+if (isBffUnreachable(error)) {
+  return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+}
+```
+
+`isBffUnreachable` separa timeout, DNS e conexão recusada de bug nosso — 504 no primeiro caso,
+500/503 no segundo. Única exceção de contrato: `GET /api/Nota-corte` continua degradando para
+lista vazia, porque a tela de configurações precisa abrir com o BFF fora. Cobertura em
+`tests/route-timeouts.test.ts`.
 
 ---
 
@@ -90,13 +120,17 @@ ponto do fluxo que escreve esse cookie: se falhar, toda a aplicação se comport
 
 Aceita o JWT do Java em cinco grafias — `string` crua, `{ token }`, `{ accessToken }`, `{ jwt }` e
 `{ data: { token } }` — apara o prefixo `Bearer` e só grava o cookie se `decodeJWT()` devolver
-payload válido. Timeout próprio de **8s** (`AbortSignal.timeout`), abaixo dos 10s do undici.
+payload válido. Timeout de **8s** (`bffTimeoutSignal`), abaixo dos 10s do undici.
+
+Lê o `id_token` de `googleIdToken` na sessão — o callback `jwt` guarda só esse campo. Sessões
+emitidas antes de 18/09/2026 trazem o formato legado `googleAccount.id_token`, que continua
+aceito até expirarem.
 
 Os modos de falha são distinguíveis **no log do servidor**, porque na tela são idênticos:
 
 | Log | Significado | Status |
 |---|---|---|
-| `[sync-user][ABORT]` | sessão NextAuth sem `googleAccount` ou sem `id_token` | 401 |
+| `[sync-user][ABORT]` | sessão NextAuth sem `id_token` do Google | 401 |
 | `[sync-user][NET]` | não alcançou o BFF — rede, firewall, host errado | **504** |
 | `[sync-user][BFF]` | o Java respondeu, mas com erro | relay do status |
 | `[sync-user][SHAPE]` | respondeu OK, sem JWT utilizável no corpo | **502** |
@@ -128,9 +162,11 @@ A fonte 2 existe porque um `sync-user` que falha deixa o aluno autenticado no OA
 **`X-Claims-Source`** (`user_data` | `next-auth`) diz qual respondeu; `next-auth` é sinal de que
 o problema está no `/api/sync-user`.
 
-Esse cookie do NextAuth chega **fragmentado** (`next-auth.session-token.0`, `.1`, …) porque o
-callback `jwt` guarda o `account` inteiro do Google. Quem remonta é
-`readNextAuthSessionToken(req)` de [`sessionToken.ts`](../service/sessionToken.ts), ordenando
+Esse cookie do NextAuth chegava **fragmentado** (`next-auth.session-token.0`, `.1`, …) porque o
+callback `jwt` guardava o `account` inteiro do Google. A origem foi corrigida em 18/09/2026: o
+callback guarda só `googleIdToken`, `accessToken`, `refreshToken` e `expires_at`, e a sessão
+cifrada cabe num cookie só (`tests/auth-session-cookie.test.ts`). A remontagem continua para
+sessões antigas e como defesa. Quem remonta é `readNextAuthSessionToken(req)` de [`sessionToken.ts`](../service/sessionToken.ts), ordenando
 pelo sufixo **numérico** e reconhecendo também o nome `__Secure-` de produção. E ele é um **JWE
 cifrado**, não um JWT: `jwt-decode` não o lê — quem abre é o `decode` do `next-auth/jwt` com a
 `NEXTAUTH_SECRET`. A regra "só o `jwtDecoder` lê JWT" continua valendo: ela é sobre o token do
@@ -149,17 +185,18 @@ performance por matéria. A resposta é achatada no formato que a tela consome.
 
 A cadeia inteira (resolver preço, criar cobrança na gateway, verificar pagamento, conferir
 titularidade, ativar tier) vive **no Java**. Nenhum SDK de gateway existe neste repositório.
-Todas as cinco rotas passam por [`src/app/service/bffPayments.ts`](../service/bffPayments.ts).
+As rotas passam por [`src/app/service/bffPayments.ts`](../service/bffPayments.ts).
 
 | Rota | Método | Endpoint no BFF | Sessão |
 |---|---|---|---|
-| `/api/plans` | `GET` | `GET /plans` | pública |
-| `/api/process-subscription/credit-card` | `POST` | `POST /subscriptions/checkout/card` | obrigatória |
-| `/api/process-subscription/pix` | `POST` | `POST /subscriptions/checkout/pix` | obrigatória |
-| `/api/process-subscription/boleto` | `POST` | `POST /subscriptions/checkout/boleto` | obrigatória |
 | `/api/subscriptions/activate` | `POST` | `POST /subscriptions/activate` | NextAuth **e** JWT |
 
-**Corpo das três rotas de cobrança** — idêntico para os três métodos:
+> **Checkout fora da Fase 1.** As rotas de cobrança (`/api/plans`, `/api/process-subscription/*`)
+> saíram em `83575da`, e as telas que as chamavam (`components/pricing/*`, `components/payment/*`)
+> saíram em 18/09/2026. O contrato abaixo fica registrado para quando o checkout voltar — o
+> `sanitizeCheckoutBody` de `bffPayments.ts` continua pronto para ele.
+
+**Corpo das rotas de cobrança** (quando voltarem) — idêntico para os três métodos:
 
 ```jsonc
 {
@@ -194,15 +231,15 @@ valer sem o aluno relogar. **O token não vai no corpo da resposta.**
 Status repassados sem tradução: `200` ativado · `202` pendente · `403` titularidade divergente ·
 `404` gateway não conhece o id · `409` falhou.
 
-Três origens chamam esta rota, todas com o mesmo corpo:
-[`paidPlan/page.tsx`](../paidPlan/page.tsx) (cartão),
-[`usePixPaymentStatus`](../../hooks/usePixPaymentStatus.ts) (polling do PIX),
-[`usePendingPaymentReconciliation`](../../hooks/usePendingPaymentReconciliation.ts) (boleto, no
-próximo acesso).
+Hoje uma origem chama esta rota:
+[`usePendingPaymentReconciliation`](../../hooks/usePendingPaymentReconciliation.ts) (pagamento
+pendente reconciliado no próximo acesso, via `SyncUserEffect`).
+[`usePixPaymentStatus`](../../hooks/usePixPaymentStatus.ts) também a chama, mas nenhuma tela
+monta o hook desde que o formulário de PIX saiu.
 
 **Erros nunca vazam.** Acima de 2xx, `callBff` substitui o corpo do Java por mensagem genérica do
-próprio status — o corpo original pode carregar host, stack ou nome de classe interna. Falha de
-rede e `BACKEND_API_URL` ausente viram `503`.
+próprio status — o corpo original pode carregar host, stack ou nome de classe interna. Timeout e
+BFF inalcançável viram `504`; outra falha de rede e `BACKEND_API_URL` ausente viram `503`.
 
 ---
 
@@ -233,6 +270,35 @@ que é provider global.
 
 ---
 
+### 🤖 IA
+
+| Rota | Método | Origem | Sessão |
+|---|---|---|---|
+| `/api/generate-explanation` | `POST` | Gemini 2.5 Flash (streaming) | obrigatória — `readSessionClaims` |
+
+**`/api/generate-explanation`** — explicação do gabarito de uma questão. Corpo
+`{ enunciado, gabarito }` (até 20 mil caracteres cada); resposta `text/plain` em streaming.
+
+| Situação | Status |
+|---|---|
+| sem sessão | 401 |
+| corpo inválido, sem `enunciado`/`gabarito` | 400 |
+| FREE sem cota no dia | 429 — `{ error, limite }` |
+| `GEMINI_API_KEY` ausente | 503 |
+| Gemini não respondeu em 30s | 504 |
+| Gemini falhou antes de começar | 502 |
+
+O tier sai da sessão, no servidor (`isPaidTier`). PRO não tem cota; FREE tem **5 explicações
+por dia** (fuso de Brasília), contadas em cookie HttpOnly `ai_explanations` com `path` restrito à
+rota — ver [`aiExplanationQuota.ts`](../service/aiExplanationQuota.ts). O saldo volta no header
+`X-AI-Quota-Remaining` (`unlimited` para PRO). A cota só é debitada depois que o Gemini aceitou a
+requisição.
+
+> **Limite conhecido:** é cota de navegador — apagar o cookie pelas ferramentas de desenvolvedor
+> recomeça a contagem. Medição à prova disso precisa de estado no servidor, que mora no BFF Java.
+
+---
+
 ### 🎮 Jogos e utilitários
 
 | Rota | Método | Origem dos dados | Sessão |
@@ -253,11 +319,8 @@ tolerando variações de nome e slug (`PUC-SP` vs `pucsp`).
 | `/api/user/me` | `lib/core/userClaims.ts` → `hooks/useUserTier.ts`, `components/blog/SubscribeButton.tsx`, `components/SyncUserEffect.tsx` |
 | `/api/user/stats` | `components/profile/ProfileClient.tsx` (SWR) |
 | `/api/subscribe` | `components/blog/SubscribeButton.tsx` |
-| `/api/plans` | `components/PricingCard.tsx`, `app/paidPlan/page.tsx` |
-| `/api/process-subscription/credit-card` | `app/paidPlan/page.tsx` |
-| `/api/process-subscription/pix` | `app/paidPlan/page.tsx` |
-| `/api/process-subscription/boleto` | `components/payment/BoletoForm.tsx` |
-| `/api/subscriptions/activate` | `app/paidPlan/page.tsx`, `hooks/usePixPaymentStatus.ts`, `hooks/usePendingPaymentReconciliation.ts` |
+| `/api/subscriptions/activate` | `hooks/usePendingPaymentReconciliation.ts` (e `hooks/usePixPaymentStatus.ts`, que nenhuma tela monta) |
+| `/api/generate-explanation` | `components/profile/RevisaoIA.tsx` (aba **Revisão** do perfil) |
 | `/api/universities` | `contexts/UniversityStorage.tsx`, `components/Simula_PRO/NotaCorteConsulta.tsx`, `components/profile/UserConfig.tsx` |
 | `/api/Nota-corte` | `components/Simula_PRO/NotaCorteConsulta.tsx`, `components/profile/ProfileClient.tsx`, `components/profile/UserConfig.tsx` |
 | `/api/games/flash-cards` | `components/games/flash-card_game/functions/flash-cardlogic.ts` |
@@ -273,9 +336,8 @@ próprio — **não invente a rota sem antes conferir o contrato com o time Java
 
 | Chamada no cliente | Problema |
 |---|---|
-| `POST /api/simulations/save-result` (`Simula_PRO/SimulationQuizClient.tsx`) | **a rota não existe** — o resultado do simulado nunca chegou ao backend |
+| `POST /api/simulations/save-result` (`Simula_PRO/SimulationQuizClient.tsx`) | a rota existe, mas encaminha para o caminho provisório `/CAMINHO DO BACKEND` — o resultado do simulado nunca chega ao backend |
 | `POST /api/games/flash-cards` (`flash-card_game/functions/flash-cardlogic.ts`) | a rota exporta **só `GET`** → responde 405; os acertos nunca foram salvos |
-| `POST /api/generate-explanation` (`profile/ProfileClient.tsx`) | a rota **existe** e funciona (Gemini, streaming). O que falta é a UI: `Simula_PRO/Questoes_Gemini.tsx` não é montado por nenhuma tela, então `handleSubmit` nunca é disparado |
 
 Outros pontos abertos: [`src/lib/simulationStore.ts`](../../lib/simulationStore.ts) não é
 importado por ninguém, e a grafia do claim de newsletter diverge (`newsletter` na interface do
@@ -289,15 +351,18 @@ payload, `newsLetter` no botão do blog — `/api/user/me` aceita as duas como c
    BFF direto é melhor.
 2. **Proxy fino.** Recebe, encaminha, devolve. Regra de negócio vai para o Java.
 3. **`process.env.BACKEND_API_URL`** — nunca URL no código, nunca `NEXT_PUBLIC_`.
-4. **Sessão com `readUserToken(req)`**, 401 antes de qualquer chamada externa.
-5. **Erro do BFF não chega ao navegador.** Nada de stack, host ou nome de classe. Rotas de
+4. **Sessão com `readUserToken(req)`**, 401 antes de qualquer chamada externa. Precisa de tier
+   ou `id`? `readSessionClaims(req)`.
+5. **Timeout:** `signal: bffTimeoutSignal()` em todo `fetch` ao BFF, e `isBffUnreachable` → 504
+   no `catch`.
+6. **Erro do BFF não chega ao navegador.** Nada de stack, host ou nome de classe. Rotas de
    pagamento já têm isso pronto em `callBff`.
-6. **Comentário de cache strategy** no topo do arquivo:
+7. **Comentário de cache strategy** no topo do arquivo:
 
    ```ts
    // CACHE STRATEGY: no-store — dados financeiros, sem cache
    // CACHE STRATEGY: ISR — revalidate 300s — catálogo público
    ```
 
-7. **Teste** em `src/test/`, sufixo `.test.ts` (Vitest). Os arquivos em `src/test/auth/` já
-   cobrem o padrão de sessão via `describe.each` — some a rota nova a `route-cookie-auth.test.ts`.
+8. **Teste** em `front/tests/`, sufixo `.test.ts` (Vitest). Some a rota nova ao `describe.each` de
+   `tests/route-timeouts.test.ts`.

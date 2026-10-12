@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { decodeJWT } from '@/app/service/jwtDecoder';
+import { bffTimeoutSignal, isBffUnreachable, BFF_UNREACHABLE_MESSAGE } from '@/app/service/bffTimeout';
 
 export async function POST(req: Request) {
   const backendUrl = process.env.BACKEND_API_URL;
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
         'Authorization': `Bearer ${userToken}`,
       },
       body: JSON.stringify(payload),
+      signal: bffTimeoutSignal(),
     });
 
     const contentType = response.headers.get('content-type') || '';
@@ -87,6 +89,9 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error('[API_USER_PROFILE_ERROR] Falha de comunicação com o backend:', error);
+    if (isBffUnreachable(error)) {
+      return NextResponse.json({ error: BFF_UNREACHABLE_MESSAGE }, { status: 504 });
+    }
     console.log('────────────────────────────────────────────────────────\n');
     return NextResponse.json({ error: 'Não foi possível se conectar ao servidor do backend.' }, { status: 503 });
   }

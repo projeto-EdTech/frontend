@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useUserTier } from "@/hooks/useUserTier";
 import { HelpCircle, X, Gamepad2, Heart, Shuffle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./NexoStyle.css";
@@ -19,7 +19,7 @@ type ShakeCallback = {
 
 export default function Nexo() {
   const gameRef = useRef<HTMLDivElement>(null);
-  const { data: session } = useSession();
+  const { isPro } = useUserTier();
   // Referencia para armazenar a instância da classe de lógica (ConnectionsGame)
   const logicRef = useRef<unknown>(null);
   const [resultado, setResultado] = useState<ResultadoJogo | null>(null);
@@ -108,11 +108,6 @@ export default function Nexo() {
     return () => clearInterval(interval);
   }, [resultado]);
 
-  // Descobre o tier do usuário sem usar 'any'
-  type UserWithTier = {
-    tier?: string;
-  };
-  const tier = (session?.user && (session.user as UserWithTier).tier) || "FREE";
 
   useEffect(() => {
     let mounted = true;
@@ -431,7 +426,7 @@ export default function Nexo() {
                 ))}
               </div>
               {/* FREE: só mensagem, PRO: só botão */}
-              {tier === "FREE" ? (
+              {!isPro ? (
                 <motion.div
                   className="flex flex-col items-center gap-1 my-3"
                   initial={{ opacity: 0, y: 10 }}
@@ -456,7 +451,7 @@ export default function Nexo() {
                 </motion.div>
               ) : null}
               {/* Rodapé com Ação */}
-              {tier === "Simula PRO" && (
+              {isPro && (
                 <motion.div
                   className="p-4 bg-gray-50 border-t border-gray-100"
                   initial={{ opacity: 0, y: 10 }}

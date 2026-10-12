@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { decodeJWT } from "@/app/service/jwtDecoder";
+import { bffTimeoutSignal, isBffUnreachable } from "@/app/service/bffTimeout";
 
 /**
  * Troca a sessão do NextAuth pela sessão do BFF Java.
@@ -30,14 +31,6 @@ import { decodeJWT } from "@/app/service/jwtDecoder";
  * CACHE STRATEGY: no-store — grava sessão, nunca pode ser servida de cache
  */
 
-/**
- * Corta antes dos 10s de connect timeout padrão do undici.
- *
- * Sem isto, um BFF inalcançável pendura o login por 10s e o erro chega como um
- * `TypeError: fetch failed` genérico, sem dizer se foi rede, DNS ou o Java engasgado.
- */
-const TIMEOUT_MS = 8000;
-
 /** Grafias em que o JWT já chegou do BFF. Ler só `{ token }` fazia o login falhar calado. */
 function extrairJwt(backendData: unknown): string | null {
   const bruto =
@@ -66,11 +59,22 @@ function descreverFormato(backendData: unknown): string {
   return `object{${Object.keys(backendData).join(",")}}`;
 }
 
-/** Falha antes de chegar ao Java: timeout nosso, connect timeout do undici, DNS, recusa. */
-function ehErroDeRede(erro: unknown): boolean {
-  if (erro instanceof DOMException && erro.name === "TimeoutError") return true;
-  if (erro instanceof Error && erro.name === "AbortError") return true;
-  return erro instanceof TypeError && "cause" in erro;
+/**
+ * `id_token` do Google guardado na sessão do NextAuth.
+ *
+ * `googleIdToken` é o formato atual — o callback `jwt` guarda só este campo, e não mais o
+ * `account` inteiro, que era o que fragmentava o cookie de sessão. `googleAccount.id_token` é o
+ * formato legado: sessões emitidas antes do deploy continuam funcionando até expirarem.
+ */
+function lerIdTokenDoGoogle(token: Record<string, unknown> | null): string | null {
+  if (!token) return null;
+
+  if (typeof token.googleIdToken === "string" && token.googleIdToken) {
+    return token.googleIdToken;
+  }
+
+  const legado = (token.googleAccount as { id_token?: unknown } | undefined)?.id_token;
+  return typeof legado === "string" && legado ? legado : null;
 }
 
 export async function POST(req: Request) {
@@ -78,8 +82,8 @@ export async function POST(req: Request) {
   // getToken typing expects NextRequest/NextApiRequest; cast via unknown -> NextRequest to avoid 'any'
   const token = await getToken({ req: req as unknown as NextRequest, secret: process.env.NEXTAUTH_SECRET });
 
-  if (!token?.googleAccount) {
-    console.log("[sync-user][ABORT] googleAccount ausente no token");
+  if (!token?.googleIdToken && !token?.googleAccount) {
+    console.log("[sync-user][ABORT] id_token do Google ausente no token");
     return NextResponse.json(
       { message: "Não autorizado: token de acesso não encontrado" },
       { status: 401 }
@@ -94,10 +98,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const idToken = (token.googleAccount as { id_token?: string })?.id_token;
+  const idToken = lerIdTokenDoGoogle(token);
 
   if (!idToken) {
-    console.log("[sync-user][ABORT] id_token ausente no googleAccount");
+    console.log("[sync-user][ABORT] id_token ausente na sessão");
     return NextResponse.json(
       { message: "Não autorizado: id_token não encontrado" },
       { status: 401 }
@@ -113,10 +117,10 @@ export async function POST(req: Request) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ token: idToken }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: bffTimeoutSignal(),
     });
   } catch (e) {
-    if (ehErroDeRede(e)) {
+    if (isBffUnreachable(e)) {
       const causa = (e as { cause?: { code?: string; message?: string } }).cause;
       console.error(
         `[sync-user][NET] BFF inalcançável em ${process.env.BACKEND_API_URL} — ` +

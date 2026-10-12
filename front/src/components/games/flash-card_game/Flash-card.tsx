@@ -6,12 +6,12 @@ import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, Shuffle } f
 import { useTheme } from '@/contexts/ThemeContext';
 import { FlashCardGameLogic } from './functions/flash-cardlogic';
 import type { FlashCard, FlashCardGameProps, GameScore } from './lib/flash-cardData';
-import { useSession } from 'next-auth/react';
+import { useUserTier } from '@/hooks/useUserTier';
 
 const FlashCardGame: React.FC<FlashCardGameProps> = ({ onComplete }) => {
   const { theme } = useTheme();
-  const { data: session } = useSession();
-  const isPro = session?.user?.tier === 'SIMULAPRO';
+  // Tier pelo BFF (`/api/user/me`), com a sessão como fallback — nunca comparando grafia crua.
+  const { isPro } = useUserTier();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const DAILY_LIMIT = 10;
   const [isLoading, setIsLoading] = useState(true);

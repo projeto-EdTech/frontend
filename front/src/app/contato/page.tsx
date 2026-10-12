@@ -17,7 +17,7 @@ import {
   MessageSquare,
   Heart,
 } from "lucide-react";
-import emailjs from "@emailjs/browser";
+import { sendContactEmail } from "@/components/contato/emailService";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -113,17 +113,8 @@ export default function ContatoPage() {
     setIsSubmitting(true);
 
     try {
-      await emailjs.send(
-        "service_aij29ho",
-        "template_lipq2g8",
-        {
-          name: formData.nome,
-          email: formData.email,
-          subject: formData.assunto,
-          message: formData.mensagem,
-        },
-        "fT9AktnzX0qQojQTH",
-      );
+      // IDs do EmailJS vêm do `.env` (NEXT_PUBLIC_EMAILJS_*), não mais fixos no código.
+      await sendContactEmail(formData);
 
       setSubmitMessage("Mensagem enviada com sucesso!");
       setFormData({ nome: "", email: "", assunto: "", mensagem: "" });
